@@ -6,7 +6,7 @@ import {
 } from "firebase/firestore";
 import {
   onAuthStateChanged, signInWithPopup, signOut,
-  GoogleAuthProvider, OAuthProvider, createUserWithEmailAndPassword,
+  GoogleAuthProvider, createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from "firebase/auth";
 
@@ -29,13 +29,6 @@ function GoogleIcon() {
   );
 }
 
-function AppleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 814 1000" fill="white">
-      <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.5 135.4-317.5 268.5-317.5 99.8 0 160.6 66.1 215 66.1 52.8 0 121.4-70.1 232.6-70.1zm-86.4-194.5c43.3-51.3 74.1-122.3 74.1-193.3 0-9.9-.6-19.8-2.5-28.1-70.5 2.5-154.6 47.2-205.9 105.7-38.5 43.9-75.9 114.9-75.9 187 0 10.5 1.9 21.1 2.5 24.4 4.5.6 11.8 1.9 19.1 1.9 63.5 0 144.4-42.8 188.6-97.6z"/>
-    </svg>
-  );
-}
 
 function Avatar({ initials, color, size = 40, online = false }) {
   return (
@@ -111,17 +104,6 @@ function AuthScreen({ onAuth }) {
     setLoading(false);
   };
 
-  const handleApple = async () => {
-    setLoading(true);
-    try {
-      const result = await signInWithPopup(auth, new OAuthProvider("apple.com"));
-      onAuth(result.user);
-    } catch (e) {
-      setError(e.message.replace("Firebase: ", ""));
-    }
-    setLoading(false);
-  };
-
   const handleEmail = async () => {
     setLoading(true);
     setError("");
@@ -157,20 +139,13 @@ function AuthScreen({ onAuth }) {
             {mode === "login" ? "Welcome back" : "Create account"}
           </h2>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+          <div style={{ marginBottom: 24 }}>
             <button onClick={handleGoogle} disabled={loading} style={{
-              padding: "13px", borderRadius: 12, border: `1px solid ${COLORS.border}`,
+              width: "100%", padding: "13px", borderRadius: 12, border: `1px solid ${COLORS.border}`,
               background: "transparent", color: COLORS.text, cursor: "pointer",
               fontSize: 14, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
             }}>
               <GoogleIcon /> Continue with Google
-            </button>
-            <button onClick={handleApple} disabled={loading} style={{
-              padding: "13px", borderRadius: 12, border: `1px solid ${COLORS.border}`,
-              background: "transparent", color: COLORS.text, cursor: "pointer",
-              fontSize: 14, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-            }}>
-              <AppleIcon /> Continue with Apple
             </button>
           </div>
 
