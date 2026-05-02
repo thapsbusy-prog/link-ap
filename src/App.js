@@ -68,11 +68,11 @@ function Tag({ label, color = COLORS.accent }) {
   );
 }
 
-function Input({ label, value, onChange, placeholder, type = "text" }) {
+function Input({ label, value, onChange, placeholder, type = "text", autoComplete }) {
   return (
     <div>
       <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} autoComplete={autoComplete || "off"} style={{
         width: "100%", padding: "12px 16px", borderRadius: 12,
         background: COLORS.bg, border: `1px solid ${COLORS.border}`,
         color: COLORS.text, fontSize: 14, outline: "none", boxSizing: "border-box",
@@ -162,8 +162,8 @@ function AuthScreen() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <Input label="Email" value={email} onChange={setEmail} placeholder="you@example.com" type="email" />
-            <Input label="Password" value={password} onChange={setPassword} placeholder="••••••••" type="password" />
+            <Input label="Email" value={email} onChange={setEmail} placeholder="you@example.com" type="email" autoComplete="new-password" />
+            <Input label="Password" value={password} onChange={setPassword} placeholder="••••••••" type="password" autoComplete="new-password" />
           </div>
 
           {error && (
@@ -184,7 +184,7 @@ function AuthScreen() {
 
           <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: COLORS.textMuted }}>
             {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-            <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }} style={{ color: COLORS.accent, cursor: "pointer" }}>
+            <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setEmail(""); setPassword(""); }} style={{ color: COLORS.accent, cursor: "pointer" }}>
               {mode === "login" ? "Sign up" : "Sign in"}
             </span>
           </p>
