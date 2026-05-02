@@ -9,6 +9,7 @@ import {
   GoogleAuthProvider, createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from "firebase/auth";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const COLORS = {
   bg: "#0A0A0F", card: "#13131A", border: "#2A2A3A",
@@ -17,6 +18,11 @@ const COLORS = {
 };
 
 const USER_COLORS = ["#A78BFA", "#4ADE80", "#F5A623", "#60A5FA", "#F87171", "#34D399"];
+const LOOKING_FOR_OPTIONS = ["Investor", "Co-founder", "Mentor", "Collaboration", "Freelance Work", "Startup to join", "A Job"];
+const normalizeUrl = (url) => {
+  if (!url) return "";
+  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
+};
 
 function LinkedInIcon() {
   return (
@@ -38,15 +44,22 @@ function GoogleIcon() {
 }
 
 
-function Avatar({ initials, color, size = 40, online = false }) {
+function Avatar({ initials, color, size = 40, online = false, photoURL }) {
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
-      <div style={{
-        width: size, height: size, borderRadius: "50%",
-        background: `${color}22`, border: `2px solid ${color}55`,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: size * 0.35, fontWeight: 700, color,
-      }}>{initials}</div>
+      {photoURL ? (
+        <img src={photoURL} alt={initials} style={{
+          width: size, height: size, borderRadius: "50%",
+          objectFit: "cover", border: `2px solid ${color}55`, display: "block",
+        }} />
+      ) : (
+        <div style={{
+          width: size, height: size, borderRadius: "50%",
+          background: `${color}22`, border: `2px solid ${color}55`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: size * 0.35, fontWeight: 700, color,
+        }}>{initials}</div>
+      )}
       {online && (
         <div style={{
           position: "absolute", bottom: 1, right: 1,
@@ -203,16 +216,10 @@ function Onboarding({ firebaseUser, onComplete }) {
     bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
   });
 
-  const lookingForOptions = ["Investor", "Co-founder", "Mentor", "Collaboration", "Freelance Work", "Startup to join", "A Job"];
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleLF = (v) => setForm(f => ({
     ...f, lookingFor: f.lookingFor.includes(v) ? f.lookingFor.filter(x => x !== v) : [...f.lookingFor, v]
   }));
-
-  const normalizeUrl = (url) => {
-    if (!url) return "";
-    return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
-  };
 
   const saveProfile = async () => {
     setSaving(true);
@@ -271,7 +278,7 @@ function Onboarding({ firebaseUser, onComplete }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <p style={{ color: COLORS.textMuted, fontSize: 14 }}>Select all that apply</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {lookingForOptions.map(opt => (
+            {LOOKING_FOR_OPTIONS.map(opt => (
               <button key={opt} onClick={() => toggleLF(opt)} style={{
                 padding: "8px 16px", borderRadius: 20, fontSize: 13, cursor: "pointer",
                 border: `1px solid ${form.lookingFor.includes(opt) ? COLORS.accent : COLORS.border}`,
@@ -339,8 +346,8 @@ function Onboarding({ firebaseUser, onComplete }) {
   );
 }
 
-function MainApp({ user, firebaseUser }) {
-  const [tab, setTab] = useState("discover");
+function MainApp({ user, firebaseUser, onProfileUpdate }) {
+  const [tab, setTab] = useState("profile");
   const [allUsers, setAllUsers] = useState(null);
   const [matches, setMatches] = useState([]);
   const [sent, setSent] = useState([]);
@@ -411,7 +418,7 @@ function MainApp({ user, firebaseUser }) {
           Link<span style={{ color: COLORS.accent }}>-Ap</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <Avatar initials={user.avatar} color={user.color} size={36} online />
+          <Avatar initials={user.avatar} color={user.color} size={36} online photoURL={user.photoURL} />
           <button onClick={() => signOut(auth)} style={{
             background: "none", border: `1px solid ${COLORS.border}`, color: COLORS.textMuted,
             borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 12,
@@ -423,7 +430,7 @@ function MainApp({ user, firebaseUser }) {
         {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} />}
         {tab === "messages" && <Messages matches={matches} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={setActiveChat} />}
-        {tab === "profile" && <Profile user={user} />}
+        {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} />}
       </div>
 
       <div style={{
@@ -498,7 +505,7 @@ function Discover({ users, onConnect }) {
         <div style={{ height: 4, background: current.color }} />
         <div style={{ padding: 24 }}>
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20 }}>
-            <Avatar initials={current.avatar} color={current.color} size={60} online />
+            <Avatar initials={current.avatar} color={current.color} size={60} online photoURL={current.photoURL} />
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>{current.name}</div>
@@ -570,7 +577,7 @@ function Matches({ matches, sent, onChat }) {
             background: COLORS.card, border: `1px solid ${COLORS.border}`,
             borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", cursor: "pointer",
           }}>
-            <Avatar initials={u.avatar} color={u.color} size={48} online />
+            <Avatar initials={u.avatar} color={u.color} size={48} online photoURL={u.photoURL} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
               <div style={{ color: u.color, fontSize: 12, marginBottom: 6 }}>{u.role}</div>
@@ -590,7 +597,7 @@ function Matches({ matches, sent, onChat }) {
                 background: COLORS.card, border: `1px dashed ${COLORS.border}`,
                 borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", opacity: 0.6,
               }}>
-                <Avatar initials={u.avatar} color={u.color} size={48} />
+                <Avatar initials={u.avatar} color={u.color} size={48} photoURL={u.photoURL} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
                   <div style={{ color: u.color, fontSize: 12, marginBottom: 4 }}>{u.role}</div>
@@ -657,7 +664,7 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
             background: COLORS.card, border: `1px solid ${COLORS.border}`,
             borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", cursor: "pointer",
           }}>
-            <Avatar initials={u.avatar} color={u.color} size={48} online />
+            <Avatar initials={u.avatar} color={u.color} size={48} online photoURL={u.photoURL} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
               <div style={{ color: COLORS.textMuted, fontSize: 13 }}>Tap to chat 💬</div>
@@ -676,7 +683,7 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
         position: "sticky", top: 69, zIndex: 9, flexShrink: 0,
       }}>
         <button onClick={() => setActiveChat(null)} style={{ background: "none", border: "none", color: COLORS.accent, cursor: "pointer", fontSize: 18 }}>←</button>
-        <Avatar initials={chatUser?.avatar} color={chatUser?.color} size={40} online />
+        <Avatar initials={chatUser?.avatar} color={chatUser?.color} size={40} online photoURL={chatUser?.photoURL} />
         <div>
           <div style={{ fontWeight: 700, color: COLORS.text }}>{chatUser?.name}</div>
           <div style={{ color: COLORS.green, fontSize: 12 }}>● Online</div>
@@ -731,18 +738,160 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
   );
 }
 
-function Profile({ user }) {
+function Profile({ user, firebaseUser, onProfileUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(user.photoURL || null);
+  const [form, setForm] = useState({
+    name: user.name || "", role: user.role || "", location: user.location || "",
+    bio: user.bio || "", skills: user.skills?.join(", ") || "",
+    achievements: user.achievements?.join(", ") || "",
+    linkedin: user.linkedin || "", lookingFor: user.lookingFor || [],
+  });
+
+  const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const toggleLF = (v) => setForm(f => ({
+    ...f, lookingFor: f.lookingFor.includes(v) ? f.lookingFor.filter(x => x !== v) : [...f.lookingFor, v],
+  }));
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    setSaveError("");
+    try {
+      let photoURL = user.photoURL || "";
+      if (photoFile) {
+        const storage = getStorage();
+        const photoRef = sRef(storage, `avatars/${firebaseUser.uid}`);
+        await uploadBytes(photoRef, photoFile);
+        photoURL = await getDownloadURL(photoRef);
+      }
+      const updated = {
+        ...user,
+        name: form.name,
+        role: form.role,
+        location: form.location,
+        bio: form.bio,
+        skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
+        achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
+        linkedin: normalizeUrl(form.linkedin),
+        lookingFor: form.lookingFor,
+        avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
+        photoURL,
+      };
+      await setDoc(doc(db, "users", firebaseUser.uid), updated);
+      onProfileUpdate(updated);
+      setEditing(false);
+      setPhotoFile(null);
+    } catch (e) {
+      setSaveError("Failed to save. Please try again.");
+    }
+    setSaving(false);
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+    setPhotoFile(null);
+    setPhotoPreview(user.photoURL || null);
+    setForm({
+      name: user.name || "", role: user.role || "", location: user.location || "",
+      bio: user.bio || "", skills: user.skills?.join(", ") || "",
+      achievements: user.achievements?.join(", ") || "",
+      linkedin: user.linkedin || "", lookingFor: user.lookingFor || [],
+    });
+    setSaveError("");
+  };
+
+  if (editing) return (
+    <div style={{ padding: "16px 20px", paddingBottom: 32 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Edit Profile</h2>
+        <button onClick={cancelEdit} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 13 }}>Cancel</button>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <div style={{ position: "relative" }}>
+            <Avatar initials={form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?"} color={user.color} size={80} photoURL={photoPreview} />
+            <label style={{
+              position: "absolute", bottom: 0, right: 0,
+              width: 26, height: 26, borderRadius: "50%",
+              background: COLORS.accent, display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", fontSize: 13,
+            }}>
+              📷
+              <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: "none" }} />
+            </label>
+          </div>
+          <span style={{ fontSize: 12, color: COLORS.textMuted }}>Tap camera to change photo</span>
+        </div>
+
+        <Input label="Full Name" value={form.name} onChange={v => update("name", v)} placeholder="Your name" />
+        <Input label="What do you do?" value={form.role} onChange={v => update("role", v)} placeholder="e.g. Entrepreneur, Developer" />
+        <Input label="Location" value={form.location} onChange={v => update("location", v)} placeholder="e.g. Cape Town, SA" />
+        <TextArea label="Bio" value={form.bio} onChange={v => update("bio", v)} placeholder="What are you building or working towards?" />
+        <Input label="Skills (comma separated)" value={form.skills} onChange={v => update("skills", v)} placeholder="e.g. Marketing, React, Sales" />
+        <Input label="Achievements (comma separated)" value={form.achievements} onChange={v => update("achievements", v)} placeholder="e.g. Built 2 startups" />
+        <Input label="LinkedIn URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="https://linkedin.com/in/yourname" />
+
+        <div>
+          <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8, display: "block" }}>Looking For</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {LOOKING_FOR_OPTIONS.map(opt => (
+              <button key={opt} onClick={() => toggleLF(opt)} style={{
+                padding: "7px 14px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+                border: `1px solid ${form.lookingFor.includes(opt) ? COLORS.accent : COLORS.border}`,
+                background: form.lookingFor.includes(opt) ? `${COLORS.accent}22` : "transparent",
+                color: form.lookingFor.includes(opt) ? COLORS.accent : COLORS.textMuted,
+              }}>{opt}</button>
+            ))}
+          </div>
+        </div>
+
+        {saveError && (
+          <div style={{ padding: "10px 14px", borderRadius: 10, background: `${COLORS.red}18`, color: COLORS.red, fontSize: 13 }}>
+            {saveError}
+          </div>
+        )}
+
+        <button onClick={saveProfile} disabled={saving || !form.name || !form.role} style={{
+          padding: "13px", borderRadius: 12, border: "none",
+          background: !saving && form.name && form.role ? COLORS.accent : COLORS.border,
+          color: !saving && form.name && form.role ? "#000" : COLORS.textMuted,
+          cursor: !saving && form.name && form.role ? "pointer" : "not-allowed",
+          fontSize: 14, fontWeight: 700,
+        }}>
+          {saving ? "Saving..." : "Save Profile"}
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ padding: "16px 20px" }}>
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>My Profile</h2>
-        <p style={{ color: COLORS.textMuted, fontSize: 13 }}>How others see you</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>My Profile</h2>
+          <p style={{ color: COLORS.textMuted, fontSize: 13 }}>How others see you</p>
+        </div>
+        <button onClick={() => setEditing(true)} style={{
+          padding: "8px 16px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
+          background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
+        }}>Edit</button>
       </div>
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>
         <div style={{ height: 4, background: user.color }} />
         <div style={{ padding: 24 }}>
           <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 20 }}>
-            <Avatar initials={user.avatar} color={user.color} size={64} online />
+            <Avatar initials={user.avatar} color={user.color} size={64} online photoURL={user.photoURL} />
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{user.name}</div>
@@ -810,5 +959,5 @@ export default function App() {
 
   if (!firebaseUser) return <AuthScreen />;
   if (!profile || profile.uid !== firebaseUser.uid) return <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
-  return <MainApp user={profile} firebaseUser={firebaseUser} />;
+  return <MainApp user={profile} firebaseUser={firebaseUser} onProfileUpdate={setProfile} />;
 }
