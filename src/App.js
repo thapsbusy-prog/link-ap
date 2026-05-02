@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { db, auth } from "./firebase";
 import {
   collection, addDoc, onSnapshot, query,
-  orderBy, serverTimestamp, doc, setDoc, getDoc
+  orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc
 } from "firebase/firestore";
 import {
   onAuthStateChanged, signInWithPopup, signOut,
@@ -343,6 +343,7 @@ function MainApp({ user, firebaseUser }) {
   const [tab, setTab] = useState("discover");
   const [allUsers, setAllUsers] = useState(null);
   const [matches, setMatches] = useState([]);
+  const [sent, setSent] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [notification, setNotification] = useState(null);
 
@@ -360,9 +361,26 @@ function MainApp({ user, firebaseUser }) {
     return unsub;
   }, [firebaseUser.uid]);
 
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "sent"), snap => {
+      setSent(snap.docs.map(d => d.data()));
+    });
+    return unsub;
+  }, [firebaseUser.uid]);
+
   const handleConnect = async (targetUser) => {
-    await setDoc(doc(db, "users", firebaseUser.uid, "matches", targetUser.uid), targetUser);
-    showNotif(`You connected with ${targetUser.name}! 🎉`);
+    const theirRequest = await getDoc(doc(db, "users", targetUser.uid, "sent", firebaseUser.uid));
+    if (theirRequest.exists()) {
+      await Promise.all([
+        setDoc(doc(db, "users", firebaseUser.uid, "matches", targetUser.uid), targetUser),
+        setDoc(doc(db, "users", targetUser.uid, "matches", firebaseUser.uid), user),
+        deleteDoc(doc(db, "users", targetUser.uid, "sent", firebaseUser.uid)),
+      ]);
+      showNotif(`It's a match with ${targetUser.name}! 🎉`);
+    } else {
+      await setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), targetUser);
+      showNotif(`Request sent to ${targetUser.name}!`);
+    }
   };
 
   const showNotif = (msg) => {
@@ -370,7 +388,9 @@ function MainApp({ user, firebaseUser }) {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const unmatched = allUsers === null ? null : allUsers.filter(u => !matches.find(m => m.uid === u.uid));
+  const unmatched = allUsers === null ? null : allUsers.filter(u =>
+    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid)
+  );
 
   return (
     <div style={{ minHeight: "100vh", background: COLORS.bg, maxWidth: 430, margin: "0 auto", position: "relative" }}>
@@ -401,7 +421,7 @@ function MainApp({ user, firebaseUser }) {
 
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} />}
-        {tab === "matches" && <Matches matches={matches} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} />}
+        {tab === "matches" && <Matches matches={matches} sent={sent} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} />}
         {tab === "messages" && <Messages matches={matches} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={setActiveChat} />}
         {tab === "profile" && <Profile user={user} />}
       </div>
@@ -529,19 +549,21 @@ function Discover({ users, onConnect }) {
   );
 }
 
-function Matches({ matches, onChat }) {
+function Matches({ matches, sent, onChat }) {
   return (
     <div style={{ padding: "16px 20px" }}>
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Your Matches</h2>
-        <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{matches.length} connections made</p>
+        <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{matches.length} mutual connections</p>
       </div>
-      {matches.length === 0 && (
+
+      {matches.length === 0 && sent.length === 0 && (
         <div style={{ textAlign: "center", paddingTop: 60, color: COLORS.textMuted }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
           <p>Go discover people and connect!</p>
         </div>
       )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {matches.map(u => (
           <div key={u.uid} onClick={() => onChat(u.uid)} style={{
@@ -559,6 +581,25 @@ function Matches({ matches, onChat }) {
             <div style={{ color: COLORS.textMuted, fontSize: 20 }}>→</div>
           </div>
         ))}
+
+        {sent.length > 0 && (
+          <>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 600, marginTop: 8 }}>PENDING REQUESTS</div>
+            {sent.map(u => (
+              <div key={u.uid} style={{
+                background: COLORS.card, border: `1px dashed ${COLORS.border}`,
+                borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", opacity: 0.6,
+              }}>
+                <Avatar initials={u.avatar} color={u.color} size={48} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
+                  <div style={{ color: u.color, fontSize: 12, marginBottom: 4 }}>{u.role}</div>
+                  <div style={{ fontSize: 12, color: COLORS.textMuted }}>Waiting for them to connect back...</div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
