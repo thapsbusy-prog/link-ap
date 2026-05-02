@@ -23,6 +23,11 @@ const normalizeUrl = (url) => {
   if (!url) return "";
   return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
 };
+const validateLinkedIn = (url) => {
+  if (!url) return true;
+  const normalized = normalizeUrl(url);
+  return /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-_%]+\/?$/.test(normalized);
+};
 
 function LinkedInIcon() {
   return (
@@ -256,10 +261,20 @@ function Onboarding({ firebaseUser, onComplete }) {
           <Input label="Full Name" value={form.name} onChange={v => update("name", v)} placeholder="e.g. Thapelo Mokoena" />
           <Input label="What do you do?" value={form.role} onChange={v => update("role", v)} placeholder="e.g. Entrepreneur, Developer, Designer" />
           <Input label="Location" value={form.location} onChange={v => update("location", v)} placeholder="e.g. Cape Town, SA" />
-          <Input label="LinkedIn Profile URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="https://linkedin.com/in/yourname" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <Input label="LinkedIn Profile URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="https://linkedin.com/in/yourname" />
+            {form.linkedin && !validateLinkedIn(form.linkedin) && (
+              <span style={{ fontSize: 12, color: COLORS.red }}>Must be a valid LinkedIn profile URL — e.g. linkedin.com/in/yourname</span>
+            )}
+            {form.linkedin && validateLinkedIn(form.linkedin) && (
+              <a href={normalizeUrl(form.linkedin)} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: COLORS.accent, textDecoration: "none" }}>
+                Open to confirm it's your profile ↗
+              </a>
+            )}
+          </div>
         </div>
       ),
-      valid: form.name && form.role && form.location,
+      valid: form.name && form.role && form.location && validateLinkedIn(form.linkedin),
     },
     {
       title: "Your story",
@@ -840,7 +855,17 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
         <TextArea label="Bio" value={form.bio} onChange={v => update("bio", v)} placeholder="What are you building or working towards?" />
         <Input label="Skills (comma separated)" value={form.skills} onChange={v => update("skills", v)} placeholder="e.g. Marketing, React, Sales" />
         <Input label="Achievements (comma separated)" value={form.achievements} onChange={v => update("achievements", v)} placeholder="e.g. Built 2 startups" />
-        <Input label="LinkedIn URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="https://linkedin.com/in/yourname" />
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <Input label="LinkedIn URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="https://linkedin.com/in/yourname" />
+          {form.linkedin && !validateLinkedIn(form.linkedin) && (
+            <span style={{ fontSize: 12, color: COLORS.red }}>Must be a valid LinkedIn profile URL — e.g. linkedin.com/in/yourname</span>
+          )}
+          {form.linkedin && validateLinkedIn(form.linkedin) && (
+            <a href={normalizeUrl(form.linkedin)} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: COLORS.accent, textDecoration: "none" }}>
+              Open to confirm it's your profile ↗
+            </a>
+          )}
+        </div>
 
         <div>
           <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8, display: "block" }}>Looking For</label>
@@ -862,11 +887,11 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
           </div>
         )}
 
-        <button onClick={saveProfile} disabled={saving || !form.name || !form.role} style={{
+        <button onClick={saveProfile} disabled={saving || !form.name || !form.role || !validateLinkedIn(form.linkedin)} style={{
           padding: "13px", borderRadius: 12, border: "none",
-          background: !saving && form.name && form.role ? COLORS.accent : COLORS.border,
-          color: !saving && form.name && form.role ? "#000" : COLORS.textMuted,
-          cursor: !saving && form.name && form.role ? "pointer" : "not-allowed",
+          background: !saving && form.name && form.role && validateLinkedIn(form.linkedin) ? COLORS.accent : COLORS.border,
+          color: !saving && form.name && form.role && validateLinkedIn(form.linkedin) ? "#000" : COLORS.textMuted,
+          cursor: !saving && form.name && form.role && validateLinkedIn(form.linkedin) ? "pointer" : "not-allowed",
           fontSize: 14, fontWeight: 700,
         }}>
           {saving ? "Saving..." : "Save Profile"}
