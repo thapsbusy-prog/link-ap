@@ -203,7 +203,7 @@ function Onboarding({ firebaseUser, onComplete }) {
     bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
   });
 
-  const lookingForOptions = ["Investor", "Co-founder", "Mentor", "Collaboration", "Freelance Work", "Startup to join"];
+  const lookingForOptions = ["Investor", "Co-founder", "Mentor", "Collaboration", "Freelance Work", "Startup to join", "A Job"];
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleLF = (v) => setForm(f => ({
     ...f, lookingFor: f.lookingFor.includes(v) ? f.lookingFor.filter(x => x !== v) : [...f.lookingFor, v]
