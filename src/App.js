@@ -670,7 +670,11 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 130px)" }}>
-      <div style={{ padding: "12px 20px", borderBottom: `1px solid ${COLORS.border}`, display: "flex", gap: 12, alignItems: "center", background: COLORS.card }}>
+      <div style={{
+        padding: "12px 20px", borderBottom: `1px solid ${COLORS.border}`,
+        display: "flex", gap: 12, alignItems: "center", background: COLORS.card,
+        position: "sticky", top: 69, zIndex: 9, flexShrink: 0,
+      }}>
         <button onClick={() => setActiveChat(null)} style={{ background: "none", border: "none", color: COLORS.accent, cursor: "pointer", fontSize: 18 }}>←</button>
         <Avatar initials={chatUser?.avatar} color={chatUser?.color} size={40} online />
         <div>
