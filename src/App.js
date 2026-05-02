@@ -18,7 +18,9 @@ const COLORS = {
 };
 
 const USER_COLORS = ["#A78BFA", "#4ADE80", "#F5A623", "#60A5FA", "#F87171", "#34D399"];
-const LOOKING_FOR_OPTIONS = ["Investor", "Co-founder", "Mentor", "Collaboration", "Freelance Work", "Startup to join", "A Job"];
+const LOOKING_FOR_OPTIONS = ["Investor", "Co-founder", "Mentor", "Collaboration", "Freelance Work", "Startup to join", "A Job", "Clients"];
+const TITLE_OPTIONS = ["Mr", "Mrs", "Ms", "Miss", "Mx", "Dr", "Prof", "Rev", "Sir", "Dame", "Adv"];
+const PRONOUN_OPTIONS = ["He/Him", "She/Her", "They/Them", "He/They", "She/They", "Ze/Zir", "Xe/Xem", "Any pronouns", "Prefer not to say"];
 const normalizeUrl = (url) => {
   if (!url) return "";
   return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
@@ -108,6 +110,29 @@ function TextArea({ label, value, onChange, placeholder }) {
         background: COLORS.bg, border: `1px solid ${COLORS.border}`,
         color: COLORS.text, fontSize: 14, outline: "none", resize: "none", boxSizing: "border-box",
       }} />
+    </div>
+  );
+}
+
+function Select({ label, value, onChange, options, placeholder }) {
+  return (
+    <div>
+      <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>{label}</label>
+      <div style={{ position: "relative" }}>
+        <select value={value} onChange={e => onChange(e.target.value)} style={{
+          width: "100%", padding: "12px 16px", borderRadius: 12,
+          background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+          color: value ? COLORS.text : COLORS.textMuted,
+          fontSize: 14, outline: "none", boxSizing: "border-box",
+          appearance: "none", WebkitAppearance: "none", cursor: "pointer", paddingRight: 36,
+        }}>
+          <option value="" style={{ background: COLORS.card, color: COLORS.textMuted }}>{placeholder}</option>
+          {options.map(opt => (
+            <option key={opt} value={opt} style={{ background: COLORS.card, color: COLORS.text }}>{opt}</option>
+          ))}
+        </select>
+        <div style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: COLORS.textMuted, fontSize: 10 }}>▼</div>
+      </div>
     </div>
   );
 }
@@ -284,7 +309,8 @@ function Onboarding({ firebaseUser, onComplete }) {
   const [saveError, setSaveError] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [form, setForm] = useState({
-    name: firebaseUser.displayName || "", role: "", location: "",
+    title: "", firstName: "", lastName: "",
+    pronouns: "", role: "", location: "",
     bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
   });
 
@@ -298,17 +324,22 @@ function Onboarding({ firebaseUser, onComplete }) {
     setSaveError("");
     try {
       const color = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+      const fullName = [form.firstName.trim(), form.lastName.trim()].filter(Boolean).join(" ");
       const profile = {
         uid: firebaseUser.uid,
-        name: form.name,
+        title: form.title,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        name: fullName,
+        pronouns: form.pronouns,
         role: form.role,
         location: form.location,
         bio: form.bio,
         skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
         lookingFor: form.lookingFor,
         achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
-        linkedin: normalizeUrl(form.linkedin),
-        avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
+        linkedin: form.linkedin ? normalizeUrl(form.linkedin) : "",
+        avatar: fullName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
         color,
         createdAt: serverTimestamp(),
         termsAcceptedAt: serverTimestamp(),
@@ -351,7 +382,16 @@ function Onboarding({ firebaseUser, onComplete }) {
       title: "Who are you?",
       content: (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Input label="Full Name" value={form.name} onChange={v => update("name", v)} placeholder="e.g. Thapelo Mokoena" />
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
+            <div style={{ flex: "0 0 130px" }}>
+              <Select label="Title (optional)" value={form.title} onChange={v => update("title", v)} options={TITLE_OPTIONS} placeholder="Select title" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <Input label="First Name(s)" value={form.firstName} onChange={v => update("firstName", v)} placeholder="e.g. Thapelo" />
+            </div>
+          </div>
+          <Input label="Last Name" value={form.lastName} onChange={v => update("lastName", v)} placeholder="e.g. Mokoena" />
+          <Select label="Pronouns / gender identity (optional)" value={form.pronouns} onChange={v => update("pronouns", v)} options={PRONOUN_OPTIONS} placeholder="Select pronouns" />
           <Input label="What do you do?" value={form.role} onChange={v => update("role", v)} placeholder="e.g. Entrepreneur, Developer, Designer" />
           <Input label="Location" value={form.location} onChange={v => update("location", v)} placeholder="e.g. Cape Town, SA" />
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -367,7 +407,7 @@ function Onboarding({ firebaseUser, onComplete }) {
           </div>
         </div>
       ),
-      valid: form.name && form.role && form.location && validateLinkedIn(form.linkedin),
+      valid: form.firstName.trim() && form.lastName.trim() && form.role && form.location && validateLinkedIn(form.linkedin),
     },
     {
       title: "Your story",
@@ -429,7 +469,7 @@ function Onboarding({ firebaseUser, onComplete }) {
           )}
           <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
             {step > 0 && (
-              <button onClick={() => setStep(s => s - 1)} disabled={saving} style={{
+              <button onClick={() => { setStep(s => s - 1); setSaveError(""); }} disabled={saving} style={{
                 padding: "12px 24px", borderRadius: 12, border: `1px solid ${COLORS.border}`,
                 background: "transparent", color: COLORS.textMuted, cursor: "pointer", fontSize: 14,
               }}>Back</button>
@@ -476,6 +516,7 @@ function PublicProfile({ profileUser, onClose }) {
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{profileUser.name}</div>
+              {profileUser.pronouns && <span style={{ fontSize: 12, color: COLORS.textMuted, fontStyle: "italic" }}>{profileUser.pronouns}</span>}
               {profileUser.linkedin && (
                 <a href={profileUser.linkedin} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
                   <LinkedInIcon />
@@ -523,6 +564,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [allUsers, setAllUsers] = useState(null);
   const [matches, setMatches] = useState([]);
   const [sent, setSent] = useState([]);
+  const [passed, setPassed] = useState(new Set());
   const [activeChat, setActiveChat] = useState(null);
   const [notification, setNotification] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
@@ -548,6 +590,13 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     return unsub;
   }, [firebaseUser.uid]);
 
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "passed"), snap => {
+      setPassed(new Set(snap.docs.map(d => d.id)));
+    });
+    return unsub;
+  }, [firebaseUser.uid]);
+
   const handleConnect = async (targetUser) => {
     const theirRequest = await getDoc(doc(db, "users", targetUser.uid, "sent", firebaseUser.uid));
     if (theirRequest.exists()) {
@@ -564,13 +613,17 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     }
   };
 
+  const handlePass = async (targetUser) => {
+    await setDoc(doc(db, "users", firebaseUser.uid, "passed", targetUser.uid), { passedAt: serverTimestamp() });
+  };
+
   const showNotif = (msg) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 3000);
   };
 
   const unmatched = allUsers === null ? null : allUsers.filter(u =>
-    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid)
+    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid)
   );
 
   return (
@@ -601,7 +654,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       </div>
 
       <div style={{ paddingBottom: 90 }}>
-        {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} onViewProfile={setViewingProfile} />}
+        {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} />}
@@ -654,7 +707,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   );
 }
 
-function Discover({ users, onConnect, onViewProfile }) {
+function Discover({ users, onConnect, onPass, onViewProfile }) {
   const [seenUids, setSeenUids] = useState(new Set());
 
   if (users === null) return (
@@ -669,6 +722,7 @@ function Discover({ users, onConnect, onViewProfile }) {
 
   const act = (action) => {
     if (action === "connect") onConnect(current);
+    if (action === "pass") onPass(current);
     setSeenUids(prev => new Set([...prev, current.uid]));
   };
 
@@ -698,6 +752,7 @@ function Discover({ users, onConnect, onViewProfile }) {
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>{current.name}</div>
+                {current.pronouns && <span style={{ fontSize: 11, color: COLORS.textMuted, fontStyle: "italic" }}>{current.pronouns}</span>}
                 {current.linkedin && (
                   <a href={current.linkedin} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center" }}>
                     <LinkedInIcon />
@@ -967,6 +1022,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
     const file = e.target.files[0];
     if (!file) return;
     setPhotoFile(file);
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
     setPhotoPreview(URL.createObjectURL(file));
   };
 
@@ -989,7 +1045,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
         bio: form.bio,
         skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
         achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
-        linkedin: normalizeUrl(form.linkedin),
+        linkedin: form.linkedin ? normalizeUrl(form.linkedin) : "",
         lookingFor: form.lookingFor,
         avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
         photoURL,
@@ -1079,11 +1135,11 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
           </div>
         )}
 
-        <button onClick={saveProfile} disabled={saving || !form.name || !form.role || !validateLinkedIn(form.linkedin)} style={{
+        <button onClick={saveProfile} disabled={saving || !form.name || !form.role || (!!form.linkedin && !validateLinkedIn(form.linkedin))} style={{
           padding: "13px", borderRadius: 12, border: "none",
-          background: !saving && form.name && form.role && validateLinkedIn(form.linkedin) ? COLORS.accent : COLORS.border,
-          color: !saving && form.name && form.role && validateLinkedIn(form.linkedin) ? "#000" : COLORS.textMuted,
-          cursor: !saving && form.name && form.role && validateLinkedIn(form.linkedin) ? "pointer" : "not-allowed",
+          background: !saving && form.name && form.role && (!form.linkedin || validateLinkedIn(form.linkedin)) ? COLORS.accent : COLORS.border,
+          color: !saving && form.name && form.role && (!form.linkedin || validateLinkedIn(form.linkedin)) ? "#000" : COLORS.textMuted,
+          cursor: !saving && form.name && form.role && (!form.linkedin || validateLinkedIn(form.linkedin)) ? "pointer" : "not-allowed",
           fontSize: 14, fontWeight: 700,
         }}>
           {saving ? "Saving..." : "Save Profile"}
@@ -1132,7 +1188,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>LOOKING FOR</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {user.lookingFor?.map(s => <Tag key={s} label={s} color={COLORS.purple} />)}
+              {user.lookingFor?.map(s => <Tag key={s} label={s} color={COLORS.accent} />)}
             </div>
           </div>
           {user.achievements?.length > 0 && (
