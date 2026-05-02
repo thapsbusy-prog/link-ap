@@ -18,6 +18,14 @@ const COLORS = {
 
 const USER_COLORS = ["#A78BFA", "#4ADE80", "#F5A623", "#60A5FA", "#F87171", "#34D399"];
 
+function LinkedInIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+    </svg>
+  );
+}
+
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48">
@@ -192,7 +200,7 @@ function Onboarding({ firebaseUser, onComplete }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     name: firebaseUser.displayName || "", role: "", location: "",
-    bio: "", skills: "", lookingFor: [], achievements: "",
+    bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
   });
 
   const lookingForOptions = ["Investor", "Co-founder", "Mentor", "Collaboration", "Freelance Work", "Startup to join"];
@@ -212,6 +220,7 @@ function Onboarding({ firebaseUser, onComplete }) {
       skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
       lookingFor: form.lookingFor,
       achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
+      linkedin: form.linkedin,
       avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
       color,
       createdAt: serverTimestamp(),
@@ -228,6 +237,7 @@ function Onboarding({ firebaseUser, onComplete }) {
           <Input label="Full Name" value={form.name} onChange={v => update("name", v)} placeholder="e.g. Thapelo Mokoena" />
           <Input label="What do you do?" value={form.role} onChange={v => update("role", v)} placeholder="e.g. Entrepreneur, Developer, Designer" />
           <Input label="Location" value={form.location} onChange={v => update("location", v)} placeholder="e.g. Cape Town, SA" />
+          <Input label="LinkedIn Profile URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="https://linkedin.com/in/yourname" />
         </div>
       ),
       valid: form.name && form.role && form.location,
@@ -444,7 +454,14 @@ function Discover({ users, onConnect }) {
           <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20 }}>
             <Avatar initials={current.avatar} color={current.color} size={60} online />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>{current.name}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>{current.name}</div>
+                {current.linkedin && (
+                  <a href={current.linkedin} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
+                    <LinkedInIcon />
+                  </a>
+                )}
+              </div>
               <div style={{ color: current.color, fontSize: 13, marginBottom: 4 }}>{current.role}</div>
               <div style={{ color: COLORS.textMuted, fontSize: 12 }}>📍 {current.location}</div>
             </div>
@@ -653,7 +670,14 @@ function Profile({ user }) {
           <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 20 }}>
             <Avatar initials={user.avatar} color={user.color} size={64} online />
             <div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{user.name}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{user.name}</div>
+                {user.linkedin && (
+                  <a href={user.linkedin} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
+                    <LinkedInIcon />
+                  </a>
+                )}
+              </div>
               <div style={{ color: user.color, fontSize: 14, marginBottom: 4 }}>{user.role}</div>
               <div style={{ color: COLORS.textMuted, fontSize: 12 }}>📍 {user.location}</div>
             </div>
