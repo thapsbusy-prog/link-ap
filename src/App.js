@@ -94,7 +94,7 @@ function TextArea({ label, value, onChange, placeholder }) {
   );
 }
 
-function AuthScreen({ onAuth }) {
+function AuthScreen() {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -103,30 +103,28 @@ function AuthScreen({ onAuth }) {
 
   const handleGoogle = async () => {
     setLoading(true);
+    setError("");
     try {
-      const result = await signInWithPopup(auth, new GoogleAuthProvider());
-      onAuth(result.user);
+      await signInWithPopup(auth, new GoogleAuthProvider());
     } catch (e) {
       setError(e.message.replace("Firebase: ", ""));
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleEmail = async () => {
     setLoading(true);
     setError("");
     try {
-      let result;
       if (mode === "login") {
-        result = await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, email, password);
       } else {
-        result = await createUserWithEmailAndPassword(auth, email, password);
+        await createUserWithEmailAndPassword(auth, email, password);
       }
-      onAuth(result.user);
     } catch (e) {
       setError(e.message.replace("Firebase: ", ""));
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -186,7 +184,7 @@ function AuthScreen({ onAuth }) {
 
           <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: COLORS.textMuted }}>
             {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-            <span onClick={() => setMode(mode === "login" ? "signup" : "login")} style={{ color: COLORS.accent, cursor: "pointer" }}>
+            <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }} style={{ color: COLORS.accent, cursor: "pointer" }}>
               {mode === "login" ? "Sign up" : "Sign in"}
             </span>
           </p>
@@ -198,6 +196,8 @@ function AuthScreen({ onAuth }) {
 
 function Onboarding({ firebaseUser, onComplete }) {
   const [step, setStep] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [form, setForm] = useState({
     name: firebaseUser.displayName || "", role: "", location: "",
     bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
@@ -209,24 +209,36 @@ function Onboarding({ firebaseUser, onComplete }) {
     ...f, lookingFor: f.lookingFor.includes(v) ? f.lookingFor.filter(x => x !== v) : [...f.lookingFor, v]
   }));
 
+  const normalizeUrl = (url) => {
+    if (!url) return "";
+    return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
+  };
+
   const saveProfile = async () => {
-    const color = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
-    const profile = {
-      uid: firebaseUser.uid,
-      name: form.name,
-      role: form.role,
-      location: form.location,
-      bio: form.bio,
-      skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
-      lookingFor: form.lookingFor,
-      achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
-      linkedin: form.linkedin,
-      avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
-      color,
-      createdAt: serverTimestamp(),
-    };
-    await setDoc(doc(db, "users", firebaseUser.uid), profile);
-    onComplete(profile);
+    setSaving(true);
+    setSaveError("");
+    try {
+      const color = USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
+      const profile = {
+        uid: firebaseUser.uid,
+        name: form.name,
+        role: form.role,
+        location: form.location,
+        bio: form.bio,
+        skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
+        lookingFor: form.lookingFor,
+        achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
+        linkedin: normalizeUrl(form.linkedin),
+        avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
+        color,
+        createdAt: serverTimestamp(),
+      };
+      await setDoc(doc(db, "users", firebaseUser.uid), profile);
+      onComplete(profile);
+    } catch (e) {
+      setSaveError("Failed to save profile. Please try again.");
+      setSaving(false);
+    }
   };
 
   const steps = [
@@ -295,25 +307,30 @@ function Onboarding({ firebaseUser, onComplete }) {
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 32 }}>
           <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 24, color: COLORS.text }}>{current.title}</h2>
           {current.content}
+          {saveError && (
+            <div style={{ marginTop: 16, padding: "10px 14px", borderRadius: 10, background: `${COLORS.red}18`, color: COLORS.red, fontSize: 13 }}>
+              {saveError}
+            </div>
+          )}
           <div style={{ display: "flex", gap: 12, marginTop: 32 }}>
             {step > 0 && (
-              <button onClick={() => setStep(s => s - 1)} style={{
+              <button onClick={() => setStep(s => s - 1)} disabled={saving} style={{
                 padding: "12px 24px", borderRadius: 12, border: `1px solid ${COLORS.border}`,
                 background: "transparent", color: COLORS.textMuted, cursor: "pointer", fontSize: 14,
               }}>Back</button>
             )}
             <button
               onClick={() => step < steps.length - 1 ? setStep(s => s + 1) : saveProfile()}
-              disabled={!current.valid}
+              disabled={!current.valid || saving}
               style={{
                 flex: 1, padding: "12px 24px", borderRadius: 12, border: "none",
-                background: current.valid ? COLORS.accent : COLORS.border,
-                color: current.valid ? "#000" : COLORS.textMuted,
-                cursor: current.valid ? "pointer" : "not-allowed",
+                background: current.valid && !saving ? COLORS.accent : COLORS.border,
+                color: current.valid && !saving ? "#000" : COLORS.textMuted,
+                cursor: current.valid && !saving ? "pointer" : "not-allowed",
                 fontSize: 14, fontWeight: 700,
               }}
             >
-              {step < steps.length - 1 ? "Continue →" : "Create Profile"}
+              {saving ? "Saving..." : step < steps.length - 1 ? "Continue →" : "Create Profile"}
             </button>
           </div>
         </div>
@@ -425,12 +442,13 @@ function MainApp({ user, firebaseUser }) {
 }
 
 function Discover({ users, onConnect }) {
-  const [idx, setIdx] = useState(0);
-  const current = users[idx];
+  const [seenUids, setSeenUids] = useState(new Set());
+  const remaining = users.filter(u => !seenUids.has(u.uid));
+  const current = remaining[0];
 
   const act = (action) => {
     if (action === "connect") onConnect(current);
-    setIdx(i => i + 1);
+    setSeenUids(prev => new Set([...prev, current.uid]));
   };
 
   if (!current) return (
@@ -445,7 +463,7 @@ function Discover({ users, onConnect }) {
     <div style={{ padding: "16px 20px" }}>
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Discover People</h2>
-        <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{users.length - idx} people to explore</p>
+        <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{remaining.length} people to explore</p>
       </div>
 
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>
@@ -547,6 +565,7 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
   const chatId = activeChat ? [firebaseUser.uid, activeChat].sort().join("_") : null;
 
   useEffect(() => {
+    setChatMessages([]);
     if (!chatId) return;
     const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt"));
     const unsub = onSnapshot(q, snap => {
@@ -568,6 +587,8 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
     });
     setInput("");
   };
+
+  if (activeChat && !chatUser) return null;
 
   if (!activeChat) return (
     <div style={{ padding: "16px 20px" }}>
@@ -716,7 +737,9 @@ export default function App() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      setFirebaseUser(user);
+      setLoading(true);
+      setProfile(null);
+      setFirebaseUser(user ?? null);
       if (user) {
         const snap = await getDoc(doc(db, "users", user.uid));
         if (snap.exists()) setProfile(snap.data());
@@ -732,7 +755,7 @@ export default function App() {
     </div>
   );
 
-  if (!firebaseUser) return <AuthScreen onAuth={setFirebaseUser} />;
+  if (!firebaseUser) return <AuthScreen />;
   if (!profile) return <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
   return <MainApp user={profile} firebaseUser={firebaseUser} />;
 }
