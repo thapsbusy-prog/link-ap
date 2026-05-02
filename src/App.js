@@ -341,7 +341,7 @@ function Onboarding({ firebaseUser, onComplete }) {
 
 function MainApp({ user, firebaseUser }) {
   const [tab, setTab] = useState("discover");
-  const [allUsers, setAllUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState(null);
   const [matches, setMatches] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [notification, setNotification] = useState(null);
@@ -370,7 +370,7 @@ function MainApp({ user, firebaseUser }) {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const unmatched = allUsers.filter(u => !matches.find(m => m.uid === u.uid));
+  const unmatched = allUsers === null ? null : allUsers.filter(u => !matches.find(m => m.uid === u.uid));
 
   return (
     <div style={{ minHeight: "100vh", background: COLORS.bg, maxWidth: 430, margin: "0 auto", position: "relative" }}>
@@ -443,6 +443,14 @@ function MainApp({ user, firebaseUser }) {
 
 function Discover({ users, onConnect }) {
   const [seenUids, setSeenUids] = useState(new Set());
+
+  if (users === null) return (
+    <div style={{ padding: 24, textAlign: "center", paddingTop: 80, color: COLORS.textMuted }}>
+      <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
+      <p>Finding people...</p>
+    </div>
+  );
+
   const remaining = users.filter(u => !seenUids.has(u.uid));
   const current = remaining[0];
 
@@ -756,6 +764,6 @@ export default function App() {
   );
 
   if (!firebaseUser) return <AuthScreen />;
-  if (!profile) return <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
+  if (!profile || profile.uid !== firebaseUser.uid) return <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
   return <MainApp user={profile} firebaseUser={firebaseUser} />;
 }
