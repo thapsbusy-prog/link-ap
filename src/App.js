@@ -123,7 +123,9 @@ function AuthScreen() {
     setLoading(true);
     setError("");
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      await signInWithPopup(auth, provider);
     } catch (e) {
       setError(e.message.replace("Firebase: ", ""));
       setLoading(false);
@@ -212,10 +214,75 @@ function AuthScreen() {
   );
 }
 
+function TermsContent() {
+  return (
+    <div style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1.7 }}>
+      <p style={{ color: COLORS.text, fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Link-Ap Terms of Use</p>
+      <p style={{ marginBottom: 12 }}>Effective: 2 May 2026 &nbsp;|&nbsp; Applies worldwide</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>1. Acceptance</p>
+      <p style={{ marginBottom: 12 }}>By creating an account you enter into a binding agreement with Link-Ap ("we", "us"). If you do not agree, do not use the platform.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>2. Eligibility</p>
+      <p style={{ marginBottom: 12 }}>You must be at least 18 years old and legally capable of forming a contract in your jurisdiction. By accepting, you confirm you meet these requirements. Use of Link-Ap is void where prohibited by local law.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>3. Your Account</p>
+      <p style={{ marginBottom: 12 }}>You are responsible for all activity under your account. Provide accurate, current information. Keep your credentials secure and do not share access. Notify us immediately of any unauthorised use.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>4. Acceptable Use</p>
+      <p style={{ marginBottom: 4 }}>You agree not to:</p>
+      <p style={{ marginBottom: 12, paddingLeft: 8 }}>
+        • Post false, misleading, or impersonating content<br />
+        • Harass, threaten, or discriminate against any person<br />
+        • Send unsolicited commercial messages (spam)<br />
+        • Scrape, copy, or reverse-engineer the platform<br />
+        • Use Link-Ap for unlawful purposes or to facilitate illegal activity<br />
+        • Upload malware, viruses, or harmful code<br />
+        • Circumvent security or access controls
+      </p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>5. Your Content</p>
+      <p style={{ marginBottom: 12 }}>You retain ownership of content you post. By posting, you grant Link-Ap a worldwide, non-exclusive, royalty-free licence to display and distribute your content solely to operate the platform. You warrant that your content does not infringe any third-party rights and complies with all applicable laws.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>6. Privacy and Data</p>
+      <p style={{ marginBottom: 4 }}>We collect and process personal data to operate Link-Ap. Depending on your location, you have rights that may include:</p>
+      <p style={{ marginBottom: 12, paddingLeft: 8 }}>
+        • <span style={{ color: COLORS.text }}>EU / EEA / UK (GDPR/UK GDPR):</span> access, rectification, erasure, restriction, portability, and the right to object to processing.<br />
+        • <span style={{ color: COLORS.text }}>California (CCPA/CPRA):</span> right to know, delete, correct, and opt out of sale of personal information.<br />
+        • <span style={{ color: COLORS.text }}>South Africa (POPIA):</span> right to access, correction, and objection to processing of personal information.<br />
+        • <span style={{ color: COLORS.text }}>Other jurisdictions:</span> applicable local data-protection rights.
+      </p>
+      <p style={{ marginBottom: 12 }}>To exercise any privacy right, contact us at thaps.busy@gmail.com. We will respond within the timeframe required by your local law (typically 30 days).</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>7. Intellectual Property</p>
+      <p style={{ marginBottom: 12 }}>All platform content, trademarks, and technology (excluding user content) belong to Link-Ap or its licensors. You may not copy, modify, distribute, or create derivative works without our written permission.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>8. Disclaimers</p>
+      <p style={{ marginBottom: 12 }}>Link-Ap is provided "as is" and "as available" without warranties of any kind, express or implied. We do not verify the accuracy of user profiles or guarantee any outcome from connections made on the platform. Some jurisdictions do not allow exclusion of implied warranties; in such cases this section applies to the maximum extent permitted.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>9. Limitation of Liability</p>
+      <p style={{ marginBottom: 12 }}>To the fullest extent permitted by applicable law, Link-Ap's total liability for any claim arising from these Terms or your use of the platform is limited to the greater of USD $100 or the amount you paid us in the 12 months before the claim. We are not liable for indirect, incidental, consequential, or punitive damages. Nothing in these Terms limits liability for fraud, gross negligence, or death/personal injury caused by our negligence.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>10. Termination</p>
+      <p style={{ marginBottom: 12 }}>We may suspend or permanently terminate your account for material violations of these Terms, with or without notice. You may delete your account at any time. Upon termination, your right to use Link-Ap ceases immediately. Sections 5, 7, 8, 9, and 11 survive termination.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>11. Governing Law and Disputes</p>
+      <p style={{ marginBottom: 12 }}>These Terms are governed by the laws of the Republic of South Africa, without regard to conflict-of-law principles. Disputes shall first be referred to good-faith negotiation. If unresolved after 30 days, disputes shall be submitted to binding arbitration under the Arbitration Foundation of South Africa (AFSA) rules, conducted in English. Nothing prevents either party from seeking urgent interim relief from a competent court. Where mandatory local law requires a different forum or governing law, that law applies to the extent required.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>12. Changes to These Terms</p>
+      <p style={{ marginBottom: 12 }}>We may update these Terms at any time. We will notify you of material changes via the app or email. Continued use after the effective date of updated Terms constitutes acceptance. If you do not agree with changes, you must stop using Link-Ap and may delete your account.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>13. Contact</p>
+      <p style={{ marginBottom: 4 }}>For any questions about these Terms or to exercise your privacy rights, contact: thaps.busy@gmail.com</p>
+    </div>
+  );
+}
+
 function Onboarding({ firebaseUser, onComplete }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [form, setForm] = useState({
     name: firebaseUser.displayName || "", role: "", location: "",
     bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
@@ -244,6 +311,7 @@ function Onboarding({ firebaseUser, onComplete }) {
         avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
         color,
         createdAt: serverTimestamp(),
+        termsAcceptedAt: serverTimestamp(),
       };
       await setDoc(doc(db, "users", firebaseUser.uid), profile);
       onComplete(profile);
@@ -254,6 +322,31 @@ function Onboarding({ firebaseUser, onComplete }) {
   };
 
   const steps = [
+    {
+      title: "Terms of Use",
+      content: (
+        <div>
+          <div style={{
+            height: 300, overflowY: "auto", border: `1px solid ${COLORS.border}`,
+            borderRadius: 12, padding: "14px 16px", background: COLORS.bg,
+          }}>
+            <TermsContent />
+          </div>
+          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 16, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={e => setTermsAccepted(e.target.checked)}
+              style={{ marginTop: 3, accentColor: COLORS.accent, width: 16, height: 16, flexShrink: 0, cursor: "pointer" }}
+            />
+            <span style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>
+              I am 18 or older, I have read and understood the Terms of Use, and I agree to be bound by them including the Privacy and Data section applicable to my country.
+            </span>
+          </label>
+        </div>
+      ),
+      valid: termsAccepted,
+    },
     {
       title: "Who are you?",
       content: (
@@ -361,6 +454,70 @@ function Onboarding({ firebaseUser, onComplete }) {
   );
 }
 
+function PublicProfile({ profileUser, onClose }) {
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)",
+      width: "100%", maxWidth: 430, height: "100dvh", zIndex: 40,
+      background: COLORS.bg, overflowY: "auto",
+    }}>
+      <div style={{
+        position: "sticky", top: 0, background: COLORS.bg, zIndex: 10,
+        padding: "16px 20px", borderBottom: `1px solid ${COLORS.border}`,
+        display: "flex", alignItems: "center", gap: 12,
+      }}>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: COLORS.accent, cursor: "pointer", fontSize: 18 }}>←</button>
+        <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16 }}>Profile</div>
+      </div>
+      <div style={{ height: 4, background: profileUser.color }} />
+      <div style={{ padding: 24 }}>
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20 }}>
+          <Avatar initials={profileUser.avatar} color={profileUser.color} size={72} online photoURL={profileUser.photoURL} />
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{profileUser.name}</div>
+              {profileUser.linkedin && (
+                <a href={profileUser.linkedin} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
+                  <LinkedInIcon />
+                </a>
+              )}
+            </div>
+            <div style={{ color: profileUser.color, fontSize: 14, marginBottom: 4 }}>{profileUser.role}</div>
+            <div style={{ color: COLORS.textMuted, fontSize: 12 }}>📍 {profileUser.location}</div>
+          </div>
+        </div>
+        {profileUser.bio && (
+          <p style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text, marginBottom: 24 }}>{profileUser.bio}</p>
+        )}
+        {profileUser.skills?.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>SKILLS</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {profileUser.skills.map(s => <Tag key={s} label={s} color={profileUser.color} />)}
+            </div>
+          </div>
+        )}
+        {profileUser.lookingFor?.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>LOOKING FOR</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {profileUser.lookingFor.map(s => <Tag key={s} label={s} color={COLORS.accent} />)}
+            </div>
+          </div>
+        )}
+        {profileUser.achievements?.length > 0 && (
+          <div style={{ background: COLORS.card, borderRadius: 12, padding: 16, border: `1px solid ${COLORS.border}` }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>ACHIEVEMENTS</div>
+            {profileUser.achievements.map((a, i) => (
+              <div key={i} style={{ fontSize: 14, color: COLORS.text, marginBottom: 6, lineHeight: 1.5 }}>✦ {a}</div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [tab, setTab] = useState("profile");
   const [allUsers, setAllUsers] = useState(null);
@@ -368,6 +525,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [sent, setSent] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [viewingProfile, setViewingProfile] = useState(null);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users"), snap => {
@@ -397,6 +555,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         setDoc(doc(db, "users", firebaseUser.uid, "matches", targetUser.uid), targetUser),
         setDoc(doc(db, "users", targetUser.uid, "matches", firebaseUser.uid), user),
         deleteDoc(doc(db, "users", targetUser.uid, "sent", firebaseUser.uid)),
+        deleteDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid)),
       ]);
       showNotif(`It's a match with ${targetUser.name}! 🎉`);
     } else {
@@ -434,7 +593,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <Avatar initials={user.avatar} color={user.color} size={36} online photoURL={user.photoURL} />
-          <button onClick={() => signOut(auth)} style={{
+          <button onClick={async () => { await signOut(auth); }} style={{
             background: "none", border: `1px solid ${COLORS.border}`, color: COLORS.textMuted,
             borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 12,
           }}>Sign out</button>
@@ -442,11 +601,23 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       </div>
 
       <div style={{ paddingBottom: 90 }}>
-        {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} />}
-        {tab === "matches" && <Matches matches={matches} sent={sent} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} />}
-        {tab === "messages" && <Messages matches={matches} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={setActiveChat} />}
+        {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} onViewProfile={setViewingProfile} />}
+        {tab === "matches" && <Matches matches={matches} sent={sent} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} />}
+        {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} />}
       </div>
+
+      {tab === "messages" && activeChat && (
+        <div style={{
+          position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)",
+          width: "100%", maxWidth: 430, height: "100dvh", zIndex: 20,
+          background: COLORS.bg, display: "flex", flexDirection: "column",
+        }}>
+          <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />
+        </div>
+      )}
+
+      {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => setViewingProfile(null)} />}
 
       <div style={{
         position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
@@ -483,7 +654,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   );
 }
 
-function Discover({ users, onConnect }) {
+function Discover({ users, onConnect, onViewProfile }) {
   const [seenUids, setSeenUids] = useState(new Set());
 
   if (users === null) return (
@@ -519,13 +690,16 @@ function Discover({ users, onConnect }) {
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>
         <div style={{ height: 4, background: current.color }} />
         <div style={{ padding: 24 }}>
-          <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20 }}>
+          <div
+            onClick={() => onViewProfile && onViewProfile(current)}
+            style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20, cursor: "pointer" }}
+          >
             <Avatar initials={current.avatar} color={current.color} size={60} online photoURL={current.photoURL} />
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>{current.name}</div>
                 {current.linkedin && (
-                  <a href={current.linkedin} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
+                  <a href={current.linkedin} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center" }}>
                     <LinkedInIcon />
                   </a>
                 )}
@@ -571,7 +745,7 @@ function Discover({ users, onConnect }) {
   );
 }
 
-function Matches({ matches, sent, onChat }) {
+function Matches({ matches, sent, onChat, onViewProfile }) {
   return (
     <div style={{ padding: "16px 20px" }}>
       <div style={{ marginBottom: 20 }}>
@@ -587,12 +761,14 @@ function Matches({ matches, sent, onChat }) {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {matches.map(u => (
+        {matches.filter(u => !sent.find(s => s.uid === u.uid)).map(u => (
           <div key={u.uid} onClick={() => onChat(u.uid)} style={{
             background: COLORS.card, border: `1px solid ${COLORS.border}`,
             borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", cursor: "pointer",
           }}>
-            <Avatar initials={u.avatar} color={u.color} size={48} online photoURL={u.photoURL} />
+            <div onClick={(e) => { e.stopPropagation(); onViewProfile && onViewProfile(u); }} style={{ flexShrink: 0 }}>
+              <Avatar initials={u.avatar} color={u.color} size={48} online photoURL={u.photoURL} />
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
               <div style={{ color: u.color, fontSize: 12, marginBottom: 6 }}>{u.role}</div>
@@ -608,9 +784,9 @@ function Matches({ matches, sent, onChat }) {
           <>
             <div style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 600, marginTop: 8 }}>PENDING REQUESTS</div>
             {sent.map(u => (
-              <div key={u.uid} style={{
+              <div key={u.uid} onClick={() => onViewProfile && onViewProfile(u)} style={{
                 background: COLORS.card, border: `1px dashed ${COLORS.border}`,
-                borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", opacity: 0.6,
+                borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", opacity: 0.6, cursor: "pointer",
               }}>
                 <Avatar initials={u.avatar} color={u.color} size={48} photoURL={u.photoURL} />
                 <div style={{ flex: 1 }}>
@@ -627,12 +803,13 @@ function Matches({ matches, sent, onChat }) {
   );
 }
 
-function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
+function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, onViewProfile }) {
   const [input, setInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const bottomRef = useRef(null);
 
   const chatUser = matches.find(u => u.uid === activeChat);
+  const isPending = sent.some(u => u.uid === activeChat);
   const chatId = activeChat ? [firebaseUser.uid, activeChat].sort().join("_") : null;
 
   useEffect(() => {
@@ -650,7 +827,7 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
   }, [chatMessages.length]);
 
   const send = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isPending || !chatUser) return;
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: input.trim(),
       from: firebaseUser.uid,
@@ -679,7 +856,9 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
             background: COLORS.card, border: `1px solid ${COLORS.border}`,
             borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", cursor: "pointer",
           }}>
-            <Avatar initials={u.avatar} color={u.color} size={48} online photoURL={u.photoURL} />
+            <div onClick={(e) => { e.stopPropagation(); onViewProfile && onViewProfile(u); }} style={{ flexShrink: 0 }}>
+              <Avatar initials={u.avatar} color={u.color} size={48} online photoURL={u.photoURL} />
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
               <div style={{ color: COLORS.textMuted, fontSize: 13 }}>Tap to chat 💬</div>
@@ -691,17 +870,22 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 130px)" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100dvh" }}>
       <div style={{
         padding: "12px 20px", borderBottom: `1px solid ${COLORS.border}`,
         display: "flex", gap: 12, alignItems: "center", background: COLORS.card,
-        position: "sticky", top: 69, zIndex: 9, flexShrink: 0,
+        position: "sticky", top: 0, zIndex: 9, flexShrink: 0,
       }}>
         <button onClick={() => setActiveChat(null)} style={{ background: "none", border: "none", color: COLORS.accent, cursor: "pointer", fontSize: 18 }}>←</button>
-        <Avatar initials={chatUser?.avatar} color={chatUser?.color} size={40} online photoURL={chatUser?.photoURL} />
-        <div>
-          <div style={{ fontWeight: 700, color: COLORS.text }}>{chatUser?.name}</div>
-          <div style={{ color: COLORS.green, fontSize: 12 }}>● Online</div>
+        <div
+          onClick={() => onViewProfile && onViewProfile(chatUser)}
+          style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer", flex: 1 }}
+        >
+          <Avatar initials={chatUser?.avatar} color={chatUser?.color} size={40} online photoURL={chatUser?.photoURL} />
+          <div>
+            <div style={{ fontWeight: 700, color: COLORS.text }}>{chatUser?.name}</div>
+            <div style={{ color: COLORS.green, fontSize: 12 }}>● Online</div>
+          </div>
         </div>
       </div>
 
@@ -729,26 +913,34 @@ function Messages({ matches, firebaseUser, activeChat, setActiveChat }) {
         <div ref={bottomRef} />
       </div>
 
-      <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}`, display: "flex", gap: 10, background: COLORS.card }}>
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && send()}
-          placeholder="Type a message..."
-          style={{
-            flex: 1, padding: "12px 16px", borderRadius: 24,
-            background: COLORS.bg, border: `1px solid ${COLORS.border}`,
-            color: COLORS.text, fontSize: 14, outline: "none",
-          }}
-        />
-        <button onClick={send} style={{
-          width: 44, height: 44, borderRadius: "50%", border: "none",
-          background: input.trim() ? COLORS.accent : COLORS.border,
-          color: input.trim() ? "#000" : COLORS.textMuted,
-          cursor: input.trim() ? "pointer" : "default",
-          fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>→</button>
-      </div>
+      {isPending ? (
+        <div style={{ padding: "14px 16px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.card, textAlign: "center" }}>
+          <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>
+            Messaging unlocks once {chatUser?.name} connects back with you.
+          </p>
+        </div>
+      ) : (
+        <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}`, display: "flex", gap: 10, background: COLORS.card }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && send()}
+            placeholder="Type a message..."
+            style={{
+              flex: 1, padding: "12px 16px", borderRadius: 24,
+              background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              color: COLORS.text, fontSize: 14, outline: "none",
+            }}
+          />
+          <button onClick={send} style={{
+            width: 44, height: 44, borderRadius: "50%", border: "none",
+            background: input.trim() ? COLORS.accent : COLORS.border,
+            color: input.trim() ? "#000" : COLORS.textMuted,
+            cursor: input.trim() ? "pointer" : "default",
+            fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>→</button>
+        </div>
+      )}
     </div>
   );
 }
