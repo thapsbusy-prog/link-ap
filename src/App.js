@@ -21,6 +21,64 @@ const USER_COLORS = ["#A78BFA", "#4ADE80", "#F5A623", "#60A5FA", "#F87171", "#34
 const LOOKING_FOR_OPTIONS = ["Investor", "Co-founder", "Mentor", "Collaboration", "Freelance Work", "Startup to join", "A Job", "Clients"];
 const TITLE_OPTIONS = ["Mr", "Mrs", "Ms", "Miss", "Mx", "Dr", "Prof", "Rev", "Sir", "Dame", "Adv"];
 const PRONOUN_OPTIONS = ["He/Him", "She/Her", "They/Them", "He/They", "She/They", "Ze/Zir", "Xe/Xem", "Any pronouns", "Prefer not to say"];
+const LOOKING_FOR_QUESTIONS = {
+  "A Job": [
+    { key: "job_industry", label: "What industry or role type are you targeting?" },
+    { key: "job_remote", label: "Are you open to remote, hybrid, or in-person?" },
+    { key: "job_notice", label: "What's your notice period or availability?" },
+    { key: "job_culture", label: "What kind of company culture fits you best?" },
+    { key: "job_win", label: "What's your biggest professional win so far?" },
+  ],
+  "Freelance Work": [
+    { key: "freelance_services", label: "What services do you offer?" },
+    { key: "freelance_industries", label: "What industries have you worked in?" },
+    { key: "freelance_budget", label: "What's your typical project size or budget range?" },
+    { key: "freelance_standout", label: "What makes your freelance work stand out?" },
+  ],
+  "Clients": [
+    { key: "clients_problem", label: "What problem does your product/service solve?" },
+    { key: "clients_ideal", label: "Who is your ideal client? (industry, size, role)" },
+    { key: "clients_results", label: "What results have you delivered for past clients?" },
+    { key: "clients_engagement", label: "What does the engagement or purchase look like?" },
+  ],
+  "Co-founder": [
+    { key: "cofounder_building", label: "What are you building?" },
+    { key: "cofounder_stage", label: "What stage is your venture at?" },
+    { key: "cofounder_skills", label: "What skills are you looking for in a co-founder?" },
+    { key: "cofounder_commitment", label: "Are you full-time or part-time on this?" },
+  ],
+  "Investor": [
+    { key: "investor_project", label: "What is your startup/project?" },
+    { key: "investor_problem", label: "What problem does it solve and for whom?" },
+    { key: "investor_traction", label: "What traction or proof points do you have?" },
+    { key: "investor_raise", label: "How much are you raising and what for?" },
+    { key: "investor_type", label: "What kind of investor are you looking for?" },
+  ],
+  "Mentor": [
+    { key: "mentor_area", label: "What area do you most want guidance in?" },
+    { key: "mentor_journey", label: "Where are you in your journey?" },
+    { key: "mentor_engage", label: "How do you prefer to engage? (async, calls, coffee chats)" },
+  ],
+  "Collaboration": [
+    { key: "collab_project", label: "What project or idea are you working on?" },
+    { key: "collab_skills", label: "What skills or roles are you looking to collaborate with?" },
+    { key: "collab_type", label: "Is this paid, equity-based, or passion project?" },
+  ],
+};
+const OPEN_TO_OPTIONS = ["Coffee Chats", "Mentorship", "Partnerships", "Beta Testing", "Advisory Roles", "Co-founder Conversations"];
+const getBringToTablePrompt = (lookingFor = []) => {
+  if (lookingFor.includes("A Job")) return "What makes you different from other candidates?";
+  if (lookingFor.includes("Investor")) return "What's your unfair advantage?";
+  if (lookingFor.includes("Co-founder")) return "What do you bring to the partnership?";
+  return "What value do you offer to the people you want to meet?";
+};
+const getContextualHeadline = (lookingFor = []) => {
+  if (lookingFor.includes("A Job")) return "Open to the right opportunity";
+  if (lookingFor.includes("Investor")) return "Actively raising";
+  if (lookingFor.includes("Co-founder")) return "Looking for a builder to join the mission";
+  if (lookingFor.includes("Mentor")) return "Seeking the right mentor";
+  return "Open to connecting";
+};
 const normalizeUrl = (url) => {
   if (!url) return "";
   return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
@@ -312,6 +370,7 @@ function Onboarding({ firebaseUser, onComplete }) {
     title: "", firstName: "", lastName: "",
     pronouns: "", role: "", location: "",
     bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
+    lookingForDetails: {}, bringToTable: "",
   });
 
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -341,6 +400,8 @@ function Onboarding({ firebaseUser, onComplete }) {
         linkedin: form.linkedin ? normalizeUrl(form.linkedin) : "",
         avatar: fullName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
         color,
+        lookingForDetails: form.lookingForDetails,
+        bringToTable: form.bringToTable,
         createdAt: serverTimestamp(),
         termsAcceptedAt: serverTimestamp(),
       };
@@ -439,12 +500,67 @@ function Onboarding({ firebaseUser, onComplete }) {
       ),
       valid: form.lookingFor.length > 0,
     },
+    {
+      title: "Tell us more",
+      content: (
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {form.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.length > 0).length === 0 ? (
+            <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0 }}>No extra details needed — tap Continue.</p>
+          ) : (
+            form.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.length > 0).map(lf => (
+              <div key={lf} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, letterSpacing: 0.5 }}>{lf.toUpperCase()}</div>
+                {LOOKING_FOR_QUESTIONS[lf].map(q => (
+                  <div key={q.key}>
+                    <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>{q.label}</label>
+                    <input
+                      type="text"
+                      value={form.lookingForDetails[q.key] || ""}
+                      onChange={e => update("lookingForDetails", { ...form.lookingForDetails, [q.key]: e.target.value })}
+                      placeholder="Optional"
+                      style={{
+                        width: "100%", padding: "12px 16px", borderRadius: 12,
+                        background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+                        color: COLORS.text, fontSize: 14, outline: "none", boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      ),
+      valid: true,
+    },
+    {
+      title: "What I bring to the table",
+      content: (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <p style={{ color: COLORS.textMuted, fontSize: 13, fontStyle: "italic", margin: 0 }}>
+            {getBringToTablePrompt(form.lookingFor)}
+          </p>
+          <textarea
+            value={form.bringToTable}
+            onChange={e => update("bringToTable", e.target.value)}
+            placeholder="Tell people what you uniquely offer..."
+            rows={4}
+            style={{
+              width: "100%", padding: "12px 16px", borderRadius: 12,
+              background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              color: COLORS.text, fontSize: 14, outline: "none", resize: "none", boxSizing: "border-box",
+            }}
+          />
+        </div>
+      ),
+      valid: true,
+    },
   ];
 
   const current = steps[step];
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: COLORS.bg }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 24px", background: COLORS.bg }}>
       <div style={{ width: "100%", maxWidth: 480 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{ fontSize: 32, fontWeight: 800, color: COLORS.text }}>
@@ -552,6 +668,45 @@ function PublicProfile({ profileUser, onClose }) {
             {profileUser.achievements.map((a, i) => (
               <div key={i} style={{ fontSize: 14, color: COLORS.text, marginBottom: 6, lineHeight: 1.5 }}>✦ {a}</div>
             ))}
+          </div>
+        )}
+        {profileUser.lookingFor?.length > 0 && profileUser.lookingForDetails && Object.values(profileUser.lookingForDetails).some(v => v) && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 4, fontWeight: 600 }}>WHAT I'M LOOKING FOR</div>
+            <div style={{ fontSize: 14, color: profileUser.color, fontWeight: 600, marginBottom: 10 }}>{getContextualHeadline(profileUser.lookingFor)}</div>
+            {profileUser.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => profileUser.lookingForDetails?.[q.key])).map(lf => (
+              <div key={lf} style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 6 }}>{lf.toUpperCase()}</div>
+                {LOOKING_FOR_QUESTIONS[lf].filter(q => profileUser.lookingForDetails?.[q.key]).map(q => (
+                  <div key={q.key} style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>{q.label}</div>
+                    <div style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.5 }}>{profileUser.lookingForDetails[q.key]}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+        {profileUser.bringToTable && (
+          <div style={{ marginTop: 20, paddingLeft: 14, borderLeft: `3px solid ${COLORS.accent}` }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
+            <p style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{profileUser.bringToTable}</p>
+          </div>
+        )}
+        {profileUser.currentlyExploring?.length > 0 && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {profileUser.currentlyExploring.map(s => <Tag key={s} label={s} color={COLORS.purple} />)}
+            </div>
+          </div>
+        )}
+        {profileUser.openTo?.length > 0 && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {profileUser.openTo.map(s => <Tag key={s} label={s} color={COLORS.blue} />)}
+            </div>
           </div>
         )}
       </div>
@@ -1011,11 +1166,18 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
     bio: user.bio || "", skills: user.skills?.join(", ") || "",
     achievements: user.achievements?.join(", ") || "",
     linkedin: user.linkedin || "", lookingFor: user.lookingFor || [],
+    bringToTable: user.bringToTable || "",
+    currentlyExploring: user.currentlyExploring?.join(", ") || "",
+    openTo: user.openTo || [],
+    lookingForDetails: user.lookingForDetails || {},
   });
 
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleLF = (v) => setForm(f => ({
     ...f, lookingFor: f.lookingFor.includes(v) ? f.lookingFor.filter(x => x !== v) : [...f.lookingFor, v],
+  }));
+  const toggleOpenTo = (v) => setForm(f => ({
+    ...f, openTo: f.openTo.includes(v) ? f.openTo.filter(x => x !== v) : [...f.openTo, v],
   }));
 
   const handlePhotoChange = (e) => {
@@ -1049,6 +1211,10 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
         lookingFor: form.lookingFor,
         avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
         photoURL,
+        bringToTable: form.bringToTable,
+        currentlyExploring: form.currentlyExploring.split(",").map(s => s.trim()).filter(Boolean),
+        openTo: form.openTo,
+        lookingForDetails: form.lookingForDetails,
       };
       await setDoc(doc(db, "users", firebaseUser.uid), updated);
       onProfileUpdate(updated);
@@ -1069,6 +1235,10 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
       bio: user.bio || "", skills: user.skills?.join(", ") || "",
       achievements: user.achievements?.join(", ") || "",
       linkedin: user.linkedin || "", lookingFor: user.lookingFor || [],
+      bringToTable: user.bringToTable || "",
+      currentlyExploring: user.currentlyExploring?.join(", ") || "",
+      openTo: user.openTo || [],
+      lookingForDetails: user.lookingForDetails || {},
     });
     setSaveError("");
   };
@@ -1101,6 +1271,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
         <Input label="What do you do?" value={form.role} onChange={v => update("role", v)} placeholder="e.g. Entrepreneur, Developer" />
         <Input label="Location" value={form.location} onChange={v => update("location", v)} placeholder="e.g. Cape Town, SA" />
         <TextArea label="Bio" value={form.bio} onChange={v => update("bio", v)} placeholder="What are you building or working towards?" />
+        <TextArea label="What I Bring to the Table" value={form.bringToTable} onChange={v => update("bringToTable", v)} placeholder={getBringToTablePrompt(form.lookingFor)} />
         <Input label="Skills (comma separated)" value={form.skills} onChange={v => update("skills", v)} placeholder="e.g. Marketing, React, Sales" />
         <Input label="Achievements (comma separated)" value={form.achievements} onChange={v => update("achievements", v)} placeholder="e.g. Built 2 startups" />
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -1124,6 +1295,49 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
                 border: `1px solid ${form.lookingFor.includes(opt) ? COLORS.accent : COLORS.border}`,
                 background: form.lookingFor.includes(opt) ? `${COLORS.accent}22` : "transparent",
                 color: form.lookingFor.includes(opt) ? COLORS.accent : COLORS.textMuted,
+              }}>{opt}</button>
+            ))}
+          </div>
+        </div>
+
+        {form.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.length > 0).length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ fontSize: 12, color: COLORS.textMuted }}>More about what you're looking for (optional)</div>
+            {form.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.length > 0).map(lf => (
+              <div key={lf} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, letterSpacing: 0.5 }}>{lf.toUpperCase()}</div>
+                {LOOKING_FOR_QUESTIONS[lf].map(q => (
+                  <div key={q.key}>
+                    <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>{q.label}</label>
+                    <input
+                      type="text"
+                      value={form.lookingForDetails[q.key] || ""}
+                      onChange={e => update("lookingForDetails", { ...form.lookingForDetails, [q.key]: e.target.value })}
+                      placeholder="Optional"
+                      style={{
+                        width: "100%", padding: "12px 16px", borderRadius: 12,
+                        background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+                        color: COLORS.text, fontSize: 14, outline: "none", boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <Input label="Currently Exploring (comma separated)" value={form.currentlyExploring} onChange={v => update("currentlyExploring", v)} placeholder="e.g. AI tools, Bootstrapping, No-code" />
+
+        <div>
+          <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8, display: "block" }}>Open To</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {OPEN_TO_OPTIONS.map(opt => (
+              <button key={opt} onClick={() => toggleOpenTo(opt)} style={{
+                padding: "7px 14px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+                border: `1px solid ${form.openTo.includes(opt) ? COLORS.accent : COLORS.border}`,
+                background: form.openTo.includes(opt) ? `${COLORS.accent}22` : "transparent",
+                color: form.openTo.includes(opt) ? COLORS.accent : COLORS.textMuted,
               }}>{opt}</button>
             ))}
           </div>
@@ -1197,6 +1411,45 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
               {user.achievements.map((a, i) => (
                 <div key={i} style={{ fontSize: 13, color: COLORS.text, marginBottom: 4 }}>✦ {a}</div>
               ))}
+            </div>
+          )}
+          {user.lookingFor?.length > 0 && user.lookingForDetails && Object.values(user.lookingForDetails).some(v => v) && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 4, fontWeight: 600 }}>WHAT I'M LOOKING FOR</div>
+              <div style={{ fontSize: 14, color: user.color, fontWeight: 600, marginBottom: 10 }}>{getContextualHeadline(user.lookingFor)}</div>
+              {user.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => user.lookingForDetails?.[q.key])).map(lf => (
+                <div key={lf} style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 6 }}>{lf.toUpperCase()}</div>
+                  {LOOKING_FOR_QUESTIONS[lf].filter(q => user.lookingForDetails?.[q.key]).map(q => (
+                    <div key={q.key} style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>{q.label}</div>
+                      <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{user.lookingForDetails[q.key]}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+          {user.bringToTable && (
+            <div style={{ marginTop: 16, paddingLeft: 14, borderLeft: `3px solid ${COLORS.accent}` }}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
+              <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{user.bringToTable}</p>
+            </div>
+          )}
+          {user.currentlyExploring?.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {user.currentlyExploring.map(s => <Tag key={s} label={s} color={COLORS.purple} />)}
+              </div>
+            </div>
+          )}
+          {user.openTo?.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {user.openTo.map(s => <Tag key={s} label={s} color={COLORS.blue} />)}
+              </div>
             </div>
           )}
         </div>
