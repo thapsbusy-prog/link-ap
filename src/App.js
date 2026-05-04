@@ -283,7 +283,7 @@ function AuthScreen() {
                 style={{ marginTop: 3, accentColor: COLORS.accent, width: 16, height: 16, flexShrink: 0, cursor: "pointer" }}
               />
               <span style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6 }}>
-                I am 18 or older and I have read and agree to the{" "}
+                I have read and agree to the{" "}
                 <span onClick={e => { e.preventDefault(); setShowTerms(true); }} style={{ color: COLORS.accent, cursor: "pointer", textDecoration: "underline" }}>Terms of Service</span>
                 {" "}and{" "}
                 <span onClick={e => { e.preventDefault(); setShowTerms(true); }} style={{ color: COLORS.accent, cursor: "pointer", textDecoration: "underline" }}>Privacy Policy</span>
