@@ -125,14 +125,6 @@ function Avatar({ initials, color, size = 40, online = false, photoURL }) {
           fontSize: size * 0.35, fontWeight: 700, color,
         }}>{initials}</div>
       )}
-      {online && (
-        <div style={{
-          position: "absolute", bottom: 1, right: 1,
-          width: size * 0.28, height: size * 0.28,
-          borderRadius: "50%", background: COLORS.green,
-          border: `2px solid ${COLORS.bg}`,
-        }} />
-      )}
     </div>
   );
 }
@@ -698,10 +690,26 @@ function PublicProfile({ profileUser, onClose }) {
         )}
         {profileUser.lookingFor?.length > 0 && (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>LOOKING FOR</div>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>LOOKING FOR</div>
+            <div style={{ fontSize: 13, color: profileUser.color, fontWeight: 600, marginBottom: 8 }}>{getContextualHeadline(profileUser.lookingFor)}</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {profileUser.lookingFor.map(s => <Tag key={s} label={s} color={COLORS.accent} />)}
             </div>
+            {profileUser.lookingForDetails && Object.values(profileUser.lookingForDetails).some(v => v) && (
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                {profileUser.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => profileUser.lookingForDetails?.[q.key])).map(lf => (
+                  <div key={lf}>
+                    <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 4 }}>{lf.toUpperCase()}</div>
+                    {LOOKING_FOR_QUESTIONS[lf].filter(q => profileUser.lookingForDetails?.[q.key]).map(q => (
+                      <div key={q.key} style={{ marginBottom: 6 }}>
+                        <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 1 }}>{q.label}</div>
+                        <div style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.5 }}>{profileUser.lookingForDetails[q.key]}</div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
         {profileUser.achievements?.length > 0 && (
@@ -709,23 +717,6 @@ function PublicProfile({ profileUser, onClose }) {
             <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>ACHIEVEMENTS</div>
             {profileUser.achievements.map((a, i) => (
               <div key={i} style={{ fontSize: 14, color: COLORS.text, marginBottom: 6, lineHeight: 1.5 }}>✦ {a}</div>
-            ))}
-          </div>
-        )}
-        {profileUser.lookingFor?.length > 0 && profileUser.lookingForDetails && Object.values(profileUser.lookingForDetails).some(v => v) && (
-          <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 4, fontWeight: 600 }}>WHAT I'M LOOKING FOR</div>
-            <div style={{ fontSize: 14, color: profileUser.color, fontWeight: 600, marginBottom: 10 }}>{getContextualHeadline(profileUser.lookingFor)}</div>
-            {profileUser.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => profileUser.lookingForDetails?.[q.key])).map(lf => (
-              <div key={lf} style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 6 }}>{lf.toUpperCase()}</div>
-                {LOOKING_FOR_QUESTIONS[lf].filter(q => profileUser.lookingForDetails?.[q.key]).map(q => (
-                  <div key={q.key} style={{ marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>{q.label}</div>
-                    <div style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.5 }}>{profileUser.lookingForDetails[q.key]}</div>
-                  </div>
-                ))}
-              </div>
             ))}
           </div>
         )}
@@ -1712,7 +1703,7 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
           <Avatar initials={chatUser?.avatar} color={chatUser?.color} size={40} online photoURL={chatUser?.photoURL} />
           <div>
             <div style={{ fontWeight: 700, color: COLORS.text }}>{chatUser?.name}</div>
-            <div style={{ color: COLORS.green, fontSize: 12 }}>● Online</div>
+            <div style={{ color: COLORS.textMuted, fontSize: 12 }}>{chatUser?.role}</div>
           </div>
         </div>
       </div>
@@ -2029,34 +2020,35 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
               {user.skills?.map(s => <Tag key={s} label={s} color={user.color} />)}
             </div>
           </div>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>LOOKING FOR</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {user.lookingFor?.map(s => <Tag key={s} label={s} color={COLORS.accent} />)}
+          {user.lookingFor?.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>LOOKING FOR</div>
+              <div style={{ fontSize: 13, color: user.color, fontWeight: 600, marginBottom: 8 }}>{getContextualHeadline(user.lookingFor)}</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {user.lookingFor.map(s => <Tag key={s} label={s} color={COLORS.accent} />)}
+              </div>
+              {user.lookingForDetails && Object.values(user.lookingForDetails).some(v => v) && (
+                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {user.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => user.lookingForDetails?.[q.key])).map(lf => (
+                    <div key={lf}>
+                      <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 4 }}>{lf.toUpperCase()}</div>
+                      {LOOKING_FOR_QUESTIONS[lf].filter(q => user.lookingForDetails?.[q.key]).map(q => (
+                        <div key={q.key} style={{ marginBottom: 6 }}>
+                          <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 1 }}>{q.label}</div>
+                          <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{user.lookingForDetails[q.key]}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          )}
           {user.achievements?.length > 0 && (
             <div style={{ background: COLORS.bg, borderRadius: 12, padding: 14, border: `1px solid ${COLORS.border}` }}>
               <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>ACHIEVEMENTS</div>
               {user.achievements.map((a, i) => (
                 <div key={i} style={{ fontSize: 13, color: COLORS.text, marginBottom: 4 }}>✦ {a}</div>
-              ))}
-            </div>
-          )}
-          {user.lookingFor?.length > 0 && user.lookingForDetails && Object.values(user.lookingForDetails).some(v => v) && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 4, fontWeight: 600 }}>WHAT I'M LOOKING FOR</div>
-              <div style={{ fontSize: 14, color: user.color, fontWeight: 600, marginBottom: 10 }}>{getContextualHeadline(user.lookingFor)}</div>
-              {user.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => user.lookingForDetails?.[q.key])).map(lf => (
-                <div key={lf} style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 6 }}>{lf.toUpperCase()}</div>
-                  {LOOKING_FOR_QUESTIONS[lf].filter(q => user.lookingForDetails?.[q.key]).map(q => (
-                    <div key={q.key} style={{ marginBottom: 8 }}>
-                      <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>{q.label}</div>
-                      <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{user.lookingForDetails[q.key]}</div>
-                    </div>
-                  ))}
-                </div>
               ))}
             </div>
           )}
