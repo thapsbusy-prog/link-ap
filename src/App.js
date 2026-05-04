@@ -971,7 +971,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         ? query(collection(db, "users"), orderBy("createdAt"), startAfter(lastDocRef.current), limit(PAGE))
         : query(collection(db, "users"), orderBy("createdAt"), limit(PAGE));
       const snap = await getDocs(q);
-      const newUsers = snap.docs.map(d => d.data()).filter(u => u.uid !== firebaseUser.uid);
+      const newUsers = snap.docs.map(d => d.data()).filter(u => u.uid !== firebaseUser.uid && !u.deactivated);
       lastDocRef.current = snap.docs[snap.docs.length - 1] ?? null;
       hasMoreRef.current = snap.docs.length === PAGE;
       setHasMore(hasMoreRef.current);
@@ -1100,10 +1100,14 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
             borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 13,
           }}>🔍 Search</button>
           <Avatar initials={user.avatar} color={user.color} size={36} online photoURL={user.photoURL} />
-          <button onClick={async () => { await signOut(auth); }} style={{
-            background: "none", border: `1px solid ${COLORS.border}`, color: COLORS.textMuted,
-            borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 12,
-          }}>Sign out</button>
+          <button onClick={() => setTab("settings")} style={{
+            background: "none", border: "none", cursor: "pointer", padding: 4,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg viewBox="0 0 24 24" fill={COLORS.textMuted} width="22" height="22">
+              <path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.11-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -1112,6 +1116,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         {tab === "matches" && <Matches matches={matches} sent={sent} received={received} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onReplyRequest={handleReplyRequest} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} />}
+        {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} />}
       </div>
 
       {tab === "messages" && activeChat && (
@@ -1142,6 +1147,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
             icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
           { id: "profile", label: "Profile",
             icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> },
+          { id: "settings", label: "Settings",
+            icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.11-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg> },
         ].map(item => {
           const color = tab === item.id ? COLORS.accent : COLORS.textMuted;
           return (
@@ -1303,7 +1310,7 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
         const merged = [...s1.docs, ...s2.docs, ...s3.docs]
           .map(d => d.data())
           .filter(u => {
-            if (u.uid === currentUser.uid || seen.has(u.uid)) return false;
+            if (u.uid === currentUser.uid || seen.has(u.uid) || u.deactivated) return false;
             seen.add(u.uid);
             return true;
           });
@@ -1770,6 +1777,191 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
             cursor: input.trim() ? "pointer" : "default",
             fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
           }}>→</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Settings({ user, firebaseUser }) {
+  const [showTerms, setShowTerms] = useState(false);
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [accountLoading, setAccountLoading] = useState(null);
+  const [accountError, setAccountError] = useState("");
+
+  async function handleDeactivate() {
+    setAccountLoading("deactivate");
+    setAccountError("");
+    try {
+      await setDoc(doc(db, "users", firebaseUser.uid), { deactivated: true }, { merge: true });
+      await signOut(auth);
+    } catch (e) {
+      setAccountError("Something went wrong. Please try again.");
+      setAccountLoading(null);
+    }
+  }
+
+  async function handleDelete() {
+    setAccountLoading("delete");
+    setAccountError("");
+    try {
+      const uid = firebaseUser.uid;
+      for (const sub of ["sent", "received", "matches"]) {
+        const snap = await getDocs(collection(db, "users", uid, sub));
+        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+      }
+      await deleteDoc(doc(db, "users", uid));
+      await firebaseUser.delete();
+    } catch (e) {
+      if (e.code === "auth/requires-recent-login") {
+        setAccountError("For security, please sign out and sign back in before deleting your account.");
+      } else {
+        setAccountError("Something went wrong. Please try again.");
+      }
+      setAccountLoading(null);
+    }
+  }
+
+  return (
+    <div style={{ padding: "24px 16px" }}>
+      <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text, marginBottom: 24 }}>Settings</div>
+
+      {/* Account */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Account</div>
+        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ padding: "14px 16px", borderBottom: `1px solid ${COLORS.border}` }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>Name</div>
+            <div style={{ fontSize: 14, color: COLORS.text }}>{user.name}</div>
+          </div>
+          <div style={{ padding: "14px 16px" }}>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>Email</div>
+            <div style={{ fontSize: 14, color: COLORS.text }}>{firebaseUser.email}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Legal */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Legal</div>
+        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+          <button onClick={() => setShowTerms(true)} style={{
+            width: "100%", background: "none", border: "none", cursor: "pointer",
+            padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center",
+          }}>
+            <span style={{ fontSize: 14, color: COLORS.text }}>Terms of Use</span>
+            <span style={{ color: COLORS.textMuted, fontSize: 16 }}>›</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Sign Out */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Session</div>
+        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+          <button onClick={() => signOut(auth)} style={{
+            width: "100%", background: "none", border: "none", cursor: "pointer",
+            padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
+          }}>
+            <svg viewBox="0 0 24 24" fill={COLORS.red} width="20" height="20">
+              <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4C2.9 3 2 3.9 2 5v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+            </svg>
+            <span style={{ flex: 1, fontSize: 14, color: COLORS.red, textAlign: "left" }}>Sign Out</span>
+            <span style={{ color: COLORS.textMuted, fontSize: 18, lineHeight: 1 }}>›</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Danger Zone</div>
+        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+          <button onClick={() => { setAccountError(""); setShowDeactivateConfirm(true); }} style={{
+            width: "100%", background: "none", border: "none", cursor: "pointer",
+            padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
+            borderBottom: `1px solid ${COLORS.border}`,
+          }}>
+            <svg viewBox="0 0 24 24" fill={COLORS.accent} width="20" height="20">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <span style={{ flex: 1, fontSize: 14, color: COLORS.accent, textAlign: "left" }}>Deactivate Account</span>
+            <span style={{ color: COLORS.textMuted, fontSize: 18, lineHeight: 1 }}>›</span>
+          </button>
+          <button onClick={() => { setAccountError(""); setShowDeleteConfirm(true); }} style={{
+            width: "100%", background: "none", border: "none", cursor: "pointer",
+            padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
+          }}>
+            <svg viewBox="0 0 24 24" fill={COLORS.red} width="20" height="20">
+              <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+            <span style={{ flex: 1, fontSize: 14, color: COLORS.red, textAlign: "left" }}>Delete Account</span>
+            <span style={{ color: COLORS.textMuted, fontSize: 18, lineHeight: 1 }}>›</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Terms modal */}
+      {showTerms && (
+        <div style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 50,
+          display: "flex", alignItems: "flex-end", justifyContent: "center",
+        }} onClick={() => setShowTerms(false)}>
+          <div style={{
+            background: COLORS.card, borderRadius: "16px 16px 0 0", width: "100%", maxWidth: 430,
+            maxHeight: "80dvh", overflowY: "auto", padding: 24,
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, color: COLORS.text }}>Terms of Use</div>
+              <button onClick={() => setShowTerms(false)} style={{ background: "none", border: "none", color: COLORS.textMuted, fontSize: 20, cursor: "pointer" }}>×</button>
+            </div>
+            <TermsContent />
+          </div>
+        </div>
+      )}
+
+      {/* Deactivate confirmation */}
+      {showDeactivateConfirm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px" }}>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 16, width: "100%", maxWidth: 380, padding: 24 }}>
+            <div style={{ fontWeight: 800, color: COLORS.text, fontSize: 17, marginBottom: 10 }}>Deactivate Account?</div>
+            <p style={{ color: COLORS.textMuted, fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>
+              Your profile will be hidden from Discover and Search. Your data stays in our system. You can reactivate by contacting support.
+            </p>
+            {accountError && <div style={{ color: COLORS.red, fontSize: 13, marginBottom: 12 }}>{accountError}</div>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowDeactivateConfirm(false)} style={{ flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "none", color: COLORS.text, cursor: "pointer", fontSize: 14 }}>
+                Cancel
+              </button>
+              <button onClick={handleDeactivate} disabled={accountLoading === "deactivate"} style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: COLORS.accent, color: "#000", cursor: accountLoading === "deactivate" ? "default" : "pointer", fontSize: 14, fontWeight: 700 }}>
+                {accountLoading === "deactivate" ? "Deactivating…" : "Deactivate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {showDeleteConfirm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px" }}>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 16, width: "100%", maxWidth: 380, padding: 24 }}>
+            <div style={{ fontWeight: 800, color: COLORS.red, fontSize: 17, marginBottom: 10 }}>Permanently Delete Account?</div>
+            <p style={{ color: COLORS.textMuted, fontSize: 14, lineHeight: 1.6, marginBottom: 8 }}>
+              This action is <strong style={{ color: COLORS.text }}>irreversible</strong>. Your profile, matches, messages, and all associated data will be permanently erased and cannot be recovered.
+            </p>
+            <p style={{ color: COLORS.textMuted, fontSize: 13, marginBottom: 20 }}>
+              Deleting account for: <strong style={{ color: COLORS.text }}>{firebaseUser?.email}</strong>
+            </p>
+            {accountError && <div style={{ color: COLORS.red, fontSize: 13, marginBottom: 12 }}>{accountError}</div>}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "none", color: COLORS.text, cursor: "pointer", fontSize: 14 }}>
+                Cancel
+              </button>
+              <button onClick={handleDelete} disabled={accountLoading === "delete"} style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: COLORS.red, color: "#fff", cursor: accountLoading === "delete" ? "default" : "pointer", fontSize: 14, fontWeight: 700 }}>
+                {accountLoading === "delete" ? "Deleting…" : "Delete Forever"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
