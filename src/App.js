@@ -402,6 +402,7 @@ function Onboarding({ firebaseUser, onComplete }) {
         avatar: fullName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
         color,
         nameLower: fullName.toLowerCase(),
+        lastNameLower: form.lastName.trim().toLowerCase(),
         lookingForDetails: form.lookingForDetails,
         bringToTable: form.bringToTable,
         createdAt: serverTimestamp(),
@@ -1247,14 +1248,24 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
     setSearching(true);
     const t = setTimeout(async () => {
       try {
-        const q = query(
-          collection(db, "users"),
-          where("nameLower", ">=", term.trim().toLowerCase()),
-          where("nameLower", "<=", term.trim().toLowerCase() + ""),
-          limit(10)
-        );
-        const snap = await getDocs(q);
-        setResults(snap.docs.map(d => d.data()).filter(u => u.uid !== currentUser.uid));
+        const t_ = term.trim().toLowerCase();
+        const tCap = t_.charAt(0).toUpperCase() + t_.slice(1);
+        const end_ = t_ + "";
+        const endCap_ = tCap + "";
+        const [s1, s2, s3] = await Promise.all([
+          getDocs(query(collection(db, 'users'), where('nameLower', '>=', t_), where('nameLower', '<=', end_), limit(15))),
+          getDocs(query(collection(db, 'users'), where('lastNameLower', '>=', t_), where('lastNameLower', '<=', end_), limit(15))),
+          getDocs(query(collection(db, 'users'), where('name', '>=', tCap), where('name', '<=', endCap_), limit(15))),
+        ]);
+        const seen = new Set();
+        const merged = [...s1.docs, ...s2.docs, ...s3.docs]
+          .map(d => d.data())
+          .filter(u => {
+            if (u.uid === currentUser.uid || seen.has(u.uid)) return false;
+            seen.add(u.uid);
+            return true;
+          });
+        setResults(merged);
       } catch (e) { setResults([]); }
       setSearching(false);
     }, 400);
@@ -1785,6 +1796,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
         openTo: form.openTo,
         lookingForDetails: form.lookingForDetails,
         nameLower: form.name.toLowerCase(),
+        lastNameLower: form.name.trim().split(/\s+/).pop()?.toLowerCase() || "",
       };
       await setDoc(doc(db, "users", firebaseUser.uid), updated);
       onProfileUpdate(updated);
@@ -2049,9 +2061,11 @@ export default function App() {
         const snap = await getDoc(doc(db, "users", user.uid));
         if (snap.exists()) {
           const data = snap.data();
-          if (!data.nameLower && data.name) {
-            await setDoc(doc(db, "users", user.uid), { nameLower: data.name.toLowerCase() }, { merge: true });
-            setProfile({ ...data, nameLower: data.name.toLowerCase() });
+          if ((!data.nameLower || !data.lastNameLower) && data.name) {
+            const nameLower = data.name.toLowerCase();
+            const lastNameLower = data.name.trim().split(/\s+/).pop()?.toLowerCase() || "";
+            await setDoc(doc(db, "users", user.uid), { nameLower, lastNameLower }, { merge: true });
+            setProfile({ ...data, nameLower, lastNameLower });
           } else {
             setProfile(data);
           }
