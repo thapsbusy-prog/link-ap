@@ -98,6 +98,14 @@ function LinkedInIcon() {
   );
 }
 
+function LocationPin() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill={COLORS.textMuted} style={{ flexShrink: 0 }}>
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+    </svg>
+  );
+}
+
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48">
@@ -676,7 +684,7 @@ function PublicProfile({ profileUser, onClose }) {
               )}
             </div>
             <div style={{ color: profileUser.color, fontSize: 14, marginBottom: 4 }}>{profileUser.role}</div>
-            <div style={{ color: COLORS.textMuted, fontSize: 12 }}>📍 {profileUser.location}</div>
+            <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {profileUser.location}</div>
           </div>
         </div>
         {profileUser.bio && (
@@ -693,10 +701,7 @@ function PublicProfile({ profileUser, onClose }) {
         {profileUser.lookingFor?.length > 0 && (
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>LOOKING FOR</div>
-            <div style={{ fontSize: 13, color: profileUser.color, fontWeight: 600, marginBottom: 8 }}>{getContextualHeadline(profileUser.lookingFor)}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {profileUser.lookingFor.map(s => <Tag key={s} label={s} color={COLORS.accent} />)}
-            </div>
+            <div style={{ fontSize: 13, color: profileUser.color, fontWeight: 600, marginBottom: 12 }}>{getContextualHeadline(profileUser.lookingFor)}</div>
             {profileUser.lookingForDetails && Object.values(profileUser.lookingForDetails).some(v => v) && (
               <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
                 {profileUser.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => profileUser.lookingForDetails?.[q.key])).map(lf => (
@@ -1129,29 +1134,34 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         display: "flex", padding: "10px 0 20px",
       }}>
         {[
-          { id: "discover", icon: "⚡", label: "Discover" },
-          { id: "matches", icon: "🤝", label: "Connections", badge: matches.length + received.length },
-          { id: "messages", icon: "💬", label: "Messages" },
-          { id: "profile", icon: "👤", label: "Profile" },
-        ].map(item => (
-          <button key={item.id} onClick={() => setTab(item.id)} style={{
-            flex: 1, background: "none", border: "none", cursor: "pointer",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative",
-          }}>
-            <div style={{ fontSize: 20 }}>{item.icon}</div>
-            <span style={{ fontSize: 10, color: tab === item.id ? COLORS.accent : COLORS.textMuted, fontWeight: 500 }}>
-              {item.label}
-            </span>
-            {item.badge > 0 && (
-              <div style={{
-                position: "absolute", top: 0, right: "calc(50% - 18px)",
-                background: COLORS.accent, color: "#000", borderRadius: 10,
-                width: 16, height: 16, fontSize: 9, fontWeight: 700,
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>{item.badge}</div>
-            )}
-          </button>
-        ))}
+          { id: "discover", label: "Discover",
+            icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> },
+          { id: "matches", label: "Connections", badge: matches.length + received.length,
+            icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> },
+          { id: "messages", label: "Messages",
+            icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
+          { id: "profile", label: "Profile",
+            icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> },
+        ].map(item => {
+          const color = tab === item.id ? COLORS.accent : COLORS.textMuted;
+          return (
+            <button key={item.id} onClick={() => setTab(item.id)} style={{
+              flex: 1, background: "none", border: "none", cursor: "pointer",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative",
+            }}>
+              {item.icon(color)}
+              <span style={{ fontSize: 10, color, fontWeight: 500 }}>{item.label}</span>
+              {item.badge > 0 && (
+                <div style={{
+                  position: "absolute", top: 0, right: "calc(50% - 18px)",
+                  background: COLORS.accent, color: "#000", borderRadius: 10,
+                  width: 16, height: 16, fontSize: 9, fontWeight: 700,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>{item.badge}</div>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -1226,7 +1236,7 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
                 )}
               </div>
               <div style={{ color: current.color, fontSize: 13, marginBottom: 4 }}>{current.role}</div>
-              <div style={{ color: COLORS.textMuted, fontSize: 12 }}>📍 {current.location}</div>
+              <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {current.location}</div>
             </div>
           </div>
           <p style={{ fontSize: 14, lineHeight: 1.6, color: COLORS.text, marginBottom: 20 }}>{current.bio}</p>
@@ -1368,7 +1378,7 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
                   <div style={{ color: u.color, fontSize: 12 }}>{u.role}</div>
-                  <div style={{ color: COLORS.textMuted, fontSize: 11 }}>📍 {u.location}</div>
+                  <div style={{ color: COLORS.textMuted, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {u.location}</div>
                 </div>
                 {isMatched(u.uid) ? (
                   <span style={{ fontSize: 11, color: COLORS.green, fontWeight: 600, flexShrink: 0 }}>Connected ✓</span>
@@ -1397,7 +1407,7 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
             <div>
               <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.text }}>{target.name}</div>
               <div style={{ color: target.color, fontSize: 13 }}>{target.role}</div>
-              <div style={{ color: COLORS.textMuted, fontSize: 12 }}>📍 {target.location}</div>
+              <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {target.location}</div>
             </div>
           </div>
           <div>
@@ -1489,7 +1499,7 @@ function Matches({ matches, sent, received, onChat, onViewProfile, onAcceptReque
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{req.name}</div>
                     <div style={{ color: req.color, fontSize: 12 }}>{req.role}</div>
-                    <div style={{ color: COLORS.textMuted, fontSize: 11 }}>📍 {req.location}</div>
+                    <div style={{ color: COLORS.textMuted, fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {req.location}</div>
                   </div>
                 </div>
 
@@ -2012,7 +2022,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
                 )}
               </div>
               <div style={{ color: user.color, fontSize: 14, marginBottom: 4 }}>{user.role}</div>
-              <div style={{ color: COLORS.textMuted, fontSize: 12 }}>📍 {user.location}</div>
+              <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {user.location}</div>
             </div>
           </div>
           <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 20, color: COLORS.text }}>{user.bio}</p>
@@ -2025,10 +2035,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
           {user.lookingFor?.length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>LOOKING FOR</div>
-              <div style={{ fontSize: 13, color: user.color, fontWeight: 600, marginBottom: 8 }}>{getContextualHeadline(user.lookingFor)}</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {user.lookingFor.map(s => <Tag key={s} label={s} color={COLORS.accent} />)}
-              </div>
+              <div style={{ fontSize: 13, color: user.color, fontWeight: 600, marginBottom: 12 }}>{getContextualHeadline(user.lookingFor)}</div>
               {user.lookingForDetails && Object.values(user.lookingForDetails).some(v => v) && (
                 <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
                   {user.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => user.lookingForDetails?.[q.key])).map(lf => (
