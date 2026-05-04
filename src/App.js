@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import logoImg from "./link-ap-logo.png";
 import { db, auth } from "./firebase";
 import {
   collection, addDoc, onSnapshot, query,
@@ -2081,7 +2082,53 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
   );
 }
 
+function SplashScreen({ onDone }) {
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setFading(true), 2000);
+    const t2 = setTimeout(() => onDone(), 2500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []); // eslint-disable-line
+
+  return (
+    <>
+      <style>{`
+        @keyframes splashLogoIn {
+          from { opacity: 0; transform: scale(0.82); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes splashPulse {
+          0%   { filter: drop-shadow(0 0 0px rgba(245,166,35,0)); }
+          50%  { filter: drop-shadow(0 0 32px rgba(245,166,35,0.75)); }
+          100% { filter: drop-shadow(0 0 0px rgba(245,166,35,0)); }
+        }
+        .splash-logo {
+          animation:
+            splashLogoIn 0.7s cubic-bezier(0.22,1,0.36,1) forwards,
+            splashPulse   0.9s ease-in-out 0.8s 3;
+        }
+      `}</style>
+      <div style={{
+        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+        zIndex: 9999, background: "#0A0A0F",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        opacity: fading ? 0 : 1, transition: "opacity 0.5s ease",
+        pointerEvents: fading ? "none" : "all",
+      }}>
+        <img
+          src={logoImg}
+          alt="Link-Ap"
+          className="splash-logo"
+          style={{ width: 160, height: 160, objectFit: "contain" }}
+        />
+      </div>
+    </>
+  );
+}
+
 export default function App() {
+  const [splashDone, setSplashDone] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -2110,13 +2157,22 @@ export default function App() {
     return unsub;
   }, []);
 
-  if (loading) return (
+  const appContent = loading ? (
     <div style={{ minHeight: "100vh", background: COLORS.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontSize: 24, fontWeight: 800, color: COLORS.accent }}>Link<span style={{ color: COLORS.text }}>-Ap</span></div>
+      <img src={logoImg} alt="Link-Ap" style={{ width: 80, height: 80, objectFit: "contain", opacity: 0.7 }} />
     </div>
+  ) : !firebaseUser ? (
+    <AuthScreen />
+  ) : !profile || profile.uid !== firebaseUser.uid ? (
+    <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />
+  ) : (
+    <MainApp user={profile} firebaseUser={firebaseUser} onProfileUpdate={setProfile} />
   );
 
-  if (!firebaseUser) return <AuthScreen />;
-  if (!profile || profile.uid !== firebaseUser.uid) return <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
-  return <MainApp user={profile} firebaseUser={firebaseUser} onProfileUpdate={setProfile} />;
+  return (
+    <>
+      {appContent}
+      {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
+    </>
+  );
 }
