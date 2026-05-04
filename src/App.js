@@ -604,6 +604,11 @@ function Onboarding({ firebaseUser, onComplete }) {
             Link<span style={{ color: COLORS.accent }}>-Ap</span>
           </div>
           <p style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 4 }}>Let's set up your profile</p>
+          <button onClick={() => signOut(auth)} style={{
+            marginTop: 10, background: "none", border: "none",
+            color: COLORS.textMuted, cursor: "pointer", fontSize: 12,
+            textDecoration: "underline",
+          }}>Wrong account? Sign out</button>
         </div>
 
         <div style={{ display: "flex", gap: 6, marginBottom: 32 }}>
