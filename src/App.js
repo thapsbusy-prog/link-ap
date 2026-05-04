@@ -9,7 +9,7 @@ import {
 import {
   onAuthStateChanged, signInWithPopup, signOut,
   GoogleAuthProvider, createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword, sendPasswordResetEmail
 } from "firebase/auth";
 
 const COLORS = {
@@ -956,6 +956,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [activeChat, setActiveChat] = useState(null);
   const [notification, setNotification] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
+  const [profileEditTrigger, setProfileEditTrigger] = useState(0);
 
   const lastDocRef = useRef(null);
   const hasMoreRef = useRef(true);
@@ -1115,8 +1116,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} received={received} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onReplyRequest={handleReplyRequest} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />}
-        {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} />}
-        {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} />}
+        {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
+        {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} />}
       </div>
 
       {tab === "messages" && activeChat && (
@@ -1783,12 +1784,44 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
   );
 }
 
-function Settings({ user, firebaseUser }) {
+function Settings({ user, firebaseUser, onEditProfile }) {
   const [showTerms, setShowTerms] = useState(false);
+  const [showBlockList, setShowBlockList] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [accountLoading, setAccountLoading] = useState(null);
   const [accountError, setAccountError] = useState("");
+  const [pwResetMsg, setPwResetMsg] = useState("");
+  const [pwResetLoading, setPwResetLoading] = useState(false);
+
+  const isEmailUser = firebaseUser.providerData.some(p => p.providerId === "password");
+
+  const sectionLabel = (text) => (
+    <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>{text}</div>
+  );
+
+  const settingsRow = (label, right, onClick, extraStyle = {}) => (
+    <button onClick={onClick} style={{
+      width: "100%", background: "none", border: "none", cursor: "pointer",
+      padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center",
+      ...extraStyle,
+    }}>
+      <span style={{ fontSize: 14, color: COLORS.text }}>{label}</span>
+      {right}
+    </button>
+  );
+
+  async function handleSendPasswordReset() {
+    setPwResetLoading(true);
+    setPwResetMsg("");
+    try {
+      await sendPasswordResetEmail(auth, firebaseUser.email);
+      setPwResetMsg("Reset email sent — check your inbox.");
+    } catch {
+      setPwResetMsg("Failed to send reset email. Please try again.");
+    }
+    setPwResetLoading(false);
+  }
 
   async function handleDeactivate() {
     setAccountLoading("deactivate");
@@ -1823,46 +1856,81 @@ function Settings({ user, firebaseUser }) {
     }
   }
 
+  if (showBlockList) {
+    return (
+      <div style={{ padding: "24px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+          <button onClick={() => setShowBlockList(false)} style={{ background: "none", border: "none", color: COLORS.text, cursor: "pointer", padding: 0, fontSize: 22, lineHeight: 1 }}>‹</button>
+          <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>Block List</div>
+        </div>
+        <div style={{ color: COLORS.textMuted, fontSize: 14, textAlign: "center", marginTop: 60 }}>Blocked users will appear here.</div>
+      </div>
+    );
+  }
+
+  const chevron = <span style={{ color: COLORS.textMuted, fontSize: 16 }}>›</span>;
+  const rowDivider = { borderBottom: `1px solid ${COLORS.border}` };
+
   return (
     <div style={{ padding: "24px 16px" }}>
       <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text, marginBottom: 24 }}>Settings</div>
 
       {/* Account */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Account</div>
+        {sectionLabel("Account")}
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
           <div style={{ padding: "14px 16px", borderBottom: `1px solid ${COLORS.border}` }}>
             <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>Name</div>
             <div style={{ fontSize: 14, color: COLORS.text }}>{user.name}</div>
           </div>
-          <div style={{ padding: "14px 16px" }}>
+          <div style={{ padding: "14px 16px", borderBottom: `1px solid ${COLORS.border}` }}>
             <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>Email</div>
             <div style={{ fontSize: 14, color: COLORS.text }}>{firebaseUser.email}</div>
+          </div>
+          {settingsRow("Edit Profile", chevron, onEditProfile, isEmailUser ? rowDivider : {})}
+          {isEmailUser && (
+            <div style={{ padding: "14px 16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 14, color: COLORS.text }}>Change Password</span>
+                <button onClick={handleSendPasswordReset} disabled={pwResetLoading} style={{
+                  background: "none", border: `1px solid ${COLORS.border}`, color: COLORS.accent,
+                  borderRadius: 8, padding: "5px 12px", cursor: pwResetLoading ? "default" : "pointer", fontSize: 12,
+                }}>{pwResetLoading ? "Sending…" : "Send Reset Email"}</button>
+              </div>
+              {pwResetMsg && <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 6 }}>{pwResetMsg}</div>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Privacy */}
+      <div style={{ marginBottom: 24 }}>
+        {sectionLabel("Privacy")}
+        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+          {settingsRow("Block List", chevron, () => setShowBlockList(true))}
+        </div>
+      </div>
+
+      {/* About */}
+      <div style={{ marginBottom: 24 }}>
+        {sectionLabel("About")}
+        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+          {settingsRow("Terms of Service", chevron, () => setShowTerms(true), rowDivider)}
+          <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 14, color: COLORS.text }}>App Version</span>
+            <span style={{ fontSize: 13, color: COLORS.textMuted }}>1.0.0 Beta</span>
           </div>
         </div>
       </div>
 
-      {/* Legal */}
+      {/* Account Actions */}
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Legal</div>
-        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
-          <button onClick={() => setShowTerms(true)} style={{
-            width: "100%", background: "none", border: "none", cursor: "pointer",
-            padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center",
-          }}>
-            <span style={{ fontSize: 14, color: COLORS.text }}>Terms of Use</span>
-            <span style={{ color: COLORS.textMuted, fontSize: 16 }}>›</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Sign Out */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Session</div>
+        {sectionLabel("Account Actions")}
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
           <button onClick={() => signOut(auth)} style={{
             width: "100%", background: "none", border: "none", cursor: "pointer",
             padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
+            borderBottom: `1px solid ${COLORS.border}`,
           }}>
             <svg viewBox="0 0 24 24" fill={COLORS.red} width="20" height="20">
               <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4C2.9 3 2 3.9 2 5v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
@@ -1870,13 +1938,6 @@ function Settings({ user, firebaseUser }) {
             <span style={{ flex: 1, fontSize: 14, color: COLORS.red, textAlign: "left" }}>Sign Out</span>
             <span style={{ color: COLORS.textMuted, fontSize: 18, lineHeight: 1 }}>›</span>
           </button>
-        </div>
-      </div>
-
-      {/* Danger Zone */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Danger Zone</div>
-        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
           <button onClick={() => { setAccountError(""); setShowDeactivateConfirm(true); }} style={{
             width: "100%", background: "none", border: "none", cursor: "pointer",
             padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
@@ -1912,7 +1973,7 @@ function Settings({ user, firebaseUser }) {
             maxHeight: "80dvh", overflowY: "auto", padding: 24,
           }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, color: COLORS.text }}>Terms of Use</div>
+              <div style={{ fontWeight: 700, color: COLORS.text }}>Terms of Service</div>
               <button onClick={() => setShowTerms(false)} style={{ background: "none", border: "none", color: COLORS.textMuted, fontSize: 20, cursor: "pointer" }}>×</button>
             </div>
             <TermsContent />
@@ -1930,9 +1991,7 @@ function Settings({ user, firebaseUser }) {
             </p>
             {accountError && <div style={{ color: COLORS.red, fontSize: 13, marginBottom: 12 }}>{accountError}</div>}
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowDeactivateConfirm(false)} style={{ flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "none", color: COLORS.text, cursor: "pointer", fontSize: 14 }}>
-                Cancel
-              </button>
+              <button onClick={() => setShowDeactivateConfirm(false)} style={{ flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "none", color: COLORS.text, cursor: "pointer", fontSize: 14 }}>Cancel</button>
               <button onClick={handleDeactivate} disabled={accountLoading === "deactivate"} style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: COLORS.accent, color: "#000", cursor: accountLoading === "deactivate" ? "default" : "pointer", fontSize: 14, fontWeight: 700 }}>
                 {accountLoading === "deactivate" ? "Deactivating…" : "Deactivate"}
               </button>
@@ -1954,9 +2013,7 @@ function Settings({ user, firebaseUser }) {
             </p>
             {accountError && <div style={{ color: COLORS.red, fontSize: 13, marginBottom: 12 }}>{accountError}</div>}
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "none", color: COLORS.text, cursor: "pointer", fontSize: 14 }}>
-                Cancel
-              </button>
+              <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "none", color: COLORS.text, cursor: "pointer", fontSize: 14 }}>Cancel</button>
               <button onClick={handleDelete} disabled={accountLoading === "delete"} style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: COLORS.red, color: "#fff", cursor: accountLoading === "delete" ? "default" : "pointer", fontSize: 14, fontWeight: 700 }}>
                 {accountLoading === "delete" ? "Deleting…" : "Delete Forever"}
               </button>
@@ -1968,8 +2025,9 @@ function Settings({ user, firebaseUser }) {
   );
 }
 
-function Profile({ user, firebaseUser, onProfileUpdate }) {
+function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
   const [editing, setEditing] = useState(false);
+  useEffect(() => { if (editTrigger) setEditing(true); }, [editTrigger]); // eslint-disable-line
   const [showShare, setShowShare] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
