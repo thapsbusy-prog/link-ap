@@ -464,6 +464,7 @@ function Onboarding({ firebaseUser, onComplete }) {
         lastNameLower: form.lastName.trim().toLowerCase(),
         lookingForDetails: form.lookingForDetails,
         bringToTable: form.bringToTable,
+        photoURL: firebaseUser.photoURL || "",
         createdAt: serverTimestamp(),
         termsAcceptedAt: serverTimestamp(),
       };
