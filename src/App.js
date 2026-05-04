@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { db, auth } from "./firebase";
 import {
   collection, addDoc, onSnapshot, query,
-  orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc
+  orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
+  getDocs, startAfter, limit,
 } from "firebase/firestore";
 import {
   onAuthStateChanged, signInWithPopup, signOut,
@@ -906,6 +907,8 @@ function ShareModal({ user, onClose }) {
 function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [tab, setTab] = useState("profile");
   const [allUsers, setAllUsers] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [matches, setMatches] = useState([]);
   const [sent, setSent] = useState([]);
   const [passed, setPassed] = useState(new Set());
@@ -913,12 +916,33 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [notification, setNotification] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
 
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "users"), snap => {
-      setAllUsers(snap.docs.map(d => d.data()).filter(u => u.uid !== firebaseUser.uid));
-    });
-    return unsub;
-  }, [firebaseUser.uid]);
+  const lastDocRef = useRef(null);
+  const hasMoreRef = useRef(true);
+  const loadingMoreRef = useRef(false);
+
+  const loadMoreUsers = async () => {
+    if (loadingMoreRef.current || !hasMoreRef.current) return;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    try {
+      const PAGE = 30;
+      const q = lastDocRef.current
+        ? query(collection(db, "users"), orderBy("createdAt"), startAfter(lastDocRef.current), limit(PAGE))
+        : query(collection(db, "users"), orderBy("createdAt"), limit(PAGE));
+      const snap = await getDocs(q);
+      const newUsers = snap.docs.map(d => d.data()).filter(u => u.uid !== firebaseUser.uid);
+      lastDocRef.current = snap.docs[snap.docs.length - 1] ?? null;
+      hasMoreRef.current = snap.docs.length === PAGE;
+      setHasMore(hasMoreRef.current);
+      setAllUsers(prev => [...(prev ?? []), ...newUsers]);
+    } catch (e) {
+      console.error("Failed to load users:", e);
+    }
+    loadingMoreRef.current = false;
+    setLoadingMore(false);
+  };
+
+  useEffect(() => { loadMoreUsers(); }, []); // eslint-disable-line
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "matches"), snap => {
@@ -998,7 +1022,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       </div>
 
       <div style={{ paddingBottom: 90 }}>
-        {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} />}
+        {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} />}
@@ -1051,8 +1075,13 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   );
 }
 
-function Discover({ users, onConnect, onPass, onViewProfile }) {
+function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loadingMore, hasMore }) {
   const [seenUids, setSeenUids] = useState(new Set());
+
+  useEffect(() => {
+    if (!users || loadingMore || !hasMore) return;
+    if (users.filter(u => !seenUids.has(u.uid)).length < 5) onLoadMore();
+  }, [users?.length, loadingMore, hasMore]); // eslint-disable-line
 
   if (users === null) return (
     <div style={{ padding: 24, textAlign: "center", paddingTop: 80, color: COLORS.textMuted }}>
@@ -1067,14 +1096,25 @@ function Discover({ users, onConnect, onPass, onViewProfile }) {
   const act = (action) => {
     if (action === "connect") onConnect(current);
     if (action === "pass") onPass(current);
-    setSeenUids(prev => new Set([...prev, current.uid]));
+    const next = new Set([...seenUids, current.uid]);
+    setSeenUids(next);
+    if (users.filter(u => !next.has(u.uid)).length < 5 && hasMore && !loadingMore) onLoadMore();
   };
 
   if (!current) return (
     <div style={{ padding: 24, textAlign: "center", paddingTop: 80, color: COLORS.textMuted }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-      <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>You've seen everyone!</h3>
-      <p>Check your matches and start conversations</p>
+      {loadingMore ? (
+        <>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
+          <p>Finding more people...</p>
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+          <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>You've seen everyone!</h3>
+          <p>Check your matches and start conversations</p>
+        </>
+      )}
     </div>
   );
 
