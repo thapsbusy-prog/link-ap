@@ -232,7 +232,10 @@ function AuthScreen() {
     }}>
       <div style={{ width: "100%", maxWidth: 400 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <img src={logoImg} alt="Link-Ap" style={{ width: 90, height: 90, objectFit: "contain", marginBottom: 12 }} />
+          <img src={logoImg} alt="Link-Ap" style={{ width: 90, height: 90, objectFit: "contain", marginBottom: 8 }} />
+          <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>
+            Link<span style={{ color: COLORS.accent }}>-Ap</span>
+          </div>
           <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>Connect with the right people</p>
         </div>
 
@@ -2084,8 +2087,8 @@ function SplashScreen({ onDone }) {
   const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setFading(true), 2000);
-    const t2 = setTimeout(() => onDone(), 2500);
+    const t1 = setTimeout(() => setFading(true), 3600);
+    const t2 = setTimeout(() => onDone(), 4100);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []); // eslint-disable-line
 
@@ -2098,13 +2101,13 @@ function SplashScreen({ onDone }) {
         }
         @keyframes splashPulse {
           0%   { filter: drop-shadow(0 0 0px rgba(245,166,35,0)); }
-          50%  { filter: drop-shadow(0 0 32px rgba(245,166,35,0.75)); }
+          50%  { filter: drop-shadow(0 0 28px rgba(245,166,35,0.55)); }
           100% { filter: drop-shadow(0 0 0px rgba(245,166,35,0)); }
         }
         .splash-logo {
           animation:
-            splashLogoIn 0.7s cubic-bezier(0.22,1,0.36,1) forwards,
-            splashPulse   0.9s ease-in-out 0.8s 3;
+            splashLogoIn 0.6s cubic-bezier(0.22,1,0.36,1) forwards,
+            splashPulse   0.85s ease-in-out 0.6s 4;
         }
       `}</style>
       <div style={{
@@ -2155,22 +2158,10 @@ export default function App() {
     return unsub;
   }, []);
 
-  const appContent = loading ? (
-    <div style={{ minHeight: "100vh", background: COLORS.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <img src={logoImg} alt="Link-Ap" style={{ width: 80, height: 80, objectFit: "contain", opacity: 0.7 }} />
-    </div>
-  ) : !firebaseUser ? (
-    <AuthScreen />
-  ) : !profile || profile.uid !== firebaseUser.uid ? (
-    <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />
-  ) : (
-    <MainApp user={profile} firebaseUser={firebaseUser} onProfileUpdate={setProfile} />
-  );
+  if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
 
-  return (
-    <>
-      {appContent}
-      {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
-    </>
-  );
+  if (loading) return <div style={{ minHeight: "100vh", background: COLORS.bg }} />;
+  if (!firebaseUser) return <AuthScreen />;
+  if (!profile || profile.uid !== firebaseUser.uid) return <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
+  return <MainApp user={profile} firebaseUser={firebaseUser} onProfileUpdate={setProfile} />;
 }
