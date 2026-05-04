@@ -202,6 +202,8 @@ function AuthScreen() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const handleGoogle = async () => {
     setLoading(true);
@@ -250,10 +252,12 @@ function AuthScreen() {
           </h2>
 
           <div style={{ marginBottom: 24 }}>
-            <button onClick={handleGoogle} disabled={loading} style={{
+            <button onClick={handleGoogle} disabled={loading || (mode === "signup" && !termsChecked)} style={{
               width: "100%", padding: "13px", borderRadius: 12, border: `1px solid ${COLORS.border}`,
-              background: "transparent", color: COLORS.text, cursor: "pointer",
+              background: "transparent", color: COLORS.text,
+              cursor: loading || (mode === "signup" && !termsChecked) ? "not-allowed" : "pointer",
               fontSize: 14, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              opacity: mode === "signup" && !termsChecked ? 0.45 : 1,
             }}>
               <GoogleIcon /> Continue with Google
             </button>
@@ -270,30 +274,86 @@ function AuthScreen() {
             <Input label="Password" value={password} onChange={setPassword} placeholder="••••••••" type="password" autoComplete="new-password" />
           </div>
 
+          {mode === "signup" && (
+            <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 18, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={termsChecked}
+                onChange={e => setTermsChecked(e.target.checked)}
+                style={{ marginTop: 3, accentColor: COLORS.accent, width: 16, height: 16, flexShrink: 0, cursor: "pointer" }}
+              />
+              <span style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6 }}>
+                I am 18 or older and I have read and agree to the{" "}
+                <span onClick={e => { e.preventDefault(); setShowTerms(true); }} style={{ color: COLORS.accent, cursor: "pointer", textDecoration: "underline" }}>Terms of Service</span>
+                {" "}and{" "}
+                <span onClick={e => { e.preventDefault(); setShowTerms(true); }} style={{ color: COLORS.accent, cursor: "pointer", textDecoration: "underline" }}>Privacy Policy</span>
+              </span>
+            </label>
+          )}
+
           {error && (
             <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: `${COLORS.red}18`, color: COLORS.red, fontSize: 13 }}>
               {error}
             </div>
           )}
 
-          <button onClick={handleEmail} disabled={loading || !email || !password} style={{
-            width: "100%", marginTop: 20, padding: "13px", borderRadius: 12, border: "none",
-            background: email && password ? COLORS.accent : COLORS.border,
-            color: email && password ? "#000" : COLORS.textMuted,
-            cursor: email && password ? "pointer" : "not-allowed",
-            fontSize: 14, fontWeight: 700,
-          }}>
-            {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
-          </button>
+          {(() => {
+            const canSubmit = email && password && (mode === "login" || termsChecked);
+            return (
+              <button onClick={handleEmail} disabled={loading || !canSubmit} style={{
+                width: "100%", marginTop: 20, padding: "13px", borderRadius: 12, border: "none",
+                background: canSubmit && !loading ? COLORS.accent : COLORS.border,
+                color: canSubmit && !loading ? "#000" : COLORS.textMuted,
+                cursor: canSubmit && !loading ? "pointer" : "not-allowed",
+                fontSize: 14, fontWeight: 700,
+              }}>
+                {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
+              </button>
+            );
+          })()}
 
           <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: COLORS.textMuted }}>
             {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-            <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setEmail(""); setPassword(""); }} style={{ color: COLORS.accent, cursor: "pointer" }}>
+            <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setEmail(""); setPassword(""); setTermsChecked(false); }} style={{ color: COLORS.accent, cursor: "pointer" }}>
               {mode === "login" ? "Sign up" : "Sign in"}
             </span>
           </p>
+
+          {mode === "login" && (
+            <p style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: COLORS.textMuted, lineHeight: 1.7, borderTop: `1px solid ${COLORS.border}`, paddingTop: 16 }}>
+              By signing in you are accepting our{" "}
+              <span onClick={() => setShowTerms(true)} style={{ color: COLORS.accent, cursor: "pointer" }}>Terms of Service</span>
+              {" "}and{" "}
+              <span onClick={() => setShowTerms(true)} style={{ color: COLORS.accent, cursor: "pointer" }}>Privacy Policy</span>
+            </p>
+          )}
         </div>
       </div>
+
+      {showTerms && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+          background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center",
+          justifyContent: "center", zIndex: 100, padding: 20, boxSizing: "border-box",
+        }}>
+          <div style={{
+            background: COLORS.card, border: `1px solid ${COLORS.border}`,
+            borderRadius: 20, width: "100%", maxWidth: 460,
+            maxHeight: "85dvh", display: "flex", flexDirection: "column",
+          }}>
+            <div style={{
+              padding: "16px 20px", borderBottom: `1px solid ${COLORS.border}`,
+              display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0,
+            }}>
+              <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16 }}>Terms of Service &amp; Privacy Policy</div>
+              <button onClick={() => setShowTerms(false)} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 24, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ overflowY: "auto", padding: "16px 20px" }}>
+              <TermsContent />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -366,7 +426,6 @@ function Onboarding({ firebaseUser, onComplete }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [form, setForm] = useState({
     title: "", firstName: "", lastName: "",
     pronouns: "", role: "", location: "",
@@ -417,31 +476,6 @@ function Onboarding({ firebaseUser, onComplete }) {
   };
 
   const steps = [
-    {
-      title: "Terms of Use",
-      content: (
-        <div>
-          <div style={{
-            height: 300, overflowY: "auto", border: `1px solid ${COLORS.border}`,
-            borderRadius: 12, padding: "14px 16px", background: COLORS.bg,
-          }}>
-            <TermsContent />
-          </div>
-          <label style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 16, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={e => setTermsAccepted(e.target.checked)}
-              style={{ marginTop: 3, accentColor: COLORS.accent, width: 16, height: 16, flexShrink: 0, cursor: "pointer" }}
-            />
-            <span style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>
-              I am 18 or older, I have read and understood the Terms of Use, and I agree to be bound by them including the Privacy and Data section applicable to my country.
-            </span>
-          </label>
-        </div>
-      ),
-      valid: termsAccepted,
-    },
     {
       title: "Who are you?",
       content: (
