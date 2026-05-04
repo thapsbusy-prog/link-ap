@@ -728,7 +728,7 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function drawInvitePoster(canvas, user) {
+function drawInvitePoster(canvas) {
   const W = 540, H = 960;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
@@ -798,29 +798,24 @@ function drawInvitePoster(canvas, user) {
 
   ctx.fillStyle = "#2A2A3A"; ctx.fillRect(W * 0.15, 566, W * 0.7, 1);
 
-  ctx.fillStyle = "rgba(245,166,35,0.07)";
-  roundRect(ctx, W * 0.07, 584, W * 0.86, 110, 14); ctx.fill();
-  ctx.strokeStyle = "rgba(245,166,35,0.22)"; ctx.lineWidth = 1;
-  roundRect(ctx, W * 0.07, 584, W * 0.86, 110, 14); ctx.stroke();
-  ctx.font = "11px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.textAlign = "center"; ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("INVITED BY", W / 2, 614);
-  ctx.font = "bold 24px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#F5A623";
-  ctx.fillText(user.name || "A friend", W / 2, 648, W * 0.7);
-  if (user.role) {
-    ctx.font = "13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-    ctx.fillStyle = "#8A8A9A"; ctx.fillText(user.role, W / 2, 670, W * 0.7);
-  }
+  ctx.font = "italic 17px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.textAlign = "center"; ctx.fillStyle = "#F0EEE8";
+  ctx.fillText("Where the right people find each other.", W / 2, 618);
+
+  ctx.font = "14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#8A8A9A";
+  ctx.fillText("Co-founders · Investors · Mentors · Clients", W / 2, 650);
+
+  ctx.fillStyle = "#2A2A3A"; ctx.fillRect(W * 0.15, 678, W * 0.7, 1);
 
   ctx.font = "13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#8A8A9A"; ctx.fillText("Join now at", W / 2, 740);
-  ctx.font = "bold 32px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#F5A623"; ctx.fillText("link-ap.online", W / 2, 784, W * 0.8);
+  ctx.fillStyle = "#8A8A9A"; ctx.fillText("Join now at", W / 2, 724);
+  ctx.font = "bold 34px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#F5A623"; ctx.fillText("link-ap.online", W / 2, 772, W * 0.8);
 
   for (let i = 0; i < 5; i++) {
     ctx.fillStyle = i === 2 ? "#F5A623" : "rgba(245,166,35,0.3)";
-    ctx.beginPath(); ctx.arc(W / 2 + (i - 2) * 16, 808, i === 2 ? 4 : 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W / 2 + (i - 2) * 16, 800, i === 2 ? 4 : 3, 0, Math.PI * 2); ctx.fill();
   }
 
   ctx.fillStyle = "#F5A623"; ctx.fillRect(0, 832, W, H - 832);
@@ -835,7 +830,7 @@ function ShareModal({ user, onClose }) {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    drawInvitePoster(canvasRef.current, user);
+    drawInvitePoster(canvasRef.current);
     canvasRef.current.toBlob(blob => setPosterBlob(blob));
   }, []); // eslint-disable-line
 
