@@ -10,7 +10,6 @@ import {
   GoogleAuthProvider, createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from "firebase/auth";
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const COLORS = {
   bg: "#0A0A0F", card: "#13131A", border: "#2A2A3A",
@@ -1779,7 +1778,6 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
   const [showShare, setShowShare] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
-  const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(user.photoURL || null);
   const [form, setForm] = useState({
     name: user.name || "", role: user.role || "", location: user.location || "",
@@ -1800,25 +1798,31 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
     ...f, openTo: f.openTo.includes(v) ? f.openTo.filter(x => x !== v) : [...f.openTo, v],
   }));
 
-  const handlePhotoChange = (e) => {
+  const handlePhotoSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setPhotoFile(file);
-    if (photoPreview) URL.revokeObjectURL(photoPreview);
-    setPhotoPreview(URL.createObjectURL(file));
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const MAX = 200;
+      const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      setPhotoPreview(canvas.toDataURL("image/jpeg", 0.7));
+    };
+    img.src = objectUrl;
   };
 
   const saveProfile = async () => {
     setSaving(true);
     setSaveError("");
     try {
-      let photoURL = user.photoURL || "";
-      if (photoFile) {
-        const storage = getStorage();
-        const photoRef = sRef(storage, `avatars/${firebaseUser.uid}`);
-        await uploadBytes(photoRef, photoFile);
-        photoURL = await getDownloadURL(photoRef);
-      }
+      const photoURL = photoPreview || "";
       const updated = {
         ...user,
         name: form.name,
@@ -1841,7 +1845,6 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
       await setDoc(doc(db, "users", firebaseUser.uid), updated);
       onProfileUpdate(updated);
       setEditing(false);
-      setPhotoFile(null);
     } catch (e) {
       setSaveError("Failed to save. Please try again.");
     }
@@ -1850,7 +1853,6 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
 
   const cancelEdit = () => {
     setEditing(false);
-    setPhotoFile(null);
     setPhotoPreview(user.photoURL || null);
     setForm({
       name: user.name || "", role: user.role || "", location: user.location || "",
@@ -1883,7 +1885,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
               cursor: "pointer", fontSize: 13,
             }}>
               📷
-              <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: "none" }} />
+              <input type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: "none" }} />
             </label>
           </div>
           <span style={{ fontSize: 12, color: COLORS.textMuted }}>Tap camera to change photo</span>
