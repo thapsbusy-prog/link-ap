@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── User profiles ───────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Any signed-in user can read profiles (required for paginated Discover)
+      allow read: if request.auth != null;
+      // Only the owner can write their own profile document
+      allow write: if request.auth != null && request.auth.uid == uid;
+
+      // ── Matches ─────────────────────────────────────────────────────────
+      match /matches/{matchId} {
+        // Only the owner can read their own match list
+        allow read: if request.auth != null && request.auth.uid == uid;
+        // Owner can write their own matches AND the other user can write a doc
+        // keyed by their own UID when a mutual match is created
+        // e.g. user A writes to users/{B}/matches/{A}
+        allow write: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == matchId);
+      }
+
+      // ── Sent requests ───────────────────────────────────────────────────
+      match /sent/{sentToUid} {
+        // Owner can list their outgoing requests
+        // Recipient can read a single doc to check if a request exists (mutual match check)
+        allow read: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == sentToUid);
+        // Only the sender can create or update a request
+        allow create, update: if request.auth != null && request.auth.uid == uid;
+        // Sender OR recipient can delete
+        // — sender withdraws their own request
+        // — recipient deletes it when accepting a mutual match
+        allow delete: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == sentToUid);
+      }
+
+      // ── Passed profiles ─────────────────────────────────────────────────
+      // Fully private — only the owner can read or write
+      match /passed/{passedUid} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+    // ── Chat messages ────────────────────────────────────────────────────────
+    // chatId is always "{uid1}_{uid2}" with UIDs sorted alphabetically
+    // Only the two participants can read or write messages
+    match /chats/{chatId}/messages/{msgId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid in chatId.split('_');
+    }
+
+  }
+}
