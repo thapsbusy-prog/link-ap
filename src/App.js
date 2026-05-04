@@ -19,6 +19,28 @@ const COLORS = {
 };
 
 const USER_COLORS = ["#A78BFA", "#4ADE80", "#F5A623", "#60A5FA", "#F87171", "#34D399"];
+
+function playBeep() {
+  try {
+    if (localStorage.getItem("linkap_sound") !== "true") return;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.value = 0.3;
+    osc.start();
+    osc.stop(ctx.currentTime + 0.12);
+  } catch {}
+}
+
+function triggerVibrate() {
+  try {
+    if (localStorage.getItem("linkap_vibrate") !== "true") return;
+    navigator.vibrate([100]);
+  } catch {}
+}
 const LOOKING_FOR_OPTIONS = ["Investor", "Co-founder", "Mentor", "Collaboration", "Freelance Work", "Startup to join", "A Job", "Clients"];
 const TITLE_OPTIONS = ["Mr", "Mrs", "Ms", "Miss", "Mx", "Dr", "Prof", "Rev", "Sir", "Dame", "Adv"];
 const PRONOUN_OPTIONS = ["He/Him", "She/Her", "They/Them", "He/They", "She/They", "Ze/Zir", "Xe/Xem", "Any pronouns", "Prefer not to say"];
@@ -874,19 +896,27 @@ function ShareModal({ user, onClose }) {
     canvasRef.current.toBlob(blob => setPosterBlob(blob));
   }, []); // eslint-disable-line
 
-  const shareText = `⚡ *Link-Ap* — Connect with the right people\n\n${user.name} thinks you should join 🔥\n\nHere's what it is:\n✦ Discover co-founders, investors & mentors\n✦ Connect with people building real things\n✦ Chat once you both connect\n✦ Show what you bring to the table\n\nJoin now 👇\n🌐 link-ap.online`;
+  const posterCaption = `Join me on Link-Ap 🔗`;
+  const linkMessage = `Hey! Join me on Link-Ap — a networking app that connects you with the right people 🚀 https://link-ap.online`;
 
-  const handleWhatsAppClick = async (e) => {
-    if (posterBlob && navigator.share && navigator.canShare) {
-      const file = new File([posterBlob], "link-ap-invite.png", { type: "image/png" });
-      if (navigator.canShare({ files: [file] })) {
-        e.preventDefault();
-        try { await navigator.share({ files: [file], text: shareText }); }
-        catch (err) {
-          if (err.name !== "AbortError") window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
-        }
-      }
+  const handleSharePoster = async () => {
+    if (!posterBlob) return;
+    const file = new File([posterBlob], "link-ap-invite.png", { type: "image/png" });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], text: posterCaption }); } catch (err) { /* user cancelled */ }
+    } else {
+      const a = document.createElement("a");
+      a.download = "link-ap-invite.png";
+      a.href = canvasRef.current.toDataURL("image/png");
+      a.click();
     }
+  };
+
+  const handleShareLink = async () => {
+    if (navigator.share) {
+      try { await navigator.share({ text: linkMessage }); return; } catch (err) { if (err.name === "AbortError") return; }
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(linkMessage)}`, "_blank");
   };
 
   const handleSave = () => {
@@ -925,18 +955,16 @@ function ShareModal({ user, onClose }) {
             border: `1px solid ${COLORS.border}`, background: "transparent",
             color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
           }}>⬇ Save</button>
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
-            target="_blank"
-            rel="noreferrer"
-            onClick={handleWhatsAppClick}
-            style={{
-              flex: 2, padding: "12px 8px", borderRadius: 12, border: "none",
-              background: "#25D366", color: "#fff", cursor: "pointer",
-              fontSize: 13, fontWeight: 700, textDecoration: "none",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            }}
-          >📲 Share to WhatsApp</a>
+          <button onClick={handleSharePoster} style={{
+            flex: 1, padding: "12px 8px", borderRadius: 12, border: "none",
+            background: "#25D366", color: "#fff", cursor: "pointer",
+            fontSize: 13, fontWeight: 700,
+          }}>🖼 Share Poster</button>
+          <button onClick={handleShareLink} style={{
+            flex: 1, padding: "12px 8px", borderRadius: 12, border: "none",
+            background: COLORS.accent, color: "#000", cursor: "pointer",
+            fontSize: 13, fontWeight: 700,
+          }}>🔗 Share Link</button>
         </div>
       </div>
     </div>
@@ -961,6 +989,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const lastDocRef = useRef(null);
   const hasMoreRef = useRef(true);
   const loadingMoreRef = useRef(false);
+  const tabRef = useRef(tab);
+  const activeChatRef = useRef(activeChat);
 
   const loadMoreUsers = async () => {
     if (loadingMoreRef.current || !hasMoreRef.current) return;
@@ -992,6 +1022,31 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     });
     return unsub;
   }, [firebaseUser.uid]);
+
+  useEffect(() => { tabRef.current = tab; }, [tab]);
+  useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
+
+  useEffect(() => {
+    if (!matches.length) return;
+    const unsubs = matches.map(match => {
+      const chatId = [firebaseUser.uid, match.uid].sort().join("_");
+      const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt"));
+      let initialized = false;
+      return onSnapshot(q, snap => {
+        if (!initialized) { initialized = true; return; }
+        snap.docChanges().forEach(change => {
+          if (change.type !== "added") return;
+          if (change.doc.data().from === firebaseUser.uid) return;
+          const isViewingThisChat = tabRef.current === "messages" && activeChatRef.current === match.uid;
+          if (!isViewingThisChat) {
+            playBeep();
+            triggerVibrate();
+          }
+        });
+      });
+    });
+    return () => unsubs.forEach(u => u());
+  }, [matches, firebaseUser.uid]); // eslint-disable-line
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "sent"), snap => {
@@ -1025,7 +1080,10 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       ]);
       showNotif(`Connected with ${targetUser.name}! 🎉`);
     } else {
-      await setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), targetUser);
+      await Promise.all([
+        setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), targetUser),
+        setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), user),
+      ]);
       showNotif(`Request sent to ${targetUser.name}!`);
     }
   };
@@ -1074,8 +1132,34 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   const unmatched = allUsers === null ? null : allUsers.filter(u =>
-    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid)
+    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid) && !u.deactivated
   );
+
+  const intentFiltered = unmatched === null ? null : (() => {
+    const myIntents = user?.lookingFor || [];
+    if (myIntents.length === 0) return unmatched;
+
+    const complementMap = {
+      "Investor":        ["Co-founder", "Startup to join", "Collaboration"],
+      "Co-founder":      ["Co-founder", "Investor", "Startup to join"],
+      "Mentor":          ["Mentor", "Collaboration"],
+      "Collaboration":   ["Collaboration", "Mentor", "Freelance Work", "Clients"],
+      "Freelance Work":  ["Clients", "Collaboration"],
+      "Startup to join": ["Investor", "Co-founder"],
+      "A Job":           ["Clients", "Collaboration"],
+      "Clients":         ["A Job", "Freelance Work", "Collaboration"],
+    };
+
+    const relevantIntents = new Set(
+      myIntents.flatMap(intent => complementMap[intent] || [])
+    );
+
+    const matched = unmatched.filter(u =>
+      (u.lookingFor || []).some(i => relevantIntents.has(i))
+    );
+
+    return matched.length > 0 ? matched : unmatched;
+  })();
 
   return (
     <div style={{ minHeight: "100vh", background: COLORS.bg, maxWidth: 430, margin: "0 auto", position: "relative" }}>
@@ -1105,7 +1189,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       </div>
 
       <div style={{ paddingBottom: 90 }}>
-        {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} />}
+        {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} received={received} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onReplyRequest={handleReplyRequest} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
@@ -1167,8 +1251,9 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   );
 }
 
-function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loadingMore, hasMore }) {
+function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loadingMore, hasMore, user }) {
   const [seenUids, setSeenUids] = useState(new Set());
+  const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
     if (!users || loadingMore || !hasMore) return;
@@ -1202,9 +1287,11 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
         </>
       ) : (
         <>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-          <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>You've seen everyone!</h3>
-          <p>Check your connections and start conversations</p>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🐦</div>
+          <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>You're one of the first.</h3>
+          <p style={{ fontSize: 14, marginBottom: 6 }}>You're among the first 100 people on Link-Ap — which means you get access to everything, free forever.</p>
+          <p style={{ fontSize: 14, marginBottom: 20 }}>We'll notify you the moment someone worth connecting with joins. Sit tight.</p>
+          <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 20, border: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.textMuted, backgroundColor: COLORS.card }}>🎟 Founding Member</div>
         </>
       )}
     </div>
@@ -1216,6 +1303,20 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
         <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Discover People</h2>
         <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{remaining.length} people to explore</p>
       </div>
+
+      <button
+        onClick={() => setShowShare(true)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 10,
+          background: COLORS.card, border: `1px solid ${COLORS.border}`,
+          borderRadius: 12, padding: "10px 14px", cursor: "pointer",
+          marginBottom: 16, color: COLORS.textMuted, fontSize: 13, fontWeight: 500,
+        }}
+      >
+        <span style={{ fontSize: 16 }}>📲</span>
+        <span style={{ color: COLORS.text }}>Invite someone to Link-Ap</span>
+      </button>
+      {showShare && user && <ShareModal user={user} onClose={() => setShowShare(false)} />}
 
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>
         <div style={{ height: 4, background: current.color }} />
@@ -1785,6 +1886,33 @@ function Settings({ user, firebaseUser, onEditProfile }) {
   const [accountError, setAccountError] = useState("");
   const [pwResetMsg, setPwResetMsg] = useState("");
   const [pwResetLoading, setPwResetLoading] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const v = localStorage.getItem("linkap_sound");
+    if (v === null) { localStorage.setItem("linkap_sound", "true"); return true; }
+    return v === "true";
+  });
+  const [vibrateEnabled, setVibrateEnabled] = useState(() => {
+    const v = localStorage.getItem("linkap_vibrate");
+    if (v === null) { localStorage.setItem("linkap_vibrate", "true"); return true; }
+    return v === "true";
+  });
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem("linkap_sound", String(next));
+  };
+  const toggleVibrate = () => {
+    const next = !vibrateEnabled;
+    setVibrateEnabled(next);
+    localStorage.setItem("linkap_vibrate", String(next));
+  };
+
+  const toggle = (on) => (
+    <div style={{ width: 44, height: 26, borderRadius: 13, background: on ? COLORS.accent : COLORS.border, position: "relative", cursor: "pointer" }}>
+      <div style={{ position: "absolute", top: 4, left: on ? 22 : 4, width: 18, height: 18, borderRadius: "50%", background: COLORS.text, transition: "left 0.15s" }} />
+    </div>
+  );
 
   const isEmailUser = firebaseUser.providerData.some(p => p.providerId === "password");
 
@@ -1866,6 +1994,21 @@ function Settings({ user, firebaseUser, onEditProfile }) {
   return (
     <div style={{ padding: "24px 16px" }}>
       <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text, marginBottom: 24 }}>Settings</div>
+
+      {/* Notifications */}
+      <div style={{ marginBottom: 24 }}>
+        {sectionLabel("Notifications")}
+        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+          <div onClick={toggleSound} style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${COLORS.border}`, cursor: "pointer" }}>
+            <span style={{ fontSize: 14, color: COLORS.text }}>Message Sound</span>
+            {toggle(soundEnabled)}
+          </div>
+          <div onClick={toggleVibrate} style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+            <span style={{ fontSize: 14, color: COLORS.text }}>Vibrate</span>
+            {toggle(vibrateEnabled)}
+          </div>
+        </div>
+      </div>
 
       {/* Account */}
       <div style={{ marginBottom: 24 }}>
