@@ -714,6 +714,200 @@ function PublicProfile({ profileUser, onClose }) {
   );
 }
 
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function drawInvitePoster(canvas, user) {
+  const W = 540, H = 960;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#0A0A0F";
+  ctx.fillRect(0, 0, W, H);
+
+  const glow = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, 360);
+  glow.addColorStop(0, "rgba(245,166,35,0.22)");
+  glow.addColorStop(1, "rgba(245,166,35,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, 360);
+
+  const bottomGrad = ctx.createLinearGradient(0, H - 200, 0, H);
+  bottomGrad.addColorStop(0, "transparent");
+  bottomGrad.addColorStop(1, "rgba(245,166,35,0.06)");
+  ctx.fillStyle = bottomGrad;
+  ctx.fillRect(0, H - 200, W, 200);
+
+  ctx.fillStyle = "#F5A623";
+  ctx.fillRect(0, 0, W, 4);
+
+  ctx.fillStyle = "rgba(245,166,35,0.12)";
+  ctx.beginPath(); ctx.arc(W / 2, 85, 38, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = "rgba(245,166,35,0.35)"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(W / 2, 85, 38, 0, Math.PI * 2); ctx.stroke();
+  ctx.font = "32px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "#F5A623"; ctx.fillText("⚡", W / 2, 86);
+
+  ctx.textBaseline = "alphabetic";
+  ctx.font = "bold 52px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  const lw = ctx.measureText("Link").width;
+  const aw = ctx.measureText("-Ap").width;
+  const tx = (W - lw - aw) / 2;
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#F0EEE8"; ctx.fillText("Link", tx, 174);
+  ctx.fillStyle = "#F5A623"; ctx.fillText("-Ap", tx + lw, 174);
+
+  ctx.font = "16px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.textAlign = "center"; ctx.fillStyle = "#8A8A9A";
+  ctx.fillText("Connect with the right people", W / 2, 204);
+
+  ctx.fillStyle = "#2A2A3A"; ctx.fillRect(W * 0.15, 226, W * 0.7, 1);
+
+  ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#F5A623";
+  ctx.fillText("WHY YOU SHOULD JOIN", W / 2, 254);
+
+  const bullets = [
+    ["⚡", "Discover co-founders, investors & mentors"],
+    ["🤝", "Match with people building real things"],
+    ["💬", "Chat once you both connect"],
+    ["🎯", "Find exactly who you're looking for"],
+  ];
+  bullets.forEach(([icon, text], i) => {
+    const cy = 274 + i * 70, ch = 54, cx = W * 0.07, cw = W * 0.86;
+    ctx.fillStyle = "#13131A";
+    roundRect(ctx, cx, cy, cw, ch, 12); ctx.fill();
+    ctx.fillStyle = "rgba(245,166,35,0.5)";
+    ctx.fillRect(cx, cy + 10, 3, ch - 20);
+    ctx.font = "20px Arial"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#F0EEE8"; ctx.fillText(icon, cx + 16, cy + ch / 2);
+    ctx.font = "14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+    ctx.fillText(text, cx + 52, cy + ch / 2);
+    ctx.textBaseline = "alphabetic";
+  });
+
+  ctx.fillStyle = "#2A2A3A"; ctx.fillRect(W * 0.15, 566, W * 0.7, 1);
+
+  ctx.fillStyle = "rgba(245,166,35,0.07)";
+  roundRect(ctx, W * 0.07, 584, W * 0.86, 110, 14); ctx.fill();
+  ctx.strokeStyle = "rgba(245,166,35,0.22)"; ctx.lineWidth = 1;
+  roundRect(ctx, W * 0.07, 584, W * 0.86, 110, 14); ctx.stroke();
+  ctx.font = "11px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.textAlign = "center"; ctx.fillStyle = "#8A8A9A";
+  ctx.fillText("INVITED BY", W / 2, 614);
+  ctx.font = "bold 24px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#F5A623";
+  ctx.fillText(user.name || "A friend", W / 2, 648, W * 0.7);
+  if (user.role) {
+    ctx.font = "13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+    ctx.fillStyle = "#8A8A9A"; ctx.fillText(user.role, W / 2, 670, W * 0.7);
+  }
+
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#8A8A9A"; ctx.fillText("Join now at", W / 2, 740);
+  ctx.font = "bold 32px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#F5A623"; ctx.fillText("link-ap.online", W / 2, 784, W * 0.8);
+
+  for (let i = 0; i < 5; i++) {
+    ctx.fillStyle = i === 2 ? "#F5A623" : "rgba(245,166,35,0.3)";
+    ctx.beginPath(); ctx.arc(W / 2 + (i - 2) * 16, 808, i === 2 ? 4 : 3, 0, Math.PI * 2); ctx.fill();
+  }
+
+  ctx.fillStyle = "#F5A623"; ctx.fillRect(0, 832, W, H - 832);
+  ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "#000000"; ctx.fillText("Join Link-Ap  →", W / 2, 896);
+}
+
+function ShareModal({ user, onClose }) {
+  const canvasRef = useRef(null);
+  const [posterBlob, setPosterBlob] = useState(null);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    drawInvitePoster(canvasRef.current, user);
+    canvasRef.current.toBlob(blob => setPosterBlob(blob));
+  }, []); // eslint-disable-line
+
+  const shareText = `⚡ *Link-Ap* — Connect with the right people\n\n${user.name} thinks you should join 🔥\n\nHere's what it is:\n✦ Discover co-founders, investors & mentors\n✦ Match with people building real things\n✦ Chat once you both connect\n✦ Show what you bring to the table\n\nJoin now 👇\n🌐 link-ap.online`;
+
+  const handleWhatsAppClick = async (e) => {
+    if (posterBlob && navigator.share && navigator.canShare) {
+      const file = new File([posterBlob], "link-ap-invite.png", { type: "image/png" });
+      if (navigator.canShare({ files: [file] })) {
+        e.preventDefault();
+        try { await navigator.share({ files: [file], text: shareText }); }
+        catch (err) {
+          if (err.name !== "AbortError") window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
+        }
+      }
+    }
+  };
+
+  const handleSave = () => {
+    if (!canvasRef.current) return;
+    const a = document.createElement("a");
+    a.download = "link-ap-invite.png";
+    a.href = canvasRef.current.toDataURL("image/png");
+    a.click();
+  };
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: 50,
+      background: "rgba(0,0,0,0.88)", display: "flex",
+      alignItems: "center", justifyContent: "center", padding: 20,
+    }}>
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 24, padding: 24, width: "100%", maxWidth: 380,
+        display: "flex", flexDirection: "column", gap: 18,
+        maxHeight: "92dvh", overflowY: "auto",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Invite someone</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 24, lineHeight: 1 }}>×</button>
+        </div>
+        <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0, lineHeight: 1.6 }}>
+          Share this with someone you think belongs on Link-Ap. On mobile, tap Share to send the image directly via WhatsApp.
+        </p>
+        <div style={{ display: "flex", justifyContent: "center", background: COLORS.bg, borderRadius: 14, padding: 10 }}>
+          <canvas ref={canvasRef} style={{ width: 240, height: 427, borderRadius: 8, display: "block" }} />
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={handleSave} style={{
+            flex: 1, padding: "12px 8px", borderRadius: 12,
+            border: `1px solid ${COLORS.border}`, background: "transparent",
+            color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
+          }}>⬇ Save</button>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={handleWhatsAppClick}
+            style={{
+              flex: 2, padding: "12px 8px", borderRadius: 12, border: "none",
+              background: "#25D366", color: "#fff", cursor: "pointer",
+              fontSize: 13, fontWeight: 700, textDecoration: "none",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >📲 Share to WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [tab, setTab] = useState("profile");
   const [allUsers, setAllUsers] = useState(null);
@@ -1157,6 +1351,7 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
 
 function Profile({ user, firebaseUser, onProfileUpdate }) {
   const [editing, setEditing] = useState(false);
+  const [showShare, setShowShare] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
@@ -1369,10 +1564,16 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
           <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>My Profile</h2>
           <p style={{ color: COLORS.textMuted, fontSize: 13 }}>How others see you</p>
         </div>
-        <button onClick={() => setEditing(true)} style={{
-          padding: "8px 16px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
-          background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
-        }}>Edit</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setShowShare(true)} style={{
+            padding: "8px 16px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
+            background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontWeight: 600,
+          }}>Share</button>
+          <button onClick={() => setEditing(true)} style={{
+            padding: "8px 16px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
+            background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
+          }}>Edit</button>
+        </div>
       </div>
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>
         <div style={{ height: 4, background: user.color }} />
@@ -1454,6 +1655,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
           )}
         </div>
       </div>
+      {showShare && <ShareModal user={user} onClose={() => setShowShare(false)} />}
     </div>
   );
 }
