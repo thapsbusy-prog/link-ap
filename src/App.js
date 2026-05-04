@@ -812,7 +812,7 @@ function drawInvitePoster(canvas) {
 
   const bullets = [
     ["⚡", "Discover co-founders, investors & mentors"],
-    ["🤝", "Match with people building real things"],
+    ["🤝", "Connect with people building real things"],
     ["💬", "Chat once you both connect"],
     ["🎯", "Find exactly who you're looking for"],
   ];
@@ -867,7 +867,7 @@ function ShareModal({ user, onClose }) {
     canvasRef.current.toBlob(blob => setPosterBlob(blob));
   }, []); // eslint-disable-line
 
-  const shareText = `⚡ *Link-Ap* — Connect with the right people\n\n${user.name} thinks you should join 🔥\n\nHere's what it is:\n✦ Discover co-founders, investors & mentors\n✦ Match with people building real things\n✦ Chat once you both connect\n✦ Show what you bring to the table\n\nJoin now 👇\n🌐 link-ap.online`;
+  const shareText = `⚡ *Link-Ap* — Connect with the right people\n\n${user.name} thinks you should join 🔥\n\nHere's what it is:\n✦ Discover co-founders, investors & mentors\n✦ Connect with people building real things\n✦ Chat once you both connect\n✦ Show what you bring to the table\n\nJoin now 👇\n🌐 link-ap.online`;
 
   const handleWhatsAppClick = async (e) => {
     if (posterBlob && navigator.share && navigator.canShare) {
@@ -1015,7 +1015,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         deleteDoc(doc(db, "users", targetUser.uid, "sent", firebaseUser.uid)),
         deleteDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid)),
       ]);
-      showNotif(`It's a match with ${targetUser.name}! 🎉`);
+      showNotif(`Connected with ${targetUser.name}! 🎉`);
     } else {
       await setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), targetUser);
       showNotif(`Request sent to ${targetUser.name}!`);
@@ -1128,7 +1128,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       }}>
         {[
           { id: "discover", icon: "⚡", label: "Discover" },
-          { id: "matches", icon: "🤝", label: "Matches", badge: matches.length + received.length },
+          { id: "matches", icon: "🤝", label: "Connections", badge: matches.length + received.length },
           { id: "messages", icon: "💬", label: "Messages" },
           { id: "profile", icon: "👤", label: "Profile" },
         ].map(item => (
@@ -1192,7 +1192,7 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
         <>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
           <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>You've seen everyone!</h3>
-          <p>Check your matches and start conversations</p>
+          <p>Check your connections and start conversations</p>
         </>
       )}
     </div>
@@ -1456,7 +1456,7 @@ function Matches({ matches, sent, received, onChat, onViewProfile, onAcceptReque
   return (
     <div style={{ padding: "16px 20px" }}>
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Your Matches</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Your Connections</h2>
         <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{matches.length} mutual connections</p>
       </div>
 
@@ -1666,7 +1666,7 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
       {matches.length === 0 && (
         <div style={{ textAlign: "center", paddingTop: 60, color: COLORS.textMuted }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
-          <p>Match with people to start chatting</p>
+          <p>Connect with people to start chatting</p>
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
