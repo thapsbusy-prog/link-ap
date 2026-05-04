@@ -232,10 +232,8 @@ function AuthScreen() {
     }}>
       <div style={{ width: "100%", maxWidth: 400 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ fontSize: 36, fontWeight: 800, color: COLORS.text }}>
-            Link<span style={{ color: COLORS.accent }}>-Ap</span>
-          </div>
-          <p style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 6 }}>Connect with the right people</p>
+          <img src={logoImg} alt="Link-Ap" style={{ width: 90, height: 90, objectFit: "contain", marginBottom: 12 }} />
+          <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>Connect with the right people</p>
         </div>
 
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 32 }}>
