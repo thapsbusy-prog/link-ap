@@ -3,7 +3,7 @@ import { db, auth } from "./firebase";
 import {
   collection, addDoc, onSnapshot, query,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
-  getDocs, startAfter, limit,
+  getDocs, startAfter, limit, where,
 } from "firebase/firestore";
 import {
   onAuthStateChanged, signInWithPopup, signOut,
@@ -401,6 +401,7 @@ function Onboarding({ firebaseUser, onComplete }) {
         linkedin: form.linkedin ? normalizeUrl(form.linkedin) : "",
         avatar: fullName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
         color,
+        nameLower: fullName.toLowerCase(),
         lookingForDetails: form.lookingForDetails,
         bringToTable: form.bringToTable,
         createdAt: serverTimestamp(),
@@ -912,6 +913,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [matches, setMatches] = useState([]);
   const [sent, setSent] = useState([]);
   const [passed, setPassed] = useState(new Set());
+  const [received, setReceived] = useState([]);
+  const [showSearch, setShowSearch] = useState(false);
   const [activeChat, setActiveChat] = useState(null);
   const [notification, setNotification] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
@@ -965,6 +968,13 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     return unsub;
   }, [firebaseUser.uid]);
 
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "received"), snap => {
+      setReceived(snap.docs.map(d => d.data()));
+    });
+    return unsub;
+  }, [firebaseUser.uid]);
+
   const handleConnect = async (targetUser) => {
     const theirRequest = await getDoc(doc(db, "users", targetUser.uid, "sent", firebaseUser.uid));
     if (theirRequest.exists()) {
@@ -990,6 +1000,40 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const handleSendRequestWithNote = async (targetUser, note) => {
+    await Promise.all([
+      setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), { ...targetUser, note, sentAt: serverTimestamp() }),
+      setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), { ...user, note, sentAt: serverTimestamp() }),
+    ]);
+  };
+
+  const handleAcceptRequest = async (senderUser) => {
+    await Promise.all([
+      setDoc(doc(db, "users", firebaseUser.uid, "matches", senderUser.uid), senderUser),
+      setDoc(doc(db, "users", senderUser.uid, "matches", firebaseUser.uid), user),
+      deleteDoc(doc(db, "users", senderUser.uid, "sent", firebaseUser.uid)),
+      deleteDoc(doc(db, "users", firebaseUser.uid, "received", senderUser.uid)),
+      deleteDoc(doc(db, "users", firebaseUser.uid, "sent", senderUser.uid)),
+      deleteDoc(doc(db, "users", senderUser.uid, "received", firebaseUser.uid)),
+    ]);
+    showNotif(`Connected with ${senderUser.name}! 🎉`);
+  };
+
+  const handleDeclineRequest = async (senderUser) => {
+    await Promise.all([
+      deleteDoc(doc(db, "users", firebaseUser.uid, "received", senderUser.uid)),
+      deleteDoc(doc(db, "users", senderUser.uid, "sent", firebaseUser.uid)),
+    ]);
+  };
+
+  const handleReplyRequest = async (senderUser, replyText) => {
+    const update = { reply: replyText, repliedAt: serverTimestamp() };
+    await Promise.all([
+      setDoc(doc(db, "users", firebaseUser.uid, "received", senderUser.uid), update, { merge: true }),
+      setDoc(doc(db, "users", senderUser.uid, "sent", firebaseUser.uid), update, { merge: true }),
+    ]);
+  };
+
   const unmatched = allUsers === null ? null : allUsers.filter(u =>
     !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid)
   );
@@ -1012,7 +1056,11 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         <div style={{ fontSize: 24, fontWeight: 800, color: COLORS.text }}>
           Link<span style={{ color: COLORS.accent }}>-Ap</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button onClick={() => setShowSearch(true)} style={{
+            background: "none", border: `1px solid ${COLORS.border}`, color: COLORS.text,
+            borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 13,
+          }}>🔍 Search</button>
           <Avatar initials={user.avatar} color={user.color} size={36} online photoURL={user.photoURL} />
           <button onClick={async () => { await signOut(auth); }} style={{
             background: "none", border: `1px solid ${COLORS.border}`, color: COLORS.textMuted,
@@ -1023,7 +1071,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && <Discover users={unmatched} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} />}
-        {tab === "matches" && <Matches matches={matches} sent={sent} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} />}
+        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onReplyRequest={handleReplyRequest} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} />}
       </div>
@@ -1039,6 +1087,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       )}
 
       {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => setViewingProfile(null)} />}
+      {showSearch && <SearchModal currentUser={user} sent={sent} matches={matches} onClose={() => setShowSearch(false)} onSendRequest={handleSendRequestWithNote} />}
 
       <div style={{
         position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
@@ -1048,7 +1097,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       }}>
         {[
           { id: "discover", icon: "⚡", label: "Discover" },
-          { id: "matches", icon: "🤝", label: "Matches", badge: matches.length },
+          { id: "matches", icon: "🤝", label: "Matches", badge: matches.length + received.length },
           { id: "messages", icon: "💬", label: "Messages" },
           { id: "profile", icon: "👤", label: "Profile" },
         ].map(item => (
@@ -1184,7 +1233,185 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
   );
 }
 
-function Matches({ matches, sent, onChat, onViewProfile }) {
+function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
+  const [term, setTerm] = useState("");
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [target, setTarget] = useState(null);
+  const [note, setNote] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sentOk, setSentOk] = useState(false);
+
+  useEffect(() => {
+    if (term.trim().length < 2) { setResults([]); return; }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const q = query(
+          collection(db, "users"),
+          where("nameLower", ">=", term.trim().toLowerCase()),
+          where("nameLower", "<=", term.trim().toLowerCase() + ""),
+          limit(10)
+        );
+        const snap = await getDocs(q);
+        setResults(snap.docs.map(d => d.data()).filter(u => u.uid !== currentUser.uid));
+      } catch (e) { setResults([]); }
+      setSearching(false);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [term]); // eslint-disable-line
+
+  const isMatched = (uid) => matches.some(m => m.uid === uid);
+  const isSent = (uid) => sent.some(s => s.uid === uid);
+
+  const handleSend = async () => {
+    if (!note.trim() || !target || sending) return;
+    setSending(true);
+    await onSendRequest(target, note.trim());
+    setSending(false);
+    setSentOk(true);
+    setTimeout(() => { setTarget(null); setNote(""); setSentOk(false); }, 1800);
+  };
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)",
+      width: "100%", maxWidth: 430, height: "100dvh", zIndex: 40,
+      background: COLORS.bg, display: "flex", flexDirection: "column",
+    }}>
+      <div style={{
+        padding: "16px 20px", borderBottom: `1px solid ${COLORS.border}`,
+        display: "flex", alignItems: "center", gap: 12, flexShrink: 0, background: COLORS.bg,
+      }}>
+        <button
+          onClick={target ? () => { setTarget(null); setNote(""); } : onClose}
+          style={{ background: "none", border: "none", color: COLORS.accent, cursor: "pointer", fontSize: 18 }}
+        >←</button>
+        <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16 }}>
+          {target ? "Send Connection Request" : "Find Someone"}
+        </div>
+      </div>
+
+      {!target && (
+        <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <input
+            autoFocus
+            type="text"
+            value={term}
+            onChange={e => setTerm(e.target.value)}
+            placeholder="Search by name or surname..."
+            style={{
+              width: "100%", padding: "12px 16px", borderRadius: 12,
+              background: COLORS.card, border: `1px solid ${COLORS.border}`,
+              color: COLORS.text, fontSize: 15, outline: "none", boxSizing: "border-box",
+            }}
+          />
+          {term.trim().length < 2 && (
+            <p style={{ color: COLORS.textMuted, fontSize: 13, textAlign: "center", marginTop: 40 }}>
+              Type a name to find people on Link-Ap.
+            </p>
+          )}
+          {searching && <p style={{ color: COLORS.textMuted, fontSize: 13, textAlign: "center" }}>Searching...</p>}
+          {!searching && term.trim().length >= 2 && results.length === 0 && (
+            <p style={{ color: COLORS.textMuted, fontSize: 13, textAlign: "center" }}>No results for "{term}".</p>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {results.map(u => (
+              <div key={u.uid} style={{
+                background: COLORS.card, border: `1px solid ${COLORS.border}`,
+                borderRadius: 16, padding: 16, display: "flex", gap: 12, alignItems: "center",
+              }}>
+                <Avatar initials={u.avatar} color={u.color} size={48} photoURL={u.photoURL} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
+                  <div style={{ color: u.color, fontSize: 12 }}>{u.role}</div>
+                  <div style={{ color: COLORS.textMuted, fontSize: 11 }}>📍 {u.location}</div>
+                </div>
+                {isMatched(u.uid) ? (
+                  <span style={{ fontSize: 11, color: COLORS.green, fontWeight: 600, flexShrink: 0 }}>Connected ✓</span>
+                ) : isSent(u.uid) ? (
+                  <span style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 500, flexShrink: 0 }}>Requested</span>
+                ) : (
+                  <button onClick={() => setTarget(u)} style={{
+                    padding: "8px 14px", borderRadius: 10, border: "none",
+                    background: COLORS.accent, color: "#000", cursor: "pointer",
+                    fontSize: 12, fontWeight: 700, flexShrink: 0,
+                  }}>Connect</button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {target && (
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{
+            background: COLORS.card, border: `1px solid ${COLORS.border}`,
+            borderRadius: 16, padding: 16, display: "flex", gap: 12, alignItems: "center",
+          }}>
+            <Avatar initials={target.avatar} color={target.color} size={52} photoURL={target.photoURL} />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.text }}>{target.name}</div>
+              <div style={{ color: target.color, fontSize: 13 }}>{target.role}</div>
+              <div style={{ color: COLORS.textMuted, fontSize: 12 }}>📍 {target.location}</div>
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>
+              Why do you want to connect? <span style={{ color: COLORS.red }}>*</span>
+            </label>
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder={`Tell ${target.name.split(" ")[0]} why you'd like to connect — be specific and genuine.`}
+              rows={5}
+              autoFocus
+              style={{
+                width: "100%", padding: "12px 16px", borderRadius: 12,
+                background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+                color: COLORS.text, fontSize: 14, outline: "none", resize: "none", boxSizing: "border-box",
+              }}
+            />
+            <p style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4 }}>
+              A personal note greatly increases your chances of a response.
+            </p>
+          </div>
+          <button
+            onClick={handleSend}
+            disabled={!note.trim() || sending || sentOk}
+            style={{
+              padding: "14px", borderRadius: 12, border: "none",
+              background: sentOk ? COLORS.green : note.trim() && !sending ? COLORS.accent : COLORS.border,
+              color: sentOk || (note.trim() && !sending) ? "#000" : COLORS.textMuted,
+              cursor: note.trim() && !sending && !sentOk ? "pointer" : "not-allowed",
+              fontSize: 14, fontWeight: 700,
+            }}
+          >
+            {sentOk ? "Request Sent ✓" : sending ? "Sending..." : `Send Request to ${target.name.split(" ")[0]}`}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Matches({ matches, sent, received, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onReplyRequest }) {
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [replying, setReplying] = useState(false);
+
+  const submitReply = async (req) => {
+    if (!replyText.trim()) return;
+    setReplying(true);
+    await onReplyRequest(req, replyText.trim());
+    setReplying(false);
+    setReplyingTo(null);
+    setReplyText("");
+  };
+
+  const hasActivity = matches.length > 0 || sent.length > 0 || received.length > 0;
+
   return (
     <div style={{ padding: "16px 20px" }}>
       <div style={{ marginBottom: 20 }}>
@@ -1192,14 +1419,109 @@ function Matches({ matches, sent, onChat, onViewProfile }) {
         <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{matches.length} mutual connections</p>
       </div>
 
-      {matches.length === 0 && sent.length === 0 && (
+      {!hasActivity && (
         <div style={{ textAlign: "center", paddingTop: 60, color: COLORS.textMuted }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-          <p>Go discover people and connect!</p>
+          <p>Discover people or search by name to connect!</p>
         </div>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+        {/* ── Incoming connection requests ── */}
+        {received.length > 0 && (
+          <>
+            <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600 }}>
+              CONNECTION REQUESTS — {received.length}
+            </div>
+            {received.map(req => (
+              <div key={req.uid} style={{
+                background: COLORS.card, border: `1px solid ${COLORS.accent}44`,
+                borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 12,
+              }}>
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <div onClick={() => onViewProfile && onViewProfile(req)} style={{ cursor: "pointer", flexShrink: 0 }}>
+                    <Avatar initials={req.avatar} color={req.color} size={48} photoURL={req.photoURL} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{req.name}</div>
+                    <div style={{ color: req.color, fontSize: 12 }}>{req.role}</div>
+                    <div style={{ color: COLORS.textMuted, fontSize: 11 }}>📍 {req.location}</div>
+                  </div>
+                </div>
+
+                {req.note && (
+                  <div style={{
+                    background: COLORS.bg, borderRadius: 10, padding: "10px 14px",
+                    borderLeft: `3px solid ${COLORS.accent}`,
+                  }}>
+                    <div style={{ fontSize: 10, color: COLORS.textMuted, marginBottom: 4, fontWeight: 600 }}>REASON FOR CONNECTING</div>
+                    <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, margin: 0 }}>{req.note}</p>
+                  </div>
+                )}
+
+                {req.reply && (
+                  <div style={{ background: `${COLORS.green}12`, borderRadius: 10, padding: "10px 14px", border: `1px solid ${COLORS.green}30` }}>
+                    <div style={{ fontSize: 10, color: COLORS.green, marginBottom: 4, fontWeight: 600 }}>YOUR REPLY</div>
+                    <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, margin: 0 }}>{req.reply}</p>
+                  </div>
+                )}
+
+                {replyingTo === req.uid && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <textarea
+                      autoFocus
+                      value={replyText}
+                      onChange={e => setReplyText(e.target.value)}
+                      placeholder="Write a reply..."
+                      rows={3}
+                      style={{
+                        width: "100%", padding: "10px 14px", borderRadius: 10,
+                        background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+                        color: COLORS.text, fontSize: 13, outline: "none", resize: "none", boxSizing: "border-box",
+                      }}
+                    />
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button onClick={() => { setReplyingTo(null); setReplyText(""); }} style={{
+                        flex: 1, padding: "9px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
+                        background: "transparent", color: COLORS.textMuted, cursor: "pointer", fontSize: 12,
+                      }}>Cancel</button>
+                      <button onClick={() => submitReply(req)} disabled={!replyText.trim() || replying} style={{
+                        flex: 2, padding: "9px", borderRadius: 10, border: "none",
+                        background: replyText.trim() && !replying ? COLORS.accent : COLORS.border,
+                        color: replyText.trim() && !replying ? "#000" : COLORS.textMuted,
+                        cursor: replyText.trim() && !replying ? "pointer" : "not-allowed",
+                        fontSize: 12, fontWeight: 700,
+                      }}>{replying ? "Sending..." : "Send Reply"}</button>
+                    </div>
+                  </div>
+                )}
+
+                {replyingTo !== req.uid && (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => { setReplyingTo(req.uid); setReplyText(""); }} style={{
+                      flex: 1, padding: "9px 0", borderRadius: 10,
+                      border: `1px solid ${COLORS.border}`, background: "transparent",
+                      color: COLORS.text, cursor: "pointer", fontSize: 12, fontWeight: 500,
+                    }}>{req.reply ? "Edit Reply" : "Reply"}</button>
+                    <button onClick={() => onAcceptRequest(req)} style={{
+                      flex: 2, padding: "9px 0", borderRadius: 10, border: "none",
+                      background: COLORS.accent, color: "#000", cursor: "pointer", fontSize: 12, fontWeight: 700,
+                    }}>Accept ✓</button>
+                    <button onClick={() => onDeclineRequest(req)} style={{
+                      flex: 1, padding: "9px 0", borderRadius: 10,
+                      border: `1px solid ${COLORS.red}44`, background: "transparent",
+                      color: COLORS.red, cursor: "pointer", fontSize: 12,
+                    }}>Decline</button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {matches.length > 0 && <div style={{ height: 1, background: COLORS.border, margin: "4px 0" }} />}
+          </>
+        )}
+
+        {/* ── Mutual matches ── */}
         {matches.filter(u => !sent.find(s => s.uid === u.uid)).map(u => (
           <div key={u.uid} onClick={() => onChat(u.uid)} style={{
             background: COLORS.card, border: `1px solid ${COLORS.border}`,
@@ -1219,20 +1541,37 @@ function Matches({ matches, sent, onChat, onViewProfile }) {
           </div>
         ))}
 
+        {/* ── Pending sent requests ── */}
         {sent.length > 0 && (
           <>
             <div style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 600, marginTop: 8 }}>PENDING REQUESTS</div>
             {sent.map(u => (
-              <div key={u.uid} onClick={() => onViewProfile && onViewProfile(u)} style={{
-                background: COLORS.card, border: `1px dashed ${COLORS.border}`,
-                borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", opacity: 0.6, cursor: "pointer",
+              <div key={u.uid} style={{
+                background: COLORS.card, border: `1px dashed ${u.reply ? COLORS.accent : COLORS.border}`,
+                borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 10,
+                opacity: u.reply ? 1 : 0.7,
               }}>
-                <Avatar initials={u.avatar} color={u.color} size={48} photoURL={u.photoURL} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
-                  <div style={{ color: u.color, fontSize: 12, marginBottom: 4 }}>{u.role}</div>
-                  <div style={{ fontSize: 12, color: COLORS.textMuted }}>Waiting for them to connect back...</div>
+                <div style={{ display: "flex", gap: 14, alignItems: "center", cursor: "pointer" }}
+                  onClick={() => onViewProfile && onViewProfile(u)}>
+                  <Avatar initials={u.avatar} color={u.color} size={48} photoURL={u.photoURL} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
+                    <div style={{ color: u.color, fontSize: 12, marginBottom: 2 }}>{u.role}</div>
+                    {!u.reply && <div style={{ fontSize: 12, color: COLORS.textMuted }}>Waiting for them to respond...</div>}
+                  </div>
                 </div>
+                {u.note && (
+                  <div style={{ background: COLORS.bg, borderRadius: 10, padding: "8px 12px", borderLeft: `3px solid ${COLORS.border}` }}>
+                    <div style={{ fontSize: 10, color: COLORS.textMuted, marginBottom: 2, fontWeight: 600 }}>YOUR NOTE</div>
+                    <p style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1.5, margin: 0 }}>{u.note}</p>
+                  </div>
+                )}
+                {u.reply && (
+                  <div style={{ background: `${COLORS.accent}10`, borderRadius: 10, padding: "10px 14px", border: `1px solid ${COLORS.accent}30` }}>
+                    <div style={{ fontSize: 10, color: COLORS.accent, marginBottom: 4, fontWeight: 600 }}>THEY REPLIED</div>
+                    <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, margin: 0 }}>{u.reply}</p>
+                  </div>
+                )}
               </div>
             ))}
           </>
@@ -1445,6 +1784,7 @@ function Profile({ user, firebaseUser, onProfileUpdate }) {
         currentlyExploring: form.currentlyExploring.split(",").map(s => s.trim()).filter(Boolean),
         openTo: form.openTo,
         lookingForDetails: form.lookingForDetails,
+        nameLower: form.name.toLowerCase(),
       };
       await setDoc(doc(db, "users", firebaseUser.uid), updated);
       onProfileUpdate(updated);
@@ -1707,7 +2047,15 @@ export default function App() {
       setFirebaseUser(user ?? null);
       if (user) {
         const snap = await getDoc(doc(db, "users", user.uid));
-        if (snap.exists()) setProfile(snap.data());
+        if (snap.exists()) {
+          const data = snap.data();
+          if (!data.nameLower && data.name) {
+            await setDoc(doc(db, "users", user.uid), { nameLower: data.name.toLowerCase() }, { merge: true });
+            setProfile({ ...data, nameLower: data.name.toLowerCase() });
+          } else {
+            setProfile(data);
+          }
+        }
       }
       setLoading(false);
     });
