@@ -691,6 +691,7 @@ function PublicProfile({ profileUser, onClose }) {
       width: "100%", maxWidth: 430, height: "100dvh", zIndex: 40,
       background: COLORS.bg, overflowY: "auto",
     }}>
+      <style>{`@keyframes linkApPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
       <div style={{
         position: "sticky", top: 0, background: COLORS.bg, zIndex: 10,
         padding: "16px 20px", borderBottom: `1px solid ${COLORS.border}`,
@@ -700,85 +701,144 @@ function PublicProfile({ profileUser, onClose }) {
         <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16 }}>Profile</div>
       </div>
       <div style={{ height: 4, background: profileUser.color }} />
-      <div style={{ padding: 24 }}>
-        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20 }}>
-          <Avatar initials={profileUser.avatar} color={profileUser.color} size={72} online photoURL={profileUser.photoURL} />
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{profileUser.name}</div>
-              {profileUser.pronouns && <span style={{ fontSize: 12, color: COLORS.textMuted, fontStyle: "italic" }}>{profileUser.pronouns}</span>}
-              {profileUser.linkedinVerified && profileUser.linkedinProfileUrl && (
-                <a href={profileUser.linkedinProfileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
-                  <LinkedInIcon />
-                </a>
-              )}
+      <div>
+        {/* Header */}
+        <div style={{ background: "#16161F", padding: "24px 24px 20px" }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
+            <Avatar initials={profileUser.avatar} color={profileUser.color} size={72} online photoURL={profileUser.photoURL} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 19, fontWeight: 800, color: COLORS.text }}>{profileUser.name}</div>
+                    {profileUser.pronouns && <span style={{ fontSize: 11, color: COLORS.textMuted, fontStyle: "italic" }}>{profileUser.pronouns}</span>}
+                    {profileUser.linkedinVerified && profileUser.linkedinProfileUrl && (
+                      <a href={profileUser.linkedinProfileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
+                        <LinkedInIcon />
+                      </a>
+                    )}
+                  </div>
+                  <div style={{ color: profileUser.color, fontSize: 13, marginTop: 2 }}>{profileUser.role}</div>
+                </div>
+                {profileUser.lookingFor?.includes("Investor") && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, background: "#0A2015", border: "1px solid #15532E", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green, display: "inline-block", animation: "linkApPulse 2s ease-in-out infinite" }} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.green }}>Actively raising</span>
+                  </div>
+                )}
+              </div>
+              <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green, display: "inline-block" }} />
+                {profileUser.location}
+              </div>
             </div>
-            <div style={{ color: profileUser.color, fontSize: 14, marginBottom: 4 }}>{profileUser.role}</div>
-            <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {profileUser.location}</div>
           </div>
+          {profileUser.bio && (
+            <p style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text, margin: 0 }}>{profileUser.bio}</p>
+          )}
         </div>
-        {profileUser.bio && (
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text, marginBottom: 24 }}>{profileUser.bio}</p>
-        )}
-        {profileUser.skills?.length > 0 && (
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>SKILLS</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {profileUser.skills.map(s => <Tag key={s} label={s} color={profileUser.color} />)}
+
+        {/* Body */}
+        <div style={{ padding: "0 24px 28px" }}>
+
+          {/* Skills */}
+          {profileUser.skills?.length > 0 && (
+            <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: `1px solid ${COLORS.border}` }}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>SKILLS</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {profileUser.skills.map(s => (
+                  <span key={s} style={{ background: "#1A2E4A", color: COLORS.blue, padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 500 }}>{s}</span>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-        {profileUser.lookingFor?.length > 0 && (
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>LOOKING FOR</div>
-            <div style={{ fontSize: 13, color: profileUser.color, fontWeight: 600, marginBottom: 12 }}>{getContextualHeadline(profileUser.lookingFor)}</div>
-            {profileUser.lookingForDetails && Object.values(profileUser.lookingForDetails).some(v => v) && (
-              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-                {profileUser.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => profileUser.lookingForDetails?.[q.key])).map(lf => (
+          )}
+
+          {/* Q&A / Looking For block */}
+          {profileUser.lookingFor?.length > 0 && profileUser.lookingForDetails && Object.values(profileUser.lookingForDetails).some(v => v) && (
+            <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: `1px solid ${COLORS.border}` }}>
+              <div style={{ background: COLORS.card, borderRadius: 12, padding: 16, border: `1px solid ${COLORS.border}` }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.textMuted, letterSpacing: "0.08em" }}>
+                    {profileUser.lookingFor.includes("Investor") ? "INVESTOR DECK" : profileUser.lookingFor.map(lf => lf.toUpperCase()).join(" · ")}
+                  </div>
+                  <div style={{ background: "#2D1F00", border: "1px solid #6B4A00", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 600, color: COLORS.accent }}>
+                    Open to conversations
+                  </div>
+                </div>
+                {profileUser.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => profileUser.lookingForDetails?.[q.key])).map((lf, lfIdx, filteredArr) => (
                   <div key={lf}>
-                    <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 4 }}>{lf.toUpperCase()}</div>
-                    {LOOKING_FOR_QUESTIONS[lf].filter(q => profileUser.lookingForDetails?.[q.key]).map(q => (
-                      <div key={q.key} style={{ marginBottom: 6 }}>
-                        <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 1 }}>{q.label}</div>
-                        <div style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.5 }}>{profileUser.lookingForDetails[q.key]}</div>
+                    {filteredArr.length > 1 && (
+                      <div style={{ fontSize: 10, color: COLORS.accent, fontWeight: 600, marginBottom: 8 }}>{lf.toUpperCase()}</div>
+                    )}
+                    {LOOKING_FOR_QUESTIONS[lf].filter(q => profileUser.lookingForDetails?.[q.key]).map((q, qIdx, qArr) => (
+                      <div key={q.key}>
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>{q.label}</div>
+                          <div style={{ fontSize: 14, color: COLORS.text, fontWeight: 600, lineHeight: 1.5 }}>{profileUser.lookingForDetails[q.key]}</div>
+                        </div>
+                        {(qIdx < qArr.length - 1 || lfIdx < filteredArr.length - 1) && (
+                          <div style={{ height: 1, background: COLORS.border, marginBottom: 10 }} />
+                        )}
                       </div>
                     ))}
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-        {profileUser.achievements?.length > 0 && (
-          <div style={{ background: COLORS.card, borderRadius: 12, padding: 16, border: `1px solid ${COLORS.border}` }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>ACHIEVEMENTS</div>
-            {profileUser.achievements.map((a, i) => (
-              <div key={i} style={{ fontSize: 14, color: COLORS.text, marginBottom: 6, lineHeight: 1.5 }}>✦ {a}</div>
-            ))}
-          </div>
-        )}
-        {profileUser.bringToTable && (
-          <div style={{ marginTop: 20, paddingLeft: 14, borderLeft: `3px solid ${COLORS.accent}` }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
-            <p style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{profileUser.bringToTable}</p>
-          </div>
-        )}
-        {profileUser.currentlyExploring?.length > 0 && (
-          <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {profileUser.currentlyExploring.map(s => <Tag key={s} label={s} color={COLORS.purple} />)}
             </div>
-          </div>
-        )}
-        {profileUser.openTo?.length > 0 && (
-          <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {profileUser.openTo.map(s => <Tag key={s} label={s} color={COLORS.blue} />)}
+          )}
+
+          {/* Two-column: Achievements + Exploring / Open To */}
+          {(profileUser.achievements?.length > 0 || profileUser.currentlyExploring?.length > 0 || profileUser.openTo?.length > 0) && (
+            <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: profileUser.bringToTable ? `1px solid ${COLORS.border}` : "none", display: "flex", gap: 20, alignItems: "flex-start" }}>
+              {profileUser.achievements?.length > 0 && (
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>ACHIEVEMENTS</div>
+                  {profileUser.achievements.map((a, i) => (
+                    <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+                      <div style={{ width: 18, height: 18, minWidth: 18, background: "#1A2A4A", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                        <svg width="10" height="10" viewBox="0 0 16 16" fill={COLORS.blue}><path d="M8 1l1.85 3.75L14 5.5l-3 2.93.71 4.12L8 10.5l-3.71 2.05L5 8.43 2 5.5l4.15-.75z"/></svg>
+                      </div>
+                      <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{a}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {(profileUser.currentlyExploring?.length > 0 || profileUser.openTo?.length > 0) && (
+                <div style={{ flex: 1 }}>
+                  {profileUser.currentlyExploring?.length > 0 && (
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                        {profileUser.currentlyExploring.map(s => (
+                          <span key={s} style={{ background: "#2A1A00", color: COLORS.accent, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {profileUser.openTo?.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                        {profileUser.openTo.map(s => (
+                          <span key={s} style={{ background: "#0A2015", color: COLORS.green, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+
+          {/* What I bring to the table */}
+          {profileUser.bringToTable && (
+            <div style={{ paddingTop: 20, paddingLeft: 14, borderLeft: `3px solid ${COLORS.blue}` }}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
+              <p style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{profileUser.bringToTable}</p>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
@@ -2332,81 +2392,145 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         </div>
       </div>
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>
+        <style>{`@keyframes linkApPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
         <div style={{ height: 4, background: user.color }} />
-        <div style={{ padding: 24 }}>
-          <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 20 }}>
-            <Avatar initials={user.avatar} color={user.color} size={64} online photoURL={user.photoURL} />
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{user.name}</div>
-                {user.linkedinVerified && user.linkedinProfileUrl && (
-                  <a href={user.linkedinProfileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
-                    <LinkedInIcon />
-                  </a>
-                )}
+        <div>
+          {/* Header */}
+          <div style={{ background: "#16161F", padding: "24px 24px 20px" }}>
+            <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
+              <Avatar initials={user.avatar} color={user.color} size={64} online photoURL={user.photoURL} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <div style={{ fontSize: 19, fontWeight: 800, color: COLORS.text }}>{user.name}</div>
+                      {user.linkedinVerified && user.linkedinProfileUrl && (
+                        <a href={user.linkedinProfileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
+                          <LinkedInIcon />
+                        </a>
+                      )}
+                    </div>
+                    <div style={{ color: user.color, fontSize: 13, marginTop: 2 }}>{user.role}</div>
+                  </div>
+                  {user.lookingFor?.includes("Investor") && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "#0A2015", border: "1px solid #15532E", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green, display: "inline-block", animation: "linkApPulse 2s ease-in-out infinite" }} />
+                      <span style={{ fontSize: 11, fontWeight: 600, color: COLORS.green }}>Actively raising</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green, display: "inline-block" }} />
+                  {user.location}
+                </div>
               </div>
-              <div style={{ color: user.color, fontSize: 14, marginBottom: 4 }}>{user.role}</div>
-              <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {user.location}</div>
             </div>
+            {user.bio && (
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: COLORS.text, margin: 0 }}>{user.bio}</p>
+            )}
           </div>
-          <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 20, color: COLORS.text }}>{user.bio}</p>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>SKILLS</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {user.skills?.map(s => <Tag key={s} label={s} color={user.color} />)}
-            </div>
-          </div>
-          {user.lookingFor?.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>LOOKING FOR</div>
-              <div style={{ fontSize: 13, color: user.color, fontWeight: 600, marginBottom: 12 }}>{getContextualHeadline(user.lookingFor)}</div>
-              {user.lookingForDetails && Object.values(user.lookingForDetails).some(v => v) && (
-                <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-                  {user.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => user.lookingForDetails?.[q.key])).map(lf => (
+
+          {/* Body */}
+          <div style={{ padding: "0 24px 28px" }}>
+
+            {/* Skills */}
+            {user.skills?.length > 0 && (
+              <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: `1px solid ${COLORS.border}` }}>
+                <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>SKILLS</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {user.skills.map(s => (
+                    <span key={s} style={{ background: "#1A2E4A", color: COLORS.blue, padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 500 }}>{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Q&A / Looking For block */}
+            {user.lookingFor?.length > 0 && user.lookingForDetails && Object.values(user.lookingForDetails).some(v => v) && (
+              <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: `1px solid ${COLORS.border}` }}>
+                <div style={{ background: COLORS.bg, borderRadius: 12, padding: 16, border: `1px solid ${COLORS.border}` }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.textMuted, letterSpacing: "0.08em" }}>
+                      {user.lookingFor.includes("Investor") ? "INVESTOR DECK" : user.lookingFor.map(lf => lf.toUpperCase()).join(" · ")}
+                    </div>
+                    <div style={{ background: "#2D1F00", border: "1px solid #6B4A00", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 600, color: COLORS.accent }}>
+                      Open to conversations
+                    </div>
+                  </div>
+                  {user.lookingFor.filter(lf => LOOKING_FOR_QUESTIONS[lf]?.some(q => user.lookingForDetails?.[q.key])).map((lf, lfIdx, filteredArr) => (
                     <div key={lf}>
-                      <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 4 }}>{lf.toUpperCase()}</div>
-                      {LOOKING_FOR_QUESTIONS[lf].filter(q => user.lookingForDetails?.[q.key]).map(q => (
-                        <div key={q.key} style={{ marginBottom: 6 }}>
-                          <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 1 }}>{q.label}</div>
-                          <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{user.lookingForDetails[q.key]}</div>
+                      {filteredArr.length > 1 && (
+                        <div style={{ fontSize: 10, color: COLORS.accent, fontWeight: 600, marginBottom: 8 }}>{lf.toUpperCase()}</div>
+                      )}
+                      {LOOKING_FOR_QUESTIONS[lf].filter(q => user.lookingForDetails?.[q.key]).map((q, qIdx, qArr) => (
+                        <div key={q.key}>
+                          <div style={{ marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>{q.label}</div>
+                            <div style={{ fontSize: 13, color: COLORS.text, fontWeight: 600, lineHeight: 1.5 }}>{user.lookingForDetails[q.key]}</div>
+                          </div>
+                          {(qIdx < qArr.length - 1 || lfIdx < filteredArr.length - 1) && (
+                            <div style={{ height: 1, background: COLORS.border, marginBottom: 10 }} />
+                          )}
                         </div>
                       ))}
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-          {user.achievements?.length > 0 && (
-            <div style={{ background: COLORS.bg, borderRadius: 12, padding: 14, border: `1px solid ${COLORS.border}` }}>
-              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>ACHIEVEMENTS</div>
-              {user.achievements.map((a, i) => (
-                <div key={i} style={{ fontSize: 13, color: COLORS.text, marginBottom: 4 }}>✦ {a}</div>
-              ))}
-            </div>
-          )}
-          {user.bringToTable && (
-            <div style={{ marginTop: 16, paddingLeft: 14, borderLeft: `3px solid ${COLORS.accent}` }}>
-              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
-              <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{user.bringToTable}</p>
-            </div>
-          )}
-          {user.currentlyExploring?.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {user.currentlyExploring.map(s => <Tag key={s} label={s} color={COLORS.purple} />)}
               </div>
-            </div>
-          )}
-          {user.openTo?.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {user.openTo.map(s => <Tag key={s} label={s} color={COLORS.blue} />)}
+            )}
+
+            {/* Two-column: Achievements + Exploring / Open To */}
+            {(user.achievements?.length > 0 || user.currentlyExploring?.length > 0 || user.openTo?.length > 0) && (
+              <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: user.bringToTable ? `1px solid ${COLORS.border}` : "none", display: "flex", gap: 20, alignItems: "flex-start" }}>
+                {user.achievements?.length > 0 && (
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>ACHIEVEMENTS</div>
+                    {user.achievements.map((a, i) => (
+                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+                        <div style={{ width: 18, height: 18, minWidth: 18, background: "#1A2A4A", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                          <svg width="10" height="10" viewBox="0 0 16 16" fill={COLORS.blue}><path d="M8 1l1.85 3.75L14 5.5l-3 2.93.71 4.12L8 10.5l-3.71 2.05L5 8.43 2 5.5l4.15-.75z"/></svg>
+                        </div>
+                        <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{a}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(user.currentlyExploring?.length > 0 || user.openTo?.length > 0) && (
+                  <div style={{ flex: 1 }}>
+                    {user.currentlyExploring?.length > 0 && (
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                          {user.currentlyExploring.map(s => (
+                            <span key={s} style={{ background: "#2A1A00", color: COLORS.accent, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {user.openTo?.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                          {user.openTo.map(s => (
+                            <span key={s} style={{ background: "#0A2015", color: COLORS.green, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            )}
+
+            {/* What I bring to the table */}
+            {user.bringToTable && (
+              <div style={{ paddingTop: 20, paddingLeft: 14, borderLeft: `3px solid ${COLORS.blue}` }}>
+                <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
+                <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{user.bringToTable}</p>
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
       {showShare && <ShareModal user={user} onClose={() => setShowShare(false)} />}
