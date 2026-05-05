@@ -101,6 +101,7 @@ const getBringToTablePrompt = (lookingFor = []) => {
   if (lookingFor.includes("Co-founder")) return "What do you bring to the partnership?";
   return "What value do you offer to the people you want to meet?";
 };
+// eslint-disable-next-line no-unused-vars
 const getContextualHeadline = (lookingFor = []) => {
   if (lookingFor.includes("A Job")) return "Open to the right opportunity";
   if (lookingFor.includes("Investor")) return "Actively raising";
