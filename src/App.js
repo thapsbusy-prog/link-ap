@@ -114,6 +114,15 @@ const normalizeUrl = (url) => {
   return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
 };
 const validateLinkedIn = (url) => url.includes("linkedin.com/in/");
+const linkedinNameMatches = (url, fullName) => {
+  if (!url || !fullName) return false;
+  const m = url.match(/linkedin\.com\/in\/([^/?#]+)/i);
+  if (!m) return false;
+  const slug = m[1].toLowerCase().replace(/[-_.\s]/g, "");
+  const parts = fullName.trim().toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return false;
+  return slug.includes(parts[0]) && slug.includes(parts[parts.length - 1]);
+};
 
 function LinkedInIcon() {
   return (
@@ -490,7 +499,7 @@ function Onboarding({ firebaseUser, onComplete }) {
         lookingForDetails: form.lookingForDetails,
         bringToTable: form.bringToTable,
         linkedinProfileUrl: form.linkedin.trim() && validateLinkedIn(form.linkedin) ? normalizeUrl(form.linkedin) : "",
-        linkedinVerified: !!(form.linkedin.trim() && validateLinkedIn(form.linkedin)),
+        linkedinVerified: !!(form.linkedin.trim() && validateLinkedIn(form.linkedin) && linkedinNameMatches(form.linkedin, fullName)),
         photoURL: firebaseUser.photoURL || "",
         createdAt: serverTimestamp(),
         termsAcceptedAt: serverTimestamp(),
@@ -2161,7 +2170,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         openTo: form.openTo,
         lookingForDetails: form.lookingForDetails,
         linkedinProfileUrl: form.linkedin.trim() && validateLinkedIn(form.linkedin) ? normalizeUrl(form.linkedin) : "",
-        linkedinVerified: !!(form.linkedin.trim() && validateLinkedIn(form.linkedin)),
+        linkedinVerified: !!(form.linkedin.trim() && validateLinkedIn(form.linkedin) && linkedinNameMatches(form.linkedin, form.name)),
         nameLower: form.name.toLowerCase(),
         lastNameLower: form.name.trim().split(/\s+/).pop()?.toLowerCase() || "",
       };
