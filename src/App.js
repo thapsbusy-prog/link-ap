@@ -182,6 +182,81 @@ function Tag({ label, color = COLORS.accent }) {
   );
 }
 
+function SkillsInput({ skills, onChange, label = "Your key skills" }) {
+  const [input, setInput] = useState("");
+  const [error, setError] = useState("");
+  const atMax = skills.length >= 5;
+  const hasLegacy = skills.some(s => s.trim().split(/\s+/).length > 3);
+
+  const addSkill = () => {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    if (trimmed.split(/\s+/).length > 3) { setError("Keep it to 3 words max"); return; }
+    if (!skills.includes(trimmed)) onChange([...skills, trimmed]);
+    setInput("");
+    setError("");
+  };
+
+  return (
+    <div>
+      <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>{label}</label>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          value={input}
+          onChange={e => { setInput(e.target.value); setError(""); }}
+          onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addSkill())}
+          placeholder={atMax ? "" : "e.g. Product Strategy"}
+          disabled={atMax}
+          style={{
+            flex: 1, padding: "12px 16px", borderRadius: 12,
+            background: COLORS.bg, border: `1px solid ${error ? COLORS.red : COLORS.border}`,
+            color: COLORS.text, fontSize: 14, outline: "none", boxSizing: "border-box",
+            opacity: atMax ? 0.4 : 1,
+          }}
+        />
+        <button
+          onClick={addSkill}
+          disabled={atMax}
+          style={{
+            padding: "0 18px", borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: atMax ? "not-allowed" : "pointer",
+            background: atMax ? COLORS.border : COLORS.accent, color: atMax ? COLORS.textMuted : "#000",
+            border: "none", opacity: atMax ? 0.5 : 1, flexShrink: 0,
+          }}
+        >Add</button>
+      </div>
+      {error && <span style={{ fontSize: 12, color: COLORS.red, marginTop: 4, display: "block" }}>{error}</span>}
+      {atMax && !error && <span style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4, display: "block" }}>5 skills maximum</span>}
+      {skills.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+          {skills.map(s => {
+            const isLegacy = s.trim().split(/\s+/).length > 3;
+            return (
+              <button
+                key={s}
+                onClick={() => onChange(skills.filter(x => x !== s))}
+                style={{
+                  background: "#1A2E4A", color: COLORS.blue, padding: "5px 12px 5px 14px",
+                  borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: "pointer",
+                  border: `1px solid ${isLegacy ? "rgba(245,166,35,0.5)" : "transparent"}`,
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                }}
+              >
+                {s}
+                <span style={{ fontSize: 14, lineHeight: 1, color: COLORS.textMuted }}>×</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {hasLegacy && (
+        <p style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 6, margin: "6px 0 0" }}>
+          Some skills were updated before the 3-word limit — tap any to remove and re-add
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Input({ label, value, onChange, placeholder, type = "text", autoComplete }) {
   return (
     <div>
@@ -465,7 +540,7 @@ function Onboarding({ firebaseUser, onComplete }) {
   const [form, setForm] = useState({
     title: "", firstName: "", lastName: "",
     pronouns: "", role: "", location: "",
-    bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
+    bio: "", skills: [], lookingFor: [], achievements: "", linkedin: "",
     lookingForDetails: {}, bringToTable: "",
   });
 
@@ -490,7 +565,7 @@ function Onboarding({ firebaseUser, onComplete }) {
         role: form.role,
         location: form.location,
         bio: form.bio,
-        skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
+        skills: form.skills,
         lookingFor: form.lookingFor,
         achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
         avatar: fullName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
@@ -544,12 +619,19 @@ function Onboarding({ firebaseUser, onComplete }) {
       title: "Your story",
       content: (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <TextArea label="Bio — tell people what you're about" value={form.bio} onChange={v => update("bio", v)} placeholder="What are you building or working towards?" />
-          <Input label="Your key skills (comma separated)" value={form.skills} onChange={v => update("skills", v)} placeholder="e.g. Marketing, Sales, React" />
+          <div>
+            <TextArea label="Bio — tell people what you're about" value={form.bio} onChange={v => { const words = v.trim().split(/\s+/).filter(Boolean); if (words.length <= 20 || v.length < form.bio.length) update("bio", v); }} placeholder="What are you building or working towards?" />
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+              <span style={{ fontSize: 11, color: form.bio.trim().split(/\s+/).filter(Boolean).length >= 20 ? COLORS.accent : COLORS.textMuted }}>
+                {form.bio.trim() ? form.bio.trim().split(/\s+/).filter(Boolean).length : 0} / 20 words
+              </span>
+            </div>
+          </div>
+          <SkillsInput skills={form.skills} onChange={v => update("skills", v)} />
           <Input label="Notable achievements (comma separated)" value={form.achievements} onChange={v => update("achievements", v)} placeholder="e.g. Built 2 websites, 5 years in finance" />
         </div>
       ),
-      valid: form.bio && form.skills,
+      valid: form.bio && form.skills.length > 0,
     },
     {
       title: "What are you looking for?",
@@ -729,7 +811,7 @@ function PublicProfile({ profileUser, onClose }) {
                 )}
               </div>
               <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green, display: "inline-block" }} />
+                <LocationPin />
                 {profileUser.location}
               </div>
             </div>
@@ -2172,7 +2254,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
   const [photoPreview, setPhotoPreview] = useState(user.photoURL || null);
   const [form, setForm] = useState({
     name: user.name || "", role: user.role || "", location: user.location || "",
-    bio: user.bio || "", skills: user.skills?.join(", ") || "",
+    bio: user.bio || "", skills: user.skills || [],
     achievements: user.achievements?.join(", ") || "",
     lookingFor: user.lookingFor || [],
     bringToTable: user.bringToTable || "",
@@ -2221,7 +2303,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         role: form.role,
         location: form.location,
         bio: form.bio,
-        skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
+        skills: form.skills,
         achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
         lookingFor: form.lookingFor,
         avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
@@ -2249,7 +2331,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
     setPhotoPreview(user.photoURL || null);
     setForm({
       name: user.name || "", role: user.role || "", location: user.location || "",
-      bio: user.bio || "", skills: user.skills?.join(", ") || "",
+      bio: user.bio || "", skills: user.skills || [],
       achievements: user.achievements?.join(", ") || "",
       lookingFor: user.lookingFor || [],
       bringToTable: user.bringToTable || "",
@@ -2287,9 +2369,16 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         <Input label="Full Name" value={form.name} onChange={v => update("name", v)} placeholder="Your name" />
         <Input label="What do you do?" value={form.role} onChange={v => update("role", v)} placeholder="e.g. Entrepreneur, Developer" />
         <Input label="Location" value={form.location} onChange={v => update("location", v)} placeholder="e.g. Cape Town, SA" />
-        <TextArea label="Bio" value={form.bio} onChange={v => update("bio", v)} placeholder="What are you building or working towards?" />
+        <div>
+          <TextArea label="Bio" value={form.bio} onChange={v => { const words = v.trim().split(/\s+/).filter(Boolean); if (words.length <= 20 || v.length < form.bio.length) update("bio", v); }} placeholder="What are you building or working towards?" />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
+            <span style={{ fontSize: 11, color: form.bio.trim().split(/\s+/).filter(Boolean).length >= 20 ? COLORS.accent : COLORS.textMuted }}>
+              {form.bio.trim() ? form.bio.trim().split(/\s+/).filter(Boolean).length : 0} / 20 words
+            </span>
+          </div>
+        </div>
         <TextArea label="What I Bring to the Table" value={form.bringToTable} onChange={v => update("bringToTable", v)} placeholder={getBringToTablePrompt(form.lookingFor)} />
-        <Input label="Skills (comma separated)" value={form.skills} onChange={v => update("skills", v)} placeholder="e.g. Marketing, React, Sales" />
+        <SkillsInput skills={form.skills} onChange={v => update("skills", v)} label="Skills" />
         <Input label="Achievements (comma separated)" value={form.achievements} onChange={v => update("achievements", v)} placeholder="e.g. Built 2 startups" />
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <Input label="LinkedIn Profile URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="Paste your LinkedIn profile URL (e.g. linkedin.com/in/yourname)" />
@@ -2421,7 +2510,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
                   )}
                 </div>
                 <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.green, display: "inline-block" }} />
+                  <LocationPin />
                   {user.location}
                 </div>
               </div>
