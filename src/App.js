@@ -1132,7 +1132,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   const unmatched = allUsers === null ? null : allUsers.filter(u =>
-    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid) && !u.deactivated
+    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid) && !u.deactivated && !received.find(r => r.uid === u.uid)
   );
 
   const intentFiltered = unmatched === null ? null : (() => {
