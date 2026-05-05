@@ -790,7 +790,7 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function drawInvitePoster(canvas, name, role, lookingFor) {
+function drawInvitePoster(canvas) {
   const W = 540, H = 960;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
@@ -829,58 +829,54 @@ function drawInvitePoster(canvas, name, role, lookingFor) {
   ctx.fillStyle = "#2A2A3A";
   ctx.fillRect(W * 0.2, 260, W * 0.6, 1);
 
-  // User identity card: x=60 y=300 w=420 h=240 r=20
-  roundRect(ctx, 60, 300, 420, 240, 20);
-  ctx.fillStyle = "#13131A"; ctx.fill();
-  ctx.strokeStyle = "rgba(245,166,35,0.25)"; ctx.lineWidth = 1; ctx.stroke();
-
+  // Section label at y=290
   ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.textAlign = "center"; ctx.fillStyle = "#F5A623";
-  ctx.fillText("INVITED BY", W / 2, 340);
+  ctx.fillText("WHY YOU SHOULD JOIN", W / 2, 290);
 
-  ctx.font = "bold 32px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#F0EEE8";
-  ctx.fillText(name || "A friend", W / 2, 390);
+  // Bullet cards: cy=316, ch=56, gap=10 (period=66)
+  const bullets = [
+    "Discover co-founders, investors & freelance work",
+    "Connect with people building real things",
+    "Find exactly who you're looking for",
+    "Show what you bring to the table",
+  ];
+  bullets.forEach((text, i) => {
+    const cy = 316 + i * 66, ch = 56, cx = W * 0.07, cw = W * 0.86;
+    ctx.fillStyle = "#13131A";
+    roundRect(ctx, cx, cy, cw, ch, 12); ctx.fill();
+    ctx.fillStyle = "rgba(245,166,35,0.5)";
+    ctx.fillRect(cx, cy + 10, 3, ch - 20);
+    ctx.font = "14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#F0EEE8"; ctx.fillText(text, cx + 20, cy + ch / 2);
+    ctx.textBaseline = "alphabetic";
+  });
 
-  const roleText = (role || "").length > 36 ? (role || "").slice(0, 36) + "…" : (role || "");
-  ctx.font = "16px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#8A8A9A";
-  ctx.fillText(roleText, W / 2, 430);
-
-  // Gold accent line at y=460
-  ctx.fillStyle = "#F5A623";
-  ctx.fillRect(W / 2 - 20, 460, 40, 2);
-
-  // lookingFor at y=495
-  const lookingText = Array.isArray(lookingFor) ? lookingFor.join(" · ") : (lookingFor || "");
-  ctx.font = "13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#8A8A9A";
-  ctx.fillText(lookingText, W / 2, 495);
-
-  // Italic statement at y=620
+  // Italic statement at y=624
   ctx.font = "italic 20px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#F0EEE8";
-  ctx.fillText("Where the right people find each other.", W / 2, 620);
+  ctx.textAlign = "center"; ctx.fillStyle = "#F0EEE8";
+  ctx.fillText("Where the right people find each other.", W / 2, 624);
 
   // Three value lines
   ctx.font = "15px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("Founders · Investors · Mentors", W / 2, 680);
-  ctx.fillText("Co-founders · Freelancers · Clients", W / 2, 716);
-  ctx.fillText("Real connections. No noise.", W / 2, 752);
+  ctx.fillText("Founders · Investors · Mentors", W / 2, 668);
+  ctx.fillText("Co-founders · Freelancers · Clients", W / 2, 704);
+  ctx.fillText("Real connections. No noise.", W / 2, 740);
 
-  // Divider at y=800
+  // Divider at y=780
   ctx.fillStyle = "#2A2A3A";
-  ctx.fillRect(W * 0.2, 800, W * 0.6, 1);
+  ctx.fillRect(W * 0.2, 780, W * 0.6, 1);
 
   // CTA text
   ctx.font = "13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("Join now at", W / 2, 840);
+  ctx.fillText("Join now at", W / 2, 820);
 
   ctx.font = "bold 38px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.fillStyle = "#F5A623";
-  ctx.fillText("link-ap.online", W / 2, 892);
+  ctx.fillText("link-ap.online", W / 2, 872);
 
   // Gold footer bar
   ctx.fillStyle = "#F5A623";
@@ -898,11 +894,11 @@ function ShareModal({ user, onClose }) {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    drawInvitePoster(canvasRef.current, user.name, user.role, user.lookingFor);
+    drawInvitePoster(canvasRef.current);
     canvasRef.current.toBlob(blob => setPosterBlob(blob));
   }, []); // eslint-disable-line
 
-  const linkMessage = `Hey! Join me on Link-Ap — a networking app that connects you with the right people 🚀 https://link-ap.online`;
+  const linkMessage = `Hey! Join me on Link-Ap - a networking app that connects you with the right people - https://link-ap.online`;
 
   const handleSave = () => {
     if (!canvasRef.current) return;
