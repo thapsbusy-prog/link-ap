@@ -858,10 +858,11 @@ function drawInvitePoster(canvas) {
   ctx.textAlign = "center"; ctx.fillStyle = "#F0EEE8";
   ctx.fillText("Where the right people find each other.", W / 2, 624);
 
-  // Single value line centred between italic and divider
+  // Value lines centred between italic and divider
   ctx.font = "15px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("Co-founders · Investors · Collaborators · Advisory Roles · Coffee Chats", W / 2, 700);
+  ctx.fillText("Co-founders · Investors · Collaborators · Advisory Roles", W / 2, 686);
+  ctx.fillText("Coffee Chats · Jobs · Clients", W / 2, 718);
 
   // Divider at y=780
   ctx.fillStyle = "#2A2A3A";
