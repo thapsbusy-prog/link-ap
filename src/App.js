@@ -788,54 +788,54 @@ function PublicProfile({ profileUser, onClose }) {
             </div>
           )}
 
-          {/* Two-column: Achievements + Exploring / Open To */}
-          {(profileUser.achievements?.length > 0 || profileUser.currentlyExploring?.length > 0 || profileUser.openTo?.length > 0) && (
-            <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: profileUser.bringToTable ? `1px solid ${COLORS.border}` : "none", display: "flex", gap: 20, alignItems: "flex-start" }}>
-              {profileUser.achievements?.length > 0 && (
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>ACHIEVEMENTS</div>
-                  {profileUser.achievements.map((a, i) => (
-                    <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
-                      <div style={{ width: 18, height: 18, minWidth: 18, background: "#1A2A4A", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
-                        <svg width="10" height="10" viewBox="0 0 16 16" fill={COLORS.blue}><path d="M8 1l1.85 3.75L14 5.5l-3 2.93.71 4.12L8 10.5l-3.71 2.05L5 8.43 2 5.5l4.15-.75z"/></svg>
-                      </div>
-                      <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{a}</div>
-                    </div>
-                  ))}
+          {/* Achievements (full width) */}
+          {profileUser.achievements?.length > 0 && (
+            <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: `1px solid ${COLORS.border}` }}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>ACHIEVEMENTS</div>
+              {profileUser.achievements.map((a, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+                  <div style={{ width: 18, height: 18, minWidth: 18, background: "#1A2A4A", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                    <svg width="10" height="10" viewBox="0 0 16 16" fill={COLORS.blue}><path d="M8 1l1.85 3.75L14 5.5l-3 2.93.71 4.12L8 10.5l-3.71 2.05L5 8.43 2 5.5l4.15-.75z"/></svg>
+                  </div>
+                  <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{a}</div>
                 </div>
-              )}
-              {(profileUser.currentlyExploring?.length > 0 || profileUser.openTo?.length > 0) && (
-                <div style={{ flex: 1 }}>
-                  {profileUser.currentlyExploring?.length > 0 && (
-                    <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                        {profileUser.currentlyExploring.map(s => (
-                          <span key={s} style={{ background: "#2A1A00", color: COLORS.accent, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {profileUser.openTo?.length > 0 && (
-                    <div>
-                      <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                        {profileUser.openTo.map(s => (
-                          <span key={s} style={{ background: "#0A2015", color: COLORS.green, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              ))}
             </div>
           )}
 
           {/* What I bring to the table */}
           {profileUser.bringToTable && (
-            <div style={{ paddingTop: 20, paddingLeft: 14, borderLeft: `3px solid ${COLORS.blue}` }}>
-              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
-              <p style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{profileUser.bringToTable}</p>
+            <div style={{ paddingTop: 20, paddingBottom: (profileUser.currentlyExploring?.length > 0 || profileUser.openTo?.length > 0) ? 20 : 0, borderBottom: (profileUser.currentlyExploring?.length > 0 || profileUser.openTo?.length > 0) ? `1px solid ${COLORS.border}` : "none" }}>
+              <div style={{ paddingLeft: 14, borderLeft: `3px solid ${COLORS.blue}` }}>
+                <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
+                <p style={{ fontSize: 14, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{profileUser.bringToTable}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Currently Exploring + Open To */}
+          {(profileUser.currentlyExploring?.length > 0 || profileUser.openTo?.length > 0) && (
+            <div style={{ paddingTop: 20 }}>
+              {profileUser.currentlyExploring?.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {profileUser.currentlyExploring.map(s => (
+                      <span key={s} style={{ background: "#2A1A00", color: COLORS.accent, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {profileUser.openTo?.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {profileUser.openTo.map(s => (
+                      <span key={s} style={{ background: "#0A2015", color: COLORS.green, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1835,8 +1835,8 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
           <div key={msg.id} style={{ display: "flex", justifyContent: msg.from === firebaseUser.uid ? "flex-end" : "flex-start" }}>
             <div style={{
               maxWidth: "75%",
-              background: msg.from === firebaseUser.uid ? COLORS.accent : COLORS.card,
-              color: msg.from === firebaseUser.uid ? "#000" : COLORS.text,
+              background: msg.from === firebaseUser.uid ? "#1D4ED8" : COLORS.card,
+              color: COLORS.text,
               border: msg.from === firebaseUser.uid ? "none" : `1px solid ${COLORS.border}`,
               borderRadius: msg.from === firebaseUser.uid ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
               padding: "10px 14px", fontSize: 14, lineHeight: 1.5,
@@ -2480,54 +2480,54 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
               </div>
             )}
 
-            {/* Two-column: Achievements + Exploring / Open To */}
-            {(user.achievements?.length > 0 || user.currentlyExploring?.length > 0 || user.openTo?.length > 0) && (
-              <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: user.bringToTable ? `1px solid ${COLORS.border}` : "none", display: "flex", gap: 20, alignItems: "flex-start" }}>
-                {user.achievements?.length > 0 && (
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>ACHIEVEMENTS</div>
-                    {user.achievements.map((a, i) => (
-                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
-                        <div style={{ width: 18, height: 18, minWidth: 18, background: "#1A2A4A", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
-                          <svg width="10" height="10" viewBox="0 0 16 16" fill={COLORS.blue}><path d="M8 1l1.85 3.75L14 5.5l-3 2.93.71 4.12L8 10.5l-3.71 2.05L5 8.43 2 5.5l4.15-.75z"/></svg>
-                        </div>
-                        <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{a}</div>
-                      </div>
-                    ))}
+            {/* Achievements (full width) */}
+            {user.achievements?.length > 0 && (
+              <div style={{ paddingTop: 20, paddingBottom: 20, borderBottom: `1px solid ${COLORS.border}` }}>
+                <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 10, fontWeight: 600 }}>ACHIEVEMENTS</div>
+                {user.achievements.map((a, i) => (
+                  <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 8 }}>
+                    <div style={{ width: 18, height: 18, minWidth: 18, background: "#1A2A4A", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                      <svg width="10" height="10" viewBox="0 0 16 16" fill={COLORS.blue}><path d="M8 1l1.85 3.75L14 5.5l-3 2.93.71 4.12L8 10.5l-3.71 2.05L5 8.43 2 5.5l4.15-.75z"/></svg>
+                    </div>
+                    <div style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.5 }}>{a}</div>
                   </div>
-                )}
-                {(user.currentlyExploring?.length > 0 || user.openTo?.length > 0) && (
-                  <div style={{ flex: 1 }}>
-                    {user.currentlyExploring?.length > 0 && (
-                      <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                          {user.currentlyExploring.map(s => (
-                            <span key={s} style={{ background: "#2A1A00", color: COLORS.accent, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {user.openTo?.length > 0 && (
-                      <div>
-                        <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                          {user.openTo.map(s => (
-                            <span key={s} style={{ background: "#0A2015", color: COLORS.green, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                ))}
               </div>
             )}
 
             {/* What I bring to the table */}
             {user.bringToTable && (
-              <div style={{ paddingTop: 20, paddingLeft: 14, borderLeft: `3px solid ${COLORS.blue}` }}>
-                <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
-                <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{user.bringToTable}</p>
+              <div style={{ paddingTop: 20, paddingBottom: (user.currentlyExploring?.length > 0 || user.openTo?.length > 0) ? 20 : 0, borderBottom: (user.currentlyExploring?.length > 0 || user.openTo?.length > 0) ? `1px solid ${COLORS.border}` : "none" }}>
+                <div style={{ paddingLeft: 14, borderLeft: `3px solid ${COLORS.blue}` }}>
+                  <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, fontWeight: 600 }}>WHAT I BRING TO THE TABLE</div>
+                  <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7, margin: 0 }}>{user.bringToTable}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Currently Exploring + Open To */}
+            {(user.currentlyExploring?.length > 0 || user.openTo?.length > 0) && (
+              <div style={{ paddingTop: 20 }}>
+                {user.currentlyExploring?.length > 0 && (
+                  <div style={{ marginBottom: 14 }}>
+                    <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>CURRENTLY EXPLORING</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {user.currentlyExploring.map(s => (
+                        <span key={s} style={{ background: "#2A1A00", color: COLORS.accent, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {user.openTo?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>OPEN TO</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {user.openTo.map(s => (
+                        <span key={s} style={{ background: "#0A2015", color: COLORS.green, padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 500 }}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
