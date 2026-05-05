@@ -489,8 +489,8 @@ function Onboarding({ firebaseUser, onComplete }) {
         lastNameLower: form.lastName.trim().toLowerCase(),
         lookingForDetails: form.lookingForDetails,
         bringToTable: form.bringToTable,
-        linkedinProfileUrl: normalizeUrl(form.linkedin),
-        linkedinVerified: true,
+        linkedinProfileUrl: form.linkedin.trim() && validateLinkedIn(form.linkedin) ? normalizeUrl(form.linkedin) : "",
+        linkedinVerified: !!(form.linkedin.trim() && validateLinkedIn(form.linkedin)),
         photoURL: firebaseUser.photoURL || "",
         createdAt: serverTimestamp(),
         termsAcceptedAt: serverTimestamp(),
@@ -528,7 +528,7 @@ function Onboarding({ firebaseUser, onComplete }) {
           </div>
         </div>
       ),
-      valid: form.firstName.trim() && form.lastName.trim() && form.role && form.location && form.linkedin.trim() && validateLinkedIn(form.linkedin),
+      valid: form.firstName.trim() && form.lastName.trim() && form.role && form.location && (!form.linkedin.trim() || validateLinkedIn(form.linkedin)),
     },
     {
       title: "Your story",
@@ -2109,6 +2109,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
     currentlyExploring: user.currentlyExploring?.join(", ") || "",
     openTo: user.openTo || [],
     lookingForDetails: user.lookingForDetails || {},
+    linkedin: user.linkedinProfileUrl || "",
   });
 
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -2159,6 +2160,8 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         currentlyExploring: form.currentlyExploring.split(",").map(s => s.trim()).filter(Boolean),
         openTo: form.openTo,
         lookingForDetails: form.lookingForDetails,
+        linkedinProfileUrl: form.linkedin.trim() && validateLinkedIn(form.linkedin) ? normalizeUrl(form.linkedin) : "",
+        linkedinVerified: !!(form.linkedin.trim() && validateLinkedIn(form.linkedin)),
         nameLower: form.name.toLowerCase(),
         lastNameLower: form.name.trim().split(/\s+/).pop()?.toLowerCase() || "",
       };
@@ -2218,6 +2221,12 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         <TextArea label="What I Bring to the Table" value={form.bringToTable} onChange={v => update("bringToTable", v)} placeholder={getBringToTablePrompt(form.lookingFor)} />
         <Input label="Skills (comma separated)" value={form.skills} onChange={v => update("skills", v)} placeholder="e.g. Marketing, React, Sales" />
         <Input label="Achievements (comma separated)" value={form.achievements} onChange={v => update("achievements", v)} placeholder="e.g. Built 2 startups" />
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <Input label="LinkedIn Profile URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="Paste your LinkedIn profile URL (e.g. linkedin.com/in/yourname)" />
+          {form.linkedin.trim() && !validateLinkedIn(form.linkedin) && (
+            <span style={{ fontSize: 12, color: COLORS.red }}>Please enter a valid LinkedIn profile URL.</span>
+          )}
+        </div>
 
         <div>
           <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8, display: "block" }}>Looking For</label>
@@ -2282,11 +2291,11 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
           </div>
         )}
 
-        <button onClick={saveProfile} disabled={saving || !form.name || !form.role} style={{
+        <button onClick={saveProfile} disabled={saving || !form.name || !form.role || !!(form.linkedin.trim() && !validateLinkedIn(form.linkedin))} style={{
           padding: "13px", borderRadius: 12, border: "none",
-          background: !saving && form.name && form.role ? COLORS.accent : COLORS.border,
-          color: !saving && form.name && form.role ? "#000" : COLORS.textMuted,
-          cursor: !saving && form.name && form.role ? "pointer" : "not-allowed",
+          background: !saving && form.name && form.role && !(form.linkedin.trim() && !validateLinkedIn(form.linkedin)) ? COLORS.accent : COLORS.border,
+          color: !saving && form.name && form.role && !(form.linkedin.trim() && !validateLinkedIn(form.linkedin)) ? "#000" : COLORS.textMuted,
+          cursor: !saving && form.name && form.role && !(form.linkedin.trim() && !validateLinkedIn(form.linkedin)) ? "pointer" : "not-allowed",
           fontSize: 14, fontWeight: 700,
         }}>
           {saving ? "Saving..." : "Save Profile"}
@@ -2321,6 +2330,11 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{user.name}</div>
+                {user.linkedinVerified && user.linkedinProfileUrl && (
+                  <a href={user.linkedinProfileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
+                    <LinkedInIcon />
+                  </a>
+                )}
               </div>
               <div style={{ color: user.color, fontSize: 14, marginBottom: 4 }}>{user.role}</div>
               <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {user.location}</div>
