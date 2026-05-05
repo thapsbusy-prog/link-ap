@@ -108,23 +108,6 @@ const getContextualHeadline = (lookingFor = []) => {
   if (lookingFor.includes("Mentor")) return "Seeking the right mentor";
   return "Open to connecting";
 };
-const normalizeUrl = (url) => {
-  if (!url) return "";
-  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
-};
-const validateLinkedIn = (url) => {
-  if (!url) return true;
-  const normalized = normalizeUrl(url);
-  return /^https?:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-_%]+\/?$/.test(normalized);
-};
-
-function LinkedInIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2">
-      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-    </svg>
-  );
-}
 
 function LocationPin() {
   return (
@@ -458,7 +441,7 @@ function Onboarding({ firebaseUser, onComplete }) {
   const [form, setForm] = useState({
     title: "", firstName: "", lastName: "",
     pronouns: "", role: "", location: "",
-    bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
+    bio: "", skills: "", lookingFor: [], achievements: "",
     lookingForDetails: {}, bringToTable: "",
   });
 
@@ -486,7 +469,6 @@ function Onboarding({ firebaseUser, onComplete }) {
         skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
         lookingFor: form.lookingFor,
         achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
-        linkedin: form.linkedin ? normalizeUrl(form.linkedin) : "",
         avatar: fullName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
         color,
         nameLower: fullName.toLowerCase(),
@@ -522,20 +504,9 @@ function Onboarding({ firebaseUser, onComplete }) {
           <Select label="Pronouns / gender identity (optional)" value={form.pronouns} onChange={v => update("pronouns", v)} options={PRONOUN_OPTIONS} placeholder="Select pronouns" />
           <Input label="What do you do?" value={form.role} onChange={v => update("role", v)} placeholder="e.g. Entrepreneur, Developer, Designer" />
           <Input label="Location" value={form.location} onChange={v => update("location", v)} placeholder="e.g. Cape Town, SA" />
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <Input label="LinkedIn Profile URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="https://linkedin.com/in/yourname" />
-            {form.linkedin && !validateLinkedIn(form.linkedin) && (
-              <span style={{ fontSize: 12, color: COLORS.red }}>Must be a valid LinkedIn profile URL — e.g. linkedin.com/in/yourname</span>
-            )}
-            {form.linkedin && validateLinkedIn(form.linkedin) && (
-              <a href={normalizeUrl(form.linkedin)} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: COLORS.accent, textDecoration: "none" }}>
-                Open to confirm it's your profile ↗
-              </a>
-            )}
-          </div>
         </div>
       ),
-      valid: form.firstName.trim() && form.lastName.trim() && form.role && form.location && validateLinkedIn(form.linkedin),
+      valid: form.firstName.trim() && form.lastName.trim() && form.role && form.location,
     },
     {
       title: "Your story",
@@ -705,11 +676,6 @@ function PublicProfile({ profileUser, onClose }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{profileUser.name}</div>
               {profileUser.pronouns && <span style={{ fontSize: 12, color: COLORS.textMuted, fontStyle: "italic" }}>{profileUser.pronouns}</span>}
-              {profileUser.linkedin && (
-                <a href={profileUser.linkedin} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
-                  <LinkedInIcon />
-                </a>
-              )}
             </div>
             <div style={{ color: profileUser.color, fontSize: 14, marginBottom: 4 }}>{profileUser.role}</div>
             <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {profileUser.location}</div>
@@ -1330,11 +1296,6 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>{current.name}</div>
                 {current.pronouns && <span style={{ fontSize: 11, color: COLORS.textMuted, fontStyle: "italic" }}>{current.pronouns}</span>}
-                {current.linkedin && (
-                  <a href={current.linkedin} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ display: "flex", alignItems: "center" }}>
-                    <LinkedInIcon />
-                  </a>
-                )}
               </div>
               <div style={{ color: current.color, fontSize: 13, marginBottom: 4 }}>{current.role}</div>
               <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {current.location}</div>
@@ -2116,7 +2077,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
     name: user.name || "", role: user.role || "", location: user.location || "",
     bio: user.bio || "", skills: user.skills?.join(", ") || "",
     achievements: user.achievements?.join(", ") || "",
-    linkedin: user.linkedin || "", lookingFor: user.lookingFor || [],
+    lookingFor: user.lookingFor || [],
     bringToTable: user.bringToTable || "",
     currentlyExploring: user.currentlyExploring?.join(", ") || "",
     openTo: user.openTo || [],
@@ -2164,7 +2125,6 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         bio: form.bio,
         skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
         achievements: form.achievements.split(",").map(s => s.trim()).filter(Boolean),
-        linkedin: form.linkedin ? normalizeUrl(form.linkedin) : "",
         lookingFor: form.lookingFor,
         avatar: form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase() || "?",
         photoURL,
@@ -2191,7 +2151,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
       name: user.name || "", role: user.role || "", location: user.location || "",
       bio: user.bio || "", skills: user.skills?.join(", ") || "",
       achievements: user.achievements?.join(", ") || "",
-      linkedin: user.linkedin || "", lookingFor: user.lookingFor || [],
+      lookingFor: user.lookingFor || [],
       bringToTable: user.bringToTable || "",
       currentlyExploring: user.currentlyExploring?.join(", ") || "",
       openTo: user.openTo || [],
@@ -2231,17 +2191,6 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         <TextArea label="What I Bring to the Table" value={form.bringToTable} onChange={v => update("bringToTable", v)} placeholder={getBringToTablePrompt(form.lookingFor)} />
         <Input label="Skills (comma separated)" value={form.skills} onChange={v => update("skills", v)} placeholder="e.g. Marketing, React, Sales" />
         <Input label="Achievements (comma separated)" value={form.achievements} onChange={v => update("achievements", v)} placeholder="e.g. Built 2 startups" />
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <Input label="LinkedIn URL (optional)" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="https://linkedin.com/in/yourname" />
-          {form.linkedin && !validateLinkedIn(form.linkedin) && (
-            <span style={{ fontSize: 12, color: COLORS.red }}>Must be a valid LinkedIn profile URL — e.g. linkedin.com/in/yourname</span>
-          )}
-          {form.linkedin && validateLinkedIn(form.linkedin) && (
-            <a href={normalizeUrl(form.linkedin)} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: COLORS.accent, textDecoration: "none" }}>
-              Open to confirm it's your profile ↗
-            </a>
-          )}
-        </div>
 
         <div>
           <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8, display: "block" }}>Looking For</label>
@@ -2306,11 +2255,11 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
           </div>
         )}
 
-        <button onClick={saveProfile} disabled={saving || !form.name || !form.role || (!!form.linkedin && !validateLinkedIn(form.linkedin))} style={{
+        <button onClick={saveProfile} disabled={saving || !form.name || !form.role} style={{
           padding: "13px", borderRadius: 12, border: "none",
-          background: !saving && form.name && form.role && (!form.linkedin || validateLinkedIn(form.linkedin)) ? COLORS.accent : COLORS.border,
-          color: !saving && form.name && form.role && (!form.linkedin || validateLinkedIn(form.linkedin)) ? "#000" : COLORS.textMuted,
-          cursor: !saving && form.name && form.role && (!form.linkedin || validateLinkedIn(form.linkedin)) ? "pointer" : "not-allowed",
+          background: !saving && form.name && form.role ? COLORS.accent : COLORS.border,
+          color: !saving && form.name && form.role ? "#000" : COLORS.textMuted,
+          cursor: !saving && form.name && form.role ? "pointer" : "not-allowed",
           fontSize: 14, fontWeight: 700,
         }}>
           {saving ? "Saving..." : "Save Profile"}
@@ -2345,11 +2294,6 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{user.name}</div>
-                {user.linkedin && (
-                  <a href={user.linkedin} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
-                    <LinkedInIcon />
-                  </a>
-                )}
               </div>
               <div style={{ color: user.color, fontSize: 14, marginBottom: 4 }}>{user.role}</div>
               <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {user.location}</div>
