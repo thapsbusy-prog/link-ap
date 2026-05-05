@@ -830,7 +830,7 @@ function drawInvitePoster(canvas) {
   ctx.fillRect(W * 0.2, 260, W * 0.6, 1);
 
   // Section label at y=290
-  ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.font = "bold 14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.textAlign = "center"; ctx.fillStyle = "#F5A623";
   ctx.fillText("WHY YOU SHOULD JOIN", W / 2, 290);
 
@@ -847,7 +847,7 @@ function drawInvitePoster(canvas) {
     roundRect(ctx, cx, cy, cw, ch, 12); ctx.fill();
     ctx.fillStyle = "rgba(245,166,35,0.5)";
     ctx.fillRect(cx, cy + 10, 3, ch - 20);
-    ctx.font = "14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+    ctx.font = "16px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
     ctx.textAlign = "left"; ctx.textBaseline = "middle";
     ctx.fillStyle = "#F0EEE8"; ctx.fillText(text, cx + 20, cy + ch / 2);
     ctx.textBaseline = "alphabetic";
@@ -858,12 +858,10 @@ function drawInvitePoster(canvas) {
   ctx.textAlign = "center"; ctx.fillStyle = "#F0EEE8";
   ctx.fillText("Where the right people find each other.", W / 2, 624);
 
-  // Three value lines
+  // Single value line centred between italic and divider
   ctx.font = "15px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("Founders · Investors · Mentors", W / 2, 668);
-  ctx.fillText("Co-founders · Freelancers · Clients", W / 2, 704);
-  ctx.fillText("Real connections. No noise.", W / 2, 740);
+  ctx.fillText("Co-founders · Investors · Collaborators · Advisory Roles · Coffee Chats", W / 2, 700);
 
   // Divider at y=780
   ctx.fillStyle = "#2A2A3A";
