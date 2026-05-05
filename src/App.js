@@ -109,6 +109,20 @@ const getContextualHeadline = (lookingFor = []) => {
   return "Open to connecting";
 };
 
+const normalizeUrl = (url) => {
+  if (!url) return "";
+  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
+};
+const validateLinkedIn = (url) => url.includes("linkedin.com/in/");
+
+function LinkedInIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#0A66C2">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+    </svg>
+  );
+}
+
 function LocationPin() {
   return (
     <svg width="11" height="11" viewBox="0 0 24 24" fill={COLORS.textMuted} style={{ flexShrink: 0 }}>
@@ -441,7 +455,7 @@ function Onboarding({ firebaseUser, onComplete }) {
   const [form, setForm] = useState({
     title: "", firstName: "", lastName: "",
     pronouns: "", role: "", location: "",
-    bio: "", skills: "", lookingFor: [], achievements: "",
+    bio: "", skills: "", lookingFor: [], achievements: "", linkedin: "",
     lookingForDetails: {}, bringToTable: "",
   });
 
@@ -475,6 +489,8 @@ function Onboarding({ firebaseUser, onComplete }) {
         lastNameLower: form.lastName.trim().toLowerCase(),
         lookingForDetails: form.lookingForDetails,
         bringToTable: form.bringToTable,
+        linkedinProfileUrl: normalizeUrl(form.linkedin),
+        linkedinVerified: true,
         photoURL: firebaseUser.photoURL || "",
         createdAt: serverTimestamp(),
         termsAcceptedAt: serverTimestamp(),
@@ -504,9 +520,15 @@ function Onboarding({ firebaseUser, onComplete }) {
           <Select label="Pronouns / gender identity (optional)" value={form.pronouns} onChange={v => update("pronouns", v)} options={PRONOUN_OPTIONS} placeholder="Select pronouns" />
           <Input label="What do you do?" value={form.role} onChange={v => update("role", v)} placeholder="e.g. Entrepreneur, Developer, Designer" />
           <Input label="Location" value={form.location} onChange={v => update("location", v)} placeholder="e.g. Cape Town, SA" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <Input label="LinkedIn Profile URL" value={form.linkedin} onChange={v => update("linkedin", v)} placeholder="Paste your LinkedIn profile URL (e.g. linkedin.com/in/yourname)" />
+            {form.linkedin.trim() && !validateLinkedIn(form.linkedin) && (
+              <span style={{ fontSize: 12, color: COLORS.red }}>Please enter a valid LinkedIn profile URL.</span>
+            )}
+          </div>
         </div>
       ),
-      valid: form.firstName.trim() && form.lastName.trim() && form.role && form.location,
+      valid: form.firstName.trim() && form.lastName.trim() && form.role && form.location && form.linkedin.trim() && validateLinkedIn(form.linkedin),
     },
     {
       title: "Your story",
@@ -676,6 +698,11 @@ function PublicProfile({ profileUser, onClose }) {
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>{profileUser.name}</div>
               {profileUser.pronouns && <span style={{ fontSize: 12, color: COLORS.textMuted, fontStyle: "italic" }}>{profileUser.pronouns}</span>}
+              {profileUser.linkedinVerified && profileUser.linkedinProfileUrl && (
+                <a href={profileUser.linkedinProfileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
+                  <LinkedInIcon />
+                </a>
+              )}
             </div>
             <div style={{ color: profileUser.color, fontSize: 14, marginBottom: 4 }}>{profileUser.role}</div>
             <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {profileUser.location}</div>
