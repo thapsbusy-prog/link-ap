@@ -974,8 +974,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [showSearch, setShowSearch] = useState(false);
   const [activeChat, setActiveChat] = useState(null);
   const [notification, setNotification] = useState(null);
-  const [unreadMessages, setUnreadMessages] = useState(0);
-  useEffect(() => { if (tab === "messages") setUnreadMessages(0); }, [tab]);
+  const [unreadChats, setUnreadChats] = useState(new Set());
   const [viewingProfile, setViewingProfile] = useState(null);
   const [profileEditTrigger, setProfileEditTrigger] = useState(0);
 
@@ -1034,7 +1033,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           if (!isViewingThisChat) {
             playBeep();
             triggerVibrate();
-            setUnreadMessages(c => c + 1);
+            setUnreadChats(prev => new Set([...prev, match.uid]));
           }
         });
       });
@@ -1119,6 +1118,11 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
 
+  const handleOpenChat = (uid) => {
+    setActiveChat(uid);
+    if (uid) setUnreadChats(prev => { const s = new Set(prev); s.delete(uid); return s; });
+  };
+
   const unmatched = allUsers === null ? null : allUsers.filter(u =>
     !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid) && !u.deactivated && !received.find(r => r.uid === u.uid)
   );
@@ -1178,8 +1182,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} />}
-        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} />}
-        {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />}
+        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} />}
+        {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} />}
       </div>
@@ -1190,7 +1194,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           width: "100%", maxWidth: 430, height: "100dvh", zIndex: 20,
           background: COLORS.bg, display: "flex", flexDirection: "column",
         }}>
-          <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />
+          <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} />
         </div>
       )}
 
@@ -1208,7 +1212,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
             icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> },
           { id: "matches", label: "Connections",
             icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> },
-          { id: "messages", label: "Messages", badge: unreadMessages,
+          { id: "messages", label: "Messages", badge: unreadChats.size,
             icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
           { id: "profile", label: "Profile",
             icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> },
@@ -1669,7 +1673,7 @@ function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile,
   );
 }
 
-function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, onViewProfile }) {
+function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile }) {
   const [input, setInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const bottomRef = useRef(null);
@@ -1722,8 +1726,15 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
             background: COLORS.card, border: `1px solid ${COLORS.border}`,
             borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", cursor: "pointer",
           }}>
-            <div onClick={(e) => { e.stopPropagation(); onViewProfile && onViewProfile(u); }} style={{ flexShrink: 0 }}>
+            <div onClick={(e) => { e.stopPropagation(); onViewProfile && onViewProfile(u); }} style={{ flexShrink: 0, position: "relative" }}>
               <Avatar initials={u.avatar} color={u.color} size={48} online photoURL={u.photoURL} />
+              {unreadChats.has(u.uid) && (
+                <div style={{
+                  position: "absolute", top: 0, right: 0,
+                  width: 10, height: 10, background: "#F5A623", borderRadius: "50%",
+                  border: `2px solid ${COLORS.card}`,
+                }} />
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
