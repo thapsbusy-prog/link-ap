@@ -1105,6 +1105,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   const handleAcceptRequest = async (senderUser) => {
+    const chatId = [firebaseUser.uid, senderUser.uid].sort().join("_");
+    const prematchSnap = await getDocs(collection(db, "prematches", chatId, "messages"));
     await Promise.all([
       setDoc(doc(db, "users", firebaseUser.uid, "matches", senderUser.uid), senderUser),
       setDoc(doc(db, "users", senderUser.uid, "matches", firebaseUser.uid), user),
@@ -1112,6 +1114,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       deleteDoc(doc(db, "users", firebaseUser.uid, "received", senderUser.uid)),
       deleteDoc(doc(db, "users", firebaseUser.uid, "sent", senderUser.uid)),
       deleteDoc(doc(db, "users", senderUser.uid, "received", firebaseUser.uid)),
+      ...prematchSnap.docs.map(d => deleteDoc(d.ref)),
     ]);
     showNotif(`Connected with ${senderUser.name}! 🎉`);
   };
@@ -1124,10 +1127,16 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   const handleReplyRequest = async (senderUser, replyText) => {
+    const chatId = [firebaseUser.uid, senderUser.uid].sort().join("_");
     const update = { reply: replyText, repliedAt: serverTimestamp() };
     await Promise.all([
       setDoc(doc(db, "users", firebaseUser.uid, "received", senderUser.uid), update, { merge: true }),
       setDoc(doc(db, "users", senderUser.uid, "sent", firebaseUser.uid), update, { merge: true }),
+      addDoc(collection(db, "prematches", chatId, "messages"), {
+        from: firebaseUser.uid,
+        text: replyText,
+        sentAt: serverTimestamp(),
+      }),
     ]);
   };
 
@@ -1190,7 +1199,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} />}
-        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onReplyRequest={handleReplyRequest} />}
+        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { setActiveChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onReplyRequest={handleReplyRequest} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={setActiveChat} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} />}
@@ -1550,7 +1559,82 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
   );
 }
 
-function Matches({ matches, sent, received, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onReplyRequest }) {
+function PreMatchThread({ chatId, currentUid }) {
+  const [msgs, setMsgs] = useState([]);
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    const q = query(collection(db, "prematches", chatId, "messages"), orderBy("sentAt"));
+    return onSnapshot(q, snap => setMsgs(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+  }, [chatId]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [msgs.length]);
+
+  const send = async () => {
+    if (!input.trim() || sending) return;
+    setSending(true);
+    await addDoc(collection(db, "prematches", chatId, "messages"), {
+      from: currentUid,
+      text: input.trim(),
+      sentAt: serverTimestamp(),
+    });
+    setInput("");
+    setSending(false);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {msgs.length > 0 && (
+        <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, padding: "4px 0" }}>
+          {msgs.map(msg => (
+            <div key={msg.id} style={{ display: "flex", justifyContent: msg.from === currentUid ? "flex-end" : "flex-start" }}>
+              <div style={{
+                maxWidth: "80%", padding: "8px 12px", borderRadius: 12,
+                background: msg.from === currentUid ? COLORS.accent : COLORS.bg,
+                color: msg.from === currentUid ? "#000" : COLORS.text,
+                fontSize: 13, lineHeight: 1.5,
+                border: msg.from === currentUid ? "none" : `1px solid ${COLORS.border}`,
+              }}>
+                {msg.text}
+              </div>
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="Reply..."
+          style={{
+            flex: 1, padding: "9px 12px", borderRadius: 10,
+            background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+            color: COLORS.text, fontSize: 13, outline: "none",
+          }}
+        />
+        <button
+          onClick={send}
+          disabled={!input.trim() || sending}
+          style={{
+            padding: "9px 16px", borderRadius: 10, border: "none",
+            background: input.trim() && !sending ? COLORS.accent : COLORS.border,
+            color: input.trim() && !sending ? "#000" : COLORS.textMuted,
+            cursor: input.trim() && !sending ? "pointer" : "not-allowed",
+            fontSize: 13, fontWeight: 700,
+          }}
+        >{sending ? "..." : "Send"}</button>
+      </div>
+    </div>
+  );
+}
+
+function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onReplyRequest }) {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
@@ -1614,60 +1698,74 @@ function Matches({ matches, sent, received, onChat, onViewProfile, onAcceptReque
                   </div>
                 )}
 
-                {req.reply && (
-                  <div style={{ background: `${COLORS.green}12`, borderRadius: 10, padding: "10px 14px", border: `1px solid ${COLORS.green}30` }}>
-                    <div style={{ fontSize: 10, color: COLORS.green, marginBottom: 4, fontWeight: 600 }}>YOUR REPLY</div>
-                    <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, margin: 0 }}>{req.reply}</p>
-                  </div>
-                )}
-
-                {replyingTo === req.uid && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <textarea
-                      autoFocus
-                      value={replyText}
-                      onChange={e => setReplyText(e.target.value)}
-                      placeholder="Write a reply..."
-                      rows={3}
-                      style={{
-                        width: "100%", padding: "10px 14px", borderRadius: 10,
-                        background: COLORS.bg, border: `1px solid ${COLORS.border}`,
-                        color: COLORS.text, fontSize: 13, outline: "none", resize: "none", boxSizing: "border-box",
-                      }}
+                {req.reply ? (
+                  <>
+                    <PreMatchThread
+                      chatId={[firebaseUser.uid, req.uid].sort().join("_")}
+                      currentUid={firebaseUser.uid}
                     />
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => { setReplyingTo(null); setReplyText(""); }} style={{
-                        flex: 1, padding: "9px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
-                        background: "transparent", color: COLORS.textMuted, cursor: "pointer", fontSize: 12,
-                      }}>Cancel</button>
-                      <button onClick={() => submitReply(req)} disabled={!replyText.trim() || replying} style={{
-                        flex: 2, padding: "9px", borderRadius: 10, border: "none",
-                        background: replyText.trim() && !replying ? COLORS.accent : COLORS.border,
-                        color: replyText.trim() && !replying ? "#000" : COLORS.textMuted,
-                        cursor: replyText.trim() && !replying ? "pointer" : "not-allowed",
-                        fontSize: 12, fontWeight: 700,
-                      }}>{replying ? "Sending..." : "Send Reply"}</button>
+                      <button onClick={() => onAcceptRequest(req)} style={{
+                        flex: 2, padding: "9px 0", borderRadius: 10, border: "none",
+                        background: COLORS.accent, color: "#000", cursor: "pointer", fontSize: 12, fontWeight: 700,
+                      }}>Accept ✓</button>
+                      <button onClick={() => onDeclineRequest(req)} style={{
+                        flex: 1, padding: "9px 0", borderRadius: 10,
+                        border: `1px solid ${COLORS.red}44`, background: "transparent",
+                        color: COLORS.red, cursor: "pointer", fontSize: 12,
+                      }}>Decline</button>
                     </div>
-                  </div>
-                )}
-
-                {replyingTo !== req.uid && (
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => { setReplyingTo(req.uid); setReplyText(""); }} style={{
-                      flex: 1, padding: "9px 0", borderRadius: 10,
-                      border: `1px solid ${COLORS.border}`, background: "transparent",
-                      color: COLORS.text, cursor: "pointer", fontSize: 12, fontWeight: 500,
-                    }}>{req.reply ? "Edit Reply" : "Reply"}</button>
-                    <button onClick={() => onAcceptRequest(req)} style={{
-                      flex: 2, padding: "9px 0", borderRadius: 10, border: "none",
-                      background: COLORS.accent, color: "#000", cursor: "pointer", fontSize: 12, fontWeight: 700,
-                    }}>Accept ✓</button>
-                    <button onClick={() => onDeclineRequest(req)} style={{
-                      flex: 1, padding: "9px 0", borderRadius: 10,
-                      border: `1px solid ${COLORS.red}44`, background: "transparent",
-                      color: COLORS.red, cursor: "pointer", fontSize: 12,
-                    }}>Decline</button>
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    {replyingTo === req.uid && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <textarea
+                          autoFocus
+                          value={replyText}
+                          onChange={e => setReplyText(e.target.value)}
+                          placeholder="Write a reply..."
+                          rows={3}
+                          style={{
+                            width: "100%", padding: "10px 14px", borderRadius: 10,
+                            background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+                            color: COLORS.text, fontSize: 13, outline: "none", resize: "none", boxSizing: "border-box",
+                          }}
+                        />
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <button onClick={() => { setReplyingTo(null); setReplyText(""); }} style={{
+                            flex: 1, padding: "9px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
+                            background: "transparent", color: COLORS.textMuted, cursor: "pointer", fontSize: 12,
+                          }}>Cancel</button>
+                          <button onClick={() => submitReply(req)} disabled={!replyText.trim() || replying} style={{
+                            flex: 2, padding: "9px", borderRadius: 10, border: "none",
+                            background: replyText.trim() && !replying ? COLORS.accent : COLORS.border,
+                            color: replyText.trim() && !replying ? "#000" : COLORS.textMuted,
+                            cursor: replyText.trim() && !replying ? "pointer" : "not-allowed",
+                            fontSize: 12, fontWeight: 700,
+                          }}>{replying ? "Sending..." : "Send Reply"}</button>
+                        </div>
+                      </div>
+                    )}
+                    {replyingTo !== req.uid && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => { setReplyingTo(req.uid); setReplyText(""); }} style={{
+                          flex: 1, padding: "9px 0", borderRadius: 10,
+                          border: `1px solid ${COLORS.border}`, background: "transparent",
+                          color: COLORS.text, cursor: "pointer", fontSize: 12, fontWeight: 500,
+                        }}>Reply</button>
+                        <button onClick={() => onAcceptRequest(req)} style={{
+                          flex: 2, padding: "9px 0", borderRadius: 10, border: "none",
+                          background: COLORS.accent, color: "#000", cursor: "pointer", fontSize: 12, fontWeight: 700,
+                        }}>Accept ✓</button>
+                        <button onClick={() => onDeclineRequest(req)} style={{
+                          flex: 1, padding: "9px 0", borderRadius: 10,
+                          border: `1px solid ${COLORS.red}44`, background: "transparent",
+                          color: COLORS.red, cursor: "pointer", fontSize: 12,
+                        }}>Decline</button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             ))}
@@ -1721,10 +1819,10 @@ function Matches({ matches, sent, received, onChat, onViewProfile, onAcceptReque
                   </div>
                 )}
                 {u.reply && (
-                  <div style={{ background: `${COLORS.accent}10`, borderRadius: 10, padding: "10px 14px", border: `1px solid ${COLORS.accent}30` }}>
-                    <div style={{ fontSize: 10, color: COLORS.accent, marginBottom: 4, fontWeight: 600 }}>THEY REPLIED</div>
-                    <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, margin: 0 }}>{u.reply}</p>
-                  </div>
+                  <PreMatchThread
+                    chatId={[firebaseUser.uid, u.uid].sort().join("_")}
+                    currentUid={firebaseUser.uid}
+                  />
                 )}
               </div>
             ))}
