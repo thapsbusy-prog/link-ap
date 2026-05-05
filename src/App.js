@@ -790,100 +790,106 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function drawInvitePoster(canvas) {
+function drawInvitePoster(canvas, name, role, lookingFor) {
   const W = 540, H = 960;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
+  // Background
   ctx.fillStyle = "#0A0A0F";
   ctx.fillRect(0, 0, W, H);
 
-  const glow = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, 360);
-  glow.addColorStop(0, "rgba(245,166,35,0.22)");
+  // Subtle top radial glow
+  const glow = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, 400);
+  glow.addColorStop(0, "rgba(245,166,35,0.15)");
   glow.addColorStop(1, "rgba(245,166,35,0)");
   ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, 360);
+  ctx.fillRect(0, 0, W, 400);
 
-  const bottomGrad = ctx.createLinearGradient(0, H - 200, 0, H);
-  bottomGrad.addColorStop(0, "transparent");
-  bottomGrad.addColorStop(1, "rgba(245,166,35,0.06)");
-  ctx.fillStyle = bottomGrad;
-  ctx.fillRect(0, H - 200, W, 200);
-
+  // Gold top bar
   ctx.fillStyle = "#F5A623";
-  ctx.fillRect(0, 0, W, 4);
+  ctx.fillRect(0, 0, W, 3);
 
-  ctx.fillStyle = "rgba(245,166,35,0.12)";
-  ctx.beginPath(); ctx.arc(W / 2, 85, 38, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = "rgba(245,166,35,0.35)"; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(W / 2, 85, 38, 0, Math.PI * 2); ctx.stroke();
-  ctx.font = "32px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillStyle = "#F5A623"; ctx.fillText("⚡", W / 2, 86);
-
+  // "Link-Ap" wordmark at y=160
   ctx.textBaseline = "alphabetic";
-  ctx.font = "bold 52px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.font = "bold 64px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   const lw = ctx.measureText("Link").width;
   const aw = ctx.measureText("-Ap").width;
   const tx = (W - lw - aw) / 2;
   ctx.textAlign = "left";
-  ctx.fillStyle = "#F0EEE8"; ctx.fillText("Link", tx, 174);
-  ctx.fillStyle = "#F5A623"; ctx.fillText("-Ap", tx + lw, 174);
+  ctx.fillStyle = "#F0EEE8"; ctx.fillText("Link", tx, 160);
+  ctx.fillStyle = "#F5A623"; ctx.fillText("-Ap", tx + lw, 160);
 
-  ctx.font = "16px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  // Tagline at y=210
+  ctx.font = "18px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.textAlign = "center"; ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("Connect with the right people", W / 2, 204);
+  ctx.fillText("Connect with the right people", W / 2, 210);
 
-  ctx.fillStyle = "#2A2A3A"; ctx.fillRect(W * 0.15, 226, W * 0.7, 1);
+  // Divider at y=260
+  ctx.fillStyle = "#2A2A3A";
+  ctx.fillRect(W * 0.2, 260, W * 0.6, 1);
+
+  // User identity card: x=60 y=300 w=420 h=240 r=20
+  roundRect(ctx, 60, 300, 420, 240, 20);
+  ctx.fillStyle = "#13131A"; ctx.fill();
+  ctx.strokeStyle = "rgba(245,166,35,0.25)"; ctx.lineWidth = 1; ctx.stroke();
 
   ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#F5A623";
-  ctx.fillText("WHY YOU SHOULD JOIN", W / 2, 254);
+  ctx.textAlign = "center"; ctx.fillStyle = "#F5A623";
+  ctx.fillText("INVITED BY", W / 2, 340);
 
-  const bullets = [
-    ["⚡", "Discover co-founders, investors & mentors"],
-    ["🤝", "Connect with people building real things"],
-    ["💬", "Chat once you both connect"],
-    ["🎯", "Find exactly who you're looking for"],
-  ];
-  bullets.forEach(([icon, text], i) => {
-    const cy = 274 + i * 70, ch = 54, cx = W * 0.07, cw = W * 0.86;
-    ctx.fillStyle = "#13131A";
-    roundRect(ctx, cx, cy, cw, ch, 12); ctx.fill();
-    ctx.fillStyle = "rgba(245,166,35,0.5)";
-    ctx.fillRect(cx, cy + 10, 3, ch - 20);
-    ctx.font = "20px Arial"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillStyle = "#F0EEE8"; ctx.fillText(icon, cx + 16, cy + ch / 2);
-    ctx.font = "14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-    ctx.fillText(text, cx + 52, cy + ch / 2);
-    ctx.textBaseline = "alphabetic";
-  });
+  ctx.font = "bold 32px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#F0EEE8";
+  ctx.fillText(name || "A friend", W / 2, 390);
 
-  ctx.fillStyle = "#2A2A3A"; ctx.fillRect(W * 0.15, 566, W * 0.7, 1);
-
-  ctx.font = "italic 17px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.textAlign = "center"; ctx.fillStyle = "#F0EEE8";
-  ctx.fillText("Where the right people find each other.", W / 2, 618);
-
-  ctx.font = "14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  const roleText = (role || "").length > 36 ? (role || "").slice(0, 36) + "…" : (role || "");
+  ctx.font = "16px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("Co-founders · Investors · Mentors · Clients", W / 2, 650);
+  ctx.fillText(roleText, W / 2, 430);
 
-  ctx.fillStyle = "#2A2A3A"; ctx.fillRect(W * 0.15, 678, W * 0.7, 1);
+  // Gold accent line at y=460
+  ctx.fillStyle = "#F5A623";
+  ctx.fillRect(W / 2 - 20, 460, 40, 2);
 
+  // lookingFor at y=495
+  const lookingText = Array.isArray(lookingFor) ? lookingFor.join(" · ") : (lookingFor || "");
   ctx.font = "13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#8A8A9A"; ctx.fillText("Join now at", W / 2, 724);
-  ctx.font = "bold 34px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.fillStyle = "#F5A623"; ctx.fillText("link-ap.online", W / 2, 772, W * 0.8);
+  ctx.fillStyle = "#8A8A9A";
+  ctx.fillText(lookingText, W / 2, 495);
 
-  for (let i = 0; i < 5; i++) {
-    ctx.fillStyle = i === 2 ? "#F5A623" : "rgba(245,166,35,0.3)";
-    ctx.beginPath(); ctx.arc(W / 2 + (i - 2) * 16, 800, i === 2 ? 4 : 3, 0, Math.PI * 2); ctx.fill();
-  }
+  // Italic statement at y=620
+  ctx.font = "italic 20px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#F0EEE8";
+  ctx.fillText("Where the right people find each other.", W / 2, 620);
 
-  ctx.fillStyle = "#F5A623"; ctx.fillRect(0, 832, W, H - 832);
+  // Three value lines
+  ctx.font = "15px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#8A8A9A";
+  ctx.fillText("Founders · Investors · Mentors", W / 2, 680);
+  ctx.fillText("Co-founders · Freelancers · Clients", W / 2, 716);
+  ctx.fillText("Real connections. No noise.", W / 2, 752);
+
+  // Divider at y=800
+  ctx.fillStyle = "#2A2A3A";
+  ctx.fillRect(W * 0.2, 800, W * 0.6, 1);
+
+  // CTA text
+  ctx.font = "13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#8A8A9A";
+  ctx.fillText("Join now at", W / 2, 840);
+
+  ctx.font = "bold 38px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  ctx.fillStyle = "#F5A623";
+  ctx.fillText("link-ap.online", W / 2, 892);
+
+  // Gold footer bar
+  ctx.fillStyle = "#F5A623";
+  ctx.fillRect(0, 910, W, 50);
+
   ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillStyle = "#000000"; ctx.fillText("Join Link-Ap  →", W / 2, 896);
+  ctx.fillStyle = "#000000";
+  ctx.fillText("Join Link-Ap  →", W / 2, 935);
 }
 
 function ShareModal({ user, onClose }) {
@@ -892,32 +898,11 @@ function ShareModal({ user, onClose }) {
 
   useEffect(() => {
     if (!canvasRef.current) return;
-    drawInvitePoster(canvasRef.current);
+    drawInvitePoster(canvasRef.current, user.name, user.role, user.lookingFor);
     canvasRef.current.toBlob(blob => setPosterBlob(blob));
   }, []); // eslint-disable-line
 
-  const posterCaption = `Join me on Link-Ap 🔗`;
   const linkMessage = `Hey! Join me on Link-Ap — a networking app that connects you with the right people 🚀 https://link-ap.online`;
-
-  const handleSharePoster = async () => {
-    if (!posterBlob) return;
-    const file = new File([posterBlob], "link-ap-invite.png", { type: "image/png" });
-    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], text: posterCaption }); } catch (err) { /* user cancelled */ }
-    } else {
-      const a = document.createElement("a");
-      a.download = "link-ap-invite.png";
-      a.href = canvasRef.current.toDataURL("image/png");
-      a.click();
-    }
-  };
-
-  const handleShareLink = async () => {
-    if (navigator.share) {
-      try { await navigator.share({ text: linkMessage }); return; } catch (err) { if (err.name === "AbortError") return; }
-    }
-    window.open(`https://wa.me/?text=${encodeURIComponent(linkMessage)}`, "_blank");
-  };
 
   const handleSave = () => {
     if (!canvasRef.current) return;
@@ -925,6 +910,16 @@ function ShareModal({ user, onClose }) {
     a.download = "link-ap-invite.png";
     a.href = canvasRef.current.toDataURL("image/png");
     a.click();
+  };
+
+  const handleWhatsApp = async () => {
+    if (posterBlob && navigator.share && navigator.canShare) {
+      const file = new File([posterBlob], "link-ap-invite.png", { type: "image/png" });
+      if (navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], text: linkMessage }); return; } catch (err) { if (err.name === "AbortError") return; }
+      }
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(linkMessage)}`, "_blank");
   };
 
   return (
@@ -954,17 +949,12 @@ function ShareModal({ user, onClose }) {
             flex: 1, padding: "12px 8px", borderRadius: 12,
             border: `1px solid ${COLORS.border}`, background: "transparent",
             color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
-          }}>⬇ Save</button>
-          <button onClick={handleSharePoster} style={{
-            flex: 1, padding: "12px 8px", borderRadius: 12, border: "none",
+          }}>Save Poster</button>
+          <button onClick={handleWhatsApp} style={{
+            flex: 2, padding: "12px 8px", borderRadius: 12, border: "none",
             background: "#25D366", color: "#fff", cursor: "pointer",
             fontSize: 13, fontWeight: 700,
-          }}>🖼 Share Poster</button>
-          <button onClick={handleShareLink} style={{
-            flex: 1, padding: "12px 8px", borderRadius: 12, border: "none",
-            background: COLORS.accent, color: "#000", cursor: "pointer",
-            fontSize: 13, fontWeight: 700,
-          }}>🔗 Share Link</button>
+          }}>Share on WhatsApp</button>
         </div>
       </div>
     </div>
