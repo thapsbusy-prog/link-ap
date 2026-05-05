@@ -1280,6 +1280,7 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
           <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 20, border: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.textMuted, backgroundColor: COLORS.card }}>🎟 Founding Member</div>
         </>
       )}
+      {showShare && user && <ShareModal user={user} onClose={() => setShowShare(false)} />}
     </div>
   );
 
