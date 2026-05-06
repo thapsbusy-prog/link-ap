@@ -1327,7 +1327,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} />}
-        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} />}
+        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} />}
@@ -1691,7 +1691,7 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
 }
 
 
-function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile, onAcceptRequest, onDeclineRequest }) {
+function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onDiscover }) {
   const hasActivity = matches.length > 0 || sent.length > 0 || received.length > 0;
 
   return (
@@ -1702,9 +1702,26 @@ function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile,
       </div>
 
       {!hasActivity && (
-        <div style={{ textAlign: "center", paddingTop: 60, color: COLORS.textMuted }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-          <p>Discover people or search by name to connect!</p>
+        <div style={{ textAlign: "center", paddingTop: 52, paddingBottom: 32, paddingLeft: 24, paddingRight: 24 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px",
+            background: `${COLORS.accent}18`, border: `1px solid ${COLORS.accent}35`,
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28,
+          }}>🤝</div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>
+            No connections yet
+          </h3>
+          <p style={{ fontSize: 14, color: COLORS.textMuted, lineHeight: 1.7, margin: "0 0 6px" }}>
+            You're one of the first 100 people on Link-Ap — which means free access, forever.
+          </p>
+          <p style={{ fontSize: 14, color: COLORS.textMuted, lineHeight: 1.7, margin: "0 0 28px" }}>
+            Your next connection is one Discover away.
+          </p>
+          <button onClick={onDiscover} style={{
+            padding: "12px 28px", borderRadius: 12, border: "none",
+            background: COLORS.accent, color: "#000", cursor: "pointer",
+            fontSize: 14, fontWeight: 700,
+          }}>Go to Discover</button>
         </div>
       )}
 
