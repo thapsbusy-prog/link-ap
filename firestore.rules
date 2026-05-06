@@ -2,71 +2,45 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── User profiles ───────────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
     match /users/{uid} {
-      // Any signed-in user can read profiles (required for Discover + Search)
-      allow read: if request.auth != null;
-      // Only the owner can write their own profile document
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow read: if isAuth() && (isOwner(uid) || resource.data.deactivated != true);
+      allow create, update: if isAuth() && isOwner(uid);
+      allow delete: if isAuth() && isOwner(uid);
 
-      // ── Matches ─────────────────────────────────────────────────────────
-      match /matches/{matchId} {
-        allow read: if request.auth != null && request.auth.uid == uid;
-        // Owner writes their own matches; the other user writes the mirrored doc
-        allow write: if request.auth != null &&
-          (request.auth.uid == uid || request.auth.uid == matchId);
+      match /matches/{matchedUid} {
+        allow read, write: if isAuth() && (isOwner(uid) || isOwner(matchedUid));
       }
 
-      // ── Sent requests ───────────────────────────────────────────────────
-      match /sent/{sentToUid} {
-        // Owner lists their outgoing requests; recipient reads a single doc
-        // to check for mutual match or to see a reply
-        allow read: if request.auth != null &&
-          (request.auth.uid == uid || request.auth.uid == sentToUid);
-        // Only the sender can create a new request
-        allow create: if request.auth != null && request.auth.uid == uid;
-        // Sender OR recipient can update (recipient mirrors a reply back here)
-        allow update: if request.auth != null &&
-          (request.auth.uid == uid || request.auth.uid == sentToUid);
-        // Sender OR recipient can delete (withdraw / accept / decline)
-        allow delete: if request.auth != null &&
-          (request.auth.uid == uid || request.auth.uid == sentToUid);
+      match /sent/{targetId} {
+        allow read, write: if isAuth() && (isOwner(uid) || isOwner(targetId));
       }
 
-      // ── Received requests ────────────────────────────────────────────────
-      // Created when someone sends a search-based connection request with a note
-      match /received/{senderUid} {
-        // Only the owner can read their incoming requests
-        allow read: if request.auth != null && request.auth.uid == uid;
-        // The sender creates the document (keyed by their own UID)
-        allow create: if request.auth != null && request.auth.uid == senderUid;
-        // Owner updates when replying; sender can also update (e.g. withdraw note)
-        allow update: if request.auth != null &&
-          (request.auth.uid == uid || request.auth.uid == senderUid);
-        // Owner deletes on accept/decline; sender deletes on withdraw
-        allow delete: if request.auth != null &&
-          (request.auth.uid == uid || request.auth.uid == senderUid);
+      match /received/{senderId} {
+        allow read, write: if isAuth() && (isOwner(uid) || isOwner(senderId));
       }
 
-      // ── Passed profiles ─────────────────────────────────────────────────
       match /passed/{passedUid} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isAuth() && isOwner(uid);
       }
     }
 
-    // ── Chat messages ────────────────────────────────────────────────────────
-    // chatId is always "{uid1}_{uid2}" with UIDs sorted alphabetically
     match /chats/{chatId}/messages/{msgId} {
-      allow read, write: if request.auth != null &&
-        request.auth.uid in chatId.split('_');
+      function participants() {
+        return chatId.split('_');
+      }
+      function isParticipant() {
+        return request.auth.uid == participants()[0] || request.auth.uid == participants()[1];
+      }
+      allow read: if isAuth() && isParticipant();
+      allow create: if isAuth() && isParticipant() && request.resource.data.from == request.auth.uid;
     }
-
-    // ── Pre-match thread messages ─────────────────────────────────────────────
-    // Same chatId convention as chats/; only accessible before acceptance
-    match /prematches/{chatId}/messages/{msgId} {
-      allow read, write: if request.auth != null &&
-        request.auth.uid in chatId.split('_');
-    }
-
   }
 }
