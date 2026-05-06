@@ -1696,16 +1696,18 @@ function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile,
 
   return (
     <div style={{ padding: "16px 20px" }}>
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Your Connections</h2>
-        <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{matches.length} mutual connections</p>
-      </div>
+      {hasActivity && (
+        <div style={{ marginBottom: 20 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Your Connections</h2>
+          <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{matches.length} mutual connections</p>
+        </div>
+      )}
 
       {!hasActivity && (
         <div style={{ textAlign: "center", paddingTop: 52, paddingBottom: 32, paddingLeft: 24, paddingRight: 24 }}>
           <div style={{
             width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px",
-            background: `${COLORS.accent}18`, border: `1px solid ${COLORS.accent}35`,
+            background: COLORS.card, border: `1px solid ${COLORS.border}`,
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28,
           }}>🤝</div>
           <h3 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: "0 0 10px" }}>
