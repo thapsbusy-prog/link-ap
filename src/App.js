@@ -1136,8 +1136,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     try {
       const PAGE = 30;
       const q = lastDocRef.current
-        ? query(collection(db, "users"), orderBy("createdAt"), startAfter(lastDocRef.current), limit(PAGE))
-        : query(collection(db, "users"), orderBy("createdAt"), limit(PAGE));
+        ? query(collection(db, "users"), where("deactivated", "!=", true), orderBy("deactivated"), orderBy("createdAt"), startAfter(lastDocRef.current), limit(PAGE))
+        : query(collection(db, "users"), where("deactivated", "!=", true), orderBy("deactivated"), orderBy("createdAt"), limit(PAGE));
       const snap = await getDocs(q);
       const newUsers = snap.docs.map(d => d.data()).filter(u => u.uid !== firebaseUser.uid && !u.deactivated);
       lastDocRef.current = snap.docs[snap.docs.length - 1] ?? null;
@@ -1527,9 +1527,9 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
         const end_ = t_ + "";
         const endCap_ = tCap + "";
         const [s1, s2, s3] = await Promise.all([
-          getDocs(query(collection(db, 'users'), where('nameLower', '>=', t_), where('nameLower', '<=', end_), limit(15))),
-          getDocs(query(collection(db, 'users'), where('lastNameLower', '>=', t_), where('lastNameLower', '<=', end_), limit(15))),
-          getDocs(query(collection(db, 'users'), where('name', '>=', tCap), where('name', '<=', endCap_), limit(15))),
+          getDocs(query(collection(db, 'users'), where('deactivated', '!=', true), where('nameLower', '>=', t_), where('nameLower', '<=', end_), limit(15))),
+          getDocs(query(collection(db, 'users'), where('deactivated', '!=', true), where('lastNameLower', '>=', t_), where('lastNameLower', '<=', end_), limit(15))),
+          getDocs(query(collection(db, 'users'), where('deactivated', '!=', true), where('name', '>=', tCap), where('name', '<=', endCap_), limit(15))),
         ]);
         const seen = new Set();
         const merged = [...s1.docs, ...s2.docs, ...s3.docs]
