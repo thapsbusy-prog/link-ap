@@ -1417,27 +1417,18 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
 
   if (!current) return (
     <div style={{ padding: 24, textAlign: "center", paddingTop: 80, color: COLORS.textMuted }}>
-      {loadingMore ? (
-        <>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>⚡</div>
-          <p>Finding more people...</p>
-        </>
-      ) : (
-        <>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🐦</div>
-          <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>You're one of the first.</h3>
-          <p style={{ fontSize: 14, marginBottom: 6 }}>You're among the first 100 people on Link-Ap — which means you get access to everything, free forever.</p>
-          <p style={{ fontSize: 14, marginBottom: 16 }}>We'll notify you the moment someone worth connecting with joins. Sit tight.</p>
-          <p style={{ fontSize: 14, marginBottom: 16 }}>Share Link-Ap with someone and they'll also qualify for free access — forever.</p>
-          <button onClick={() => setShowShare(true)} style={{
-            display: "block", margin: "0 auto 20px", padding: "10px 24px",
-            borderRadius: 12, border: `1px solid ${COLORS.border}`,
-            background: "transparent", color: COLORS.text, cursor: "pointer",
-            fontSize: 14, fontWeight: 500,
-          }}>Share with someone</button>
-          <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 20, border: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.textMuted, backgroundColor: COLORS.card }}>🎟 Founding Member</div>
-        </>
-      )}
+      <div style={{ fontSize: 48, marginBottom: 16 }}>🐦</div>
+      <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>You're one of the first.</h3>
+      <p style={{ fontSize: 14, marginBottom: 6 }}>You're among the first 100 people on Link-Ap — which means you get access to everything, free forever.</p>
+      <p style={{ fontSize: 14, marginBottom: 16 }}>We'll notify you the moment someone worth connecting with joins. Sit tight.</p>
+      <p style={{ fontSize: 14, marginBottom: 16 }}>Share Link-Ap with someone and they'll also qualify for free access — forever.</p>
+      <button onClick={() => setShowShare(true)} style={{
+        display: "block", margin: "0 auto 20px", padding: "10px 24px",
+        borderRadius: 12, border: `1px solid ${COLORS.border}`,
+        background: "transparent", color: COLORS.text, cursor: "pointer",
+        fontSize: 14, fontWeight: 500,
+      }}>Share with someone</button>
+      <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 20, border: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.textMuted, backgroundColor: COLORS.card }}>🎟 Founding Member</div>
       {showShare && user && <ShareModal user={user} onClose={() => setShowShare(false)} />}
     </div>
   );
