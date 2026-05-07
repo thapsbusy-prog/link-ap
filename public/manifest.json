@@ -2,6 +2,7 @@
   "name": "Link-AP",
   "short_name": "Link-AP",
   "description": "Professional networking, one connection at a time.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -56,7 +57,7 @@
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ],
   "screenshots": [],
