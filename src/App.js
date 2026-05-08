@@ -2683,16 +2683,15 @@ function SplashScreen({ onDone }) {
     </>
   );
 }
-
 export default function App() {
-  if (window.location.pathname === "/privacy") {
-    return <PrivacyPolicy />;
-  }
-
   const [splashDone, setSplashDone] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  if (window.location.pathname === "/privacy") {
+    return <PrivacyPolicy />;
+  }
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
