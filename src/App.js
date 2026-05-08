@@ -2689,10 +2689,6 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  if (window.location.pathname === "/privacy") {
-    return <PrivacyPolicy />;
-  }
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
@@ -2716,7 +2712,8 @@ export default function App() {
     });
     return unsub;
   }, []);
-
+  
+if (window.location.pathname === "/privacy") return <PrivacyPolicy />;
   if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
 
   if (loading) return <div style={{ minHeight: "100vh", background: COLORS.bg }} />;
