@@ -11,6 +11,7 @@ import {
   GoogleAuthProvider, createUserWithEmailAndPassword,
   signInWithEmailAndPassword, sendPasswordResetEmail
 } from "firebase/auth";
+import PrivacyPolicy from './PrivacyPolicy';
 
 const COLORS = {
   bg: "#0A0A0F", card: "#13131A", border: "#2A2A3A",
@@ -2684,6 +2685,10 @@ function SplashScreen({ onDone }) {
 }
 
 export default function App() {
+  if (window.location.pathname === "/privacy") {
+    return <PrivacyPolicy />;
+  }
+
   const [splashDone, setSplashDone] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
