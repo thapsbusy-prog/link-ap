@@ -1584,7 +1584,7 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
         const tCap = t_.charAt(0).toUpperCase() + t_.slice(1);
         const end_ = t_ + "";
         const endCap_ = tCap + "";
-        console.log("[Search] lower=", JSON.stringify(t_), "upper=", JSON.stringify(end_));
+        console.log('[Search] lower=', t_, 'upper=', end_, '| upperLastCharCode=U+' + end_.codePointAt(end_.length - 1).toString(16).toUpperCase());
         const [s1, s2, s3] = await Promise.all([
           getDocs(query(collection(db, 'users'), where('nameLower', '>=', t_), where('nameLower', '<=', end_), limit(15))),
           getDocs(query(collection(db, 'users'), where('lastNameLower', '>=', t_), where('lastNameLower', '<=', end_), limit(15))),
