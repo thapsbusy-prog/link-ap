@@ -1300,6 +1300,11 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     ]);
   };
 
+  const handleConnectWithNote = async (targetUser, note) => {
+    await handleSendRequestWithNote(targetUser, note);
+    showNotif(`Request sent to ${targetUser.name}!`);
+  };
+
   const handleAcceptRequest = async (senderUser) => {
     await Promise.all([
       setDoc(doc(db, "users", firebaseUser.uid, "matches", senderUser.uid), senderUser),
@@ -1385,7 +1390,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       </div>
 
       <div style={{ paddingBottom: 90 }}>
-        {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
+        {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnectWithNote} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
@@ -1447,8 +1452,105 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   );
 }
 
+function ConnectNoteModal({ target, onSend, onCancel }) {
+  const [note, setNote] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sentOk, setSentOk] = useState(false);
+  const MAX = 300;
+  const MIN = 10;
+
+  const handleSend = async () => {
+    if (note.trim().length < MIN || sending) return;
+    setSending(true);
+    await onSend(note.trim());
+    setSending(false);
+    setSentOk(true);
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 50,
+      background: "rgba(0,0,0,0.72)",
+      display: "flex", alignItems: "flex-end", justifyContent: "center",
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 430,
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: "20px 20px 0 0",
+        padding: "20px 20px 36px",
+        display: "flex", flexDirection: "column", gap: 16,
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16 }}>Send Connection Request</div>
+          <button onClick={onCancel} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 22, lineHeight: 1 }}>×</button>
+        </div>
+
+        <div style={{
+          background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+          borderRadius: 16, padding: 16, display: "flex", gap: 12, alignItems: "center",
+        }}>
+          <Avatar initials={target.avatar} color={target.color} size={52} photoURL={target.photoURL} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: COLORS.text }}>{target.name}</div>
+            <div style={{ color: target.color, fontSize: 13 }}>{target.role}</div>
+            <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {target.location}</div>
+          </div>
+        </div>
+
+        <div>
+          <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>
+            Why do you want to connect with {target.name.split(" ")[0]}? <span style={{ color: COLORS.red }}>*</span>
+          </label>
+          <textarea
+            value={note}
+            onChange={e => setNote(e.target.value.slice(0, MAX))}
+            placeholder={`Tell ${target.name.split(" ")[0]} why you'd like to connect — be specific and genuine.`}
+            rows={5}
+            autoFocus
+            style={{
+              width: "100%", padding: "12px 16px", borderRadius: 12,
+              background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              color: COLORS.text, fontSize: 14, outline: "none", resize: "none", boxSizing: "border-box",
+            }}
+          />
+          <p style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4, textAlign: "right" }}>
+            {note.length} / {MAX}
+          </p>
+        </div>
+
+        <button
+          onClick={handleSend}
+          disabled={note.trim().length < MIN || sending || sentOk}
+          style={{
+            padding: "14px", borderRadius: 12, border: "none",
+            background: sentOk ? COLORS.green : note.trim().length >= MIN && !sending ? COLORS.accent : COLORS.border,
+            color: sentOk || (note.trim().length >= MIN && !sending) ? "#000" : COLORS.textMuted,
+            cursor: note.trim().length >= MIN && !sending && !sentOk ? "pointer" : "not-allowed",
+            fontSize: 14, fontWeight: 700,
+          }}
+        >
+          {sentOk ? "Request Sent ✓" : sending ? "Sending..." : `Send Request to ${target.name.split(" ")[0]}`}
+        </button>
+
+        <button
+          onClick={onCancel}
+          style={{
+            padding: "12px", borderRadius: 12,
+            border: `1px solid ${COLORS.border}`,
+            background: "transparent", color: COLORS.textMuted,
+            cursor: "pointer", fontSize: 14,
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loadingMore, hasMore, user, seenUids, setSeenUids }) {
   const [showShare, setShowShare] = useState(false);
+  const [connectTarget, setConnectTarget] = useState(null);
 
   useEffect(() => {
     if (!users || loadingMore || !hasMore) return;
@@ -1465,12 +1567,15 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
   const remaining = users.filter(u => !seenUids.has(u.uid));
   const current = remaining[0];
 
-  const act = (action) => {
-    if (action === "connect") onConnect(current);
-    if (action === "pass") onPass(current);
-    const next = new Set([...seenUids, current.uid]);
+  const advance = (targetUser) => {
+    const next = new Set([...seenUids, targetUser.uid]);
     setSeenUids(next);
     if (users.filter(u => !next.has(u.uid)).length < 5 && hasMore && !loadingMore) onLoadMore();
+  };
+
+  const act = (action) => {
+    if (action === "pass") onPass(current);
+    advance(current);
   };
 
   if (!current) return (
@@ -1556,12 +1661,23 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
             flex: 1, padding: 14, borderRadius: 14, border: `1px solid ${COLORS.border}`,
             background: "transparent", color: COLORS.textMuted, cursor: "pointer", fontSize: 14,
           }}>Pass</button>
-          <button onClick={() => act("connect")} style={{
+          <button onClick={() => setConnectTarget(current)} style={{
             flex: 2, padding: 14, borderRadius: 14, border: "none",
             background: COLORS.accent, color: "#000", cursor: "pointer", fontSize: 14, fontWeight: 700,
           }}>Connect ⚡</button>
         </div>
       </div>
+      {connectTarget && (
+        <ConnectNoteModal
+          target={connectTarget}
+          onSend={async (note) => {
+            await onConnect(connectTarget, note);
+            advance(connectTarget);
+            setConnectTarget(null);
+          }}
+          onCancel={() => setConnectTarget(null)}
+        />
+      )}
     </div>
   );
 }
