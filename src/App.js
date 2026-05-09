@@ -1386,7 +1386,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnectWithNote} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
-        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} />}
+        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} blockedUids={blockedUids} blockedByUids={blockedByUids} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} blocked={blocked} onUnblock={handleUnblock} />}
@@ -1695,13 +1695,11 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
         const tCap = t_.charAt(0).toUpperCase() + t_.slice(1);
         const end_ = t_ + "";
         const endCap_ = tCap + "";
-        console.log('[Search] lower=', t_, 'upper=', end_, '| upperLastCharCode=U+' + end_.codePointAt(end_.length - 1).toString(16).toUpperCase());
         const [s1, s2, s3] = await Promise.all([
           getDocs(query(collection(db, 'users'), where('nameLower', '>=', t_), where('nameLower', '<=', end_), limit(15))),
           getDocs(query(collection(db, 'users'), where('lastNameLower', '>=', t_), where('lastNameLower', '<=', end_), limit(15))),
           getDocs(query(collection(db, 'users'), where('name', '>=', tCap), where('name', '<=', endCap_), limit(15))),
         ]);
-        console.log("[Search] raw hits: nameLower=", s1.size, "lastNameLower=", s2.size, "name=", s3.size);
         const seen = new Set();
         const blockedSet = new Set((blocked || []).map(b => b.uid));
         const merged = [...s1.docs, ...s2.docs, ...s3.docs]
@@ -1854,7 +1852,7 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
 }
 
 
-function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onDiscover }) {
+function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onDiscover, blockedUids = new Set(), blockedByUids = [] }) {
   const hasActivity = matches.length > 0 || sent.length > 0 || received.length > 0;
 
   return (
@@ -1942,7 +1940,7 @@ function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile,
         )}
 
         {/* ── Mutual matches ── */}
-        {matches.filter(u => !sent.find(s => s.uid === u.uid)).map(u => (
+        {matches.filter(u => !sent.find(s => s.uid === u.uid) && !blockedUids.has(u.uid) && !blockedByUids.includes(u.uid)).map(u => (
           <div key={u.uid} onClick={() => onChat(u.uid)} style={{
             background: COLORS.card, border: `1px solid ${COLORS.border}`,
             borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", cursor: "pointer",
