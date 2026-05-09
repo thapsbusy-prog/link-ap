@@ -1258,11 +1258,25 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     return unsub;
   }, [firebaseUser.uid]);
 
+  const [blockedByUids, setBlockedByUids] = useState([]);
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "blockedBy"), snap => {
+      setBlockedByUids(snap.docs.map(d => d.id));
+    });
+    return unsub;
+  }, [firebaseUser.uid]);
+
   const handleBlock = async (targetUser) => {
-    await setDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUser.uid), targetUser);
+    await Promise.all([
+      setDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUser.uid), targetUser),
+      setDoc(doc(db, "users", targetUser.uid, "blockedBy", firebaseUser.uid), { blockedAt: serverTimestamp() }),
+    ]);
   };
   const handleUnblock = async (targetUid) => {
-    await deleteDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUid));
+    await Promise.all([
+      deleteDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUid)),
+      deleteDoc(doc(db, "users", targetUid, "blockedBy", firebaseUser.uid)),
+    ]);
   };
 
   const handlePass = async (targetUser) => {
@@ -1373,7 +1387,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnectWithNote} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} />}
-        {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} />}
+        {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} blocked={blocked} onUnblock={handleUnblock} />}
       </div>
@@ -1384,7 +1398,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           width: "100%", maxWidth: 430, height: "100dvh", zIndex: 20,
           background: COLORS.bg, display: "flex", flexDirection: "column",
         }}>
-          <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} />
+          <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} />
         </div>
       )}
 
@@ -1981,7 +1995,7 @@ function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile,
   );
 }
 
-function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile }) {
+function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile, blockedUids = new Set(), blockedByUids = [] }) {
   const [input, setInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const bottomRef = useRef(null);
@@ -1989,6 +2003,9 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
   const chatUser = matches.find(u => u.uid === activeChat);
   const isPending = sent.some(u => u.uid === activeChat);
   const chatId = activeChat ? [firebaseUser.uid, activeChat].sort().join("_") : null;
+  const iBlockedThem = activeChat ? blockedUids.has(activeChat) : false;
+  const theyBlockedMe = activeChat ? blockedByUids.includes(activeChat) : false;
+  const isBlocked = iBlockedThem || theyBlockedMe;
 
   useEffect(() => {
     setChatMessages([]);
@@ -2005,7 +2022,7 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
   }, [chatMessages.length]);
 
   const send = async () => {
-    if (!input.trim() || isPending || !chatUser) return;
+    if (!input.trim() || isPending || !chatUser || iBlockedThem) return;
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: input.trim(),
       from: firebaseUser.uid,
@@ -2016,20 +2033,22 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
 
   if (activeChat && !chatUser) return null;
 
+  const visibleMatches = matches.filter(u => !blockedUids.has(u.uid) && !blockedByUids.includes(u.uid));
+
   if (!activeChat) return (
     <div style={{ padding: "16px 20px" }}>
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Messages</h2>
         <p style={{ color: COLORS.textMuted, fontSize: 13 }}>Your conversations</p>
       </div>
-      {matches.length === 0 && (
+      {visibleMatches.length === 0 && (
         <div style={{ textAlign: "center", paddingTop: 60, color: COLORS.textMuted }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
           <p>Connect with people to start chatting</p>
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {matches.map(u => (
+        {visibleMatches.map(u => (
           <div key={u.uid} onClick={() => setActiveChat(u.uid)} style={{
             background: COLORS.card, border: `1px solid ${COLORS.border}`,
             borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", cursor: "pointer",
@@ -2074,57 +2093,72 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-        {chatMessages.length === 0 && (
-          <div style={{ textAlign: "center", color: COLORS.textMuted, marginTop: 40 }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>👋</div>
-            <p style={{ fontSize: 13 }}>Say hello to {chatUser?.name}!</p>
+      {isBlocked ? (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 32px" }}>
+          <div style={{ textAlign: "center", color: COLORS.textMuted }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🚫</div>
+            <p style={{ fontSize: 14, lineHeight: 1.6 }}>
+              {iBlockedThem
+                ? "You have blocked this person. Unblock them to send messages."
+                : "This conversation is unavailable."}
+            </p>
           </div>
-        )}
-        {chatMessages.map(msg => (
-          <div key={msg.id} style={{ display: "flex", justifyContent: msg.from === firebaseUser.uid ? "flex-end" : "flex-start" }}>
-            <div style={{
-              maxWidth: "75%",
-              background: msg.from === firebaseUser.uid ? "#1D4ED8" : COLORS.card,
-              color: COLORS.text,
-              border: msg.from === firebaseUser.uid ? "none" : `1px solid ${COLORS.border}`,
-              borderRadius: msg.from === firebaseUser.uid ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-              padding: "10px 14px", fontSize: 14, lineHeight: 1.5,
-            }}>
-              {msg.text}
-            </div>
-          </div>
-        ))}
-        <div ref={bottomRef} />
-      </div>
-
-      {isPending ? (
-        <div style={{ padding: "14px 16px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.card, textAlign: "center" }}>
-          <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>
-            Messaging unlocks once {chatUser?.name} connects back with you.
-          </p>
         </div>
       ) : (
-        <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}`, display: "flex", gap: 10, background: COLORS.card }}>
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && send()}
-            placeholder="Type a message..."
-            style={{
-              flex: 1, padding: "12px 16px", borderRadius: 24,
-              background: COLORS.bg, border: `1px solid ${COLORS.border}`,
-              color: COLORS.text, fontSize: 14, outline: "none",
-            }}
-          />
-          <button onClick={send} style={{
-            width: 44, height: 44, borderRadius: "50%", border: "none",
-            background: input.trim() ? COLORS.accent : COLORS.border,
-            color: input.trim() ? "#000" : COLORS.textMuted,
-            cursor: input.trim() ? "pointer" : "default",
-            fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-          }}>→</button>
-        </div>
+        <>
+          <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+            {chatMessages.length === 0 && (
+              <div style={{ textAlign: "center", color: COLORS.textMuted, marginTop: 40 }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>👋</div>
+                <p style={{ fontSize: 13 }}>Say hello to {chatUser?.name}!</p>
+              </div>
+            )}
+            {chatMessages.map(msg => (
+              <div key={msg.id} style={{ display: "flex", justifyContent: msg.from === firebaseUser.uid ? "flex-end" : "flex-start" }}>
+                <div style={{
+                  maxWidth: "75%",
+                  background: msg.from === firebaseUser.uid ? "#1D4ED8" : COLORS.card,
+                  color: COLORS.text,
+                  border: msg.from === firebaseUser.uid ? "none" : `1px solid ${COLORS.border}`,
+                  borderRadius: msg.from === firebaseUser.uid ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                  padding: "10px 14px", fontSize: 14, lineHeight: 1.5,
+                }}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+            <div ref={bottomRef} />
+          </div>
+
+          {isPending ? (
+            <div style={{ padding: "14px 16px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.card, textAlign: "center" }}>
+              <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>
+                Messaging unlocks once {chatUser?.name} connects back with you.
+              </p>
+            </div>
+          ) : (
+            <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}`, display: "flex", gap: 10, background: COLORS.card }}>
+              <input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && send()}
+                placeholder="Type a message..."
+                style={{
+                  flex: 1, padding: "12px 16px", borderRadius: 24,
+                  background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+                  color: COLORS.text, fontSize: 14, outline: "none",
+                }}
+              />
+              <button onClick={send} style={{
+                width: 44, height: 44, borderRadius: "50%", border: "none",
+                background: input.trim() ? COLORS.accent : COLORS.border,
+                color: input.trim() ? "#000" : COLORS.textMuted,
+                cursor: input.trim() ? "pointer" : "default",
+                fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+              }}>→</button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
