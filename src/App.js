@@ -102,14 +102,6 @@ const getBringToTablePrompt = (lookingFor = []) => {
   if (lookingFor.includes("Co-founder")) return "What do you bring to the partnership?";
   return "What value do you offer to the people you want to meet?";
 };
-// eslint-disable-next-line no-unused-vars
-const getContextualHeadline = (lookingFor = []) => {
-  if (lookingFor.includes("A Job")) return "Open to the right opportunity";
-  if (lookingFor.includes("Investor")) return "Actively raising";
-  if (lookingFor.includes("Co-founder")) return "Looking for a builder to join the mission";
-  if (lookingFor.includes("Mentor")) return "Seeking the right mentor";
-  return "Open to connecting";
-};
 
 const normalizeUrl = (url) => {
   if (!url) return "";
@@ -154,7 +146,7 @@ function GoogleIcon() {
 }
 
 
-function Avatar({ initials, color, size = 40, online = false, photoURL }) {
+function Avatar({ initials, color, size = 40, photoURL }) {
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       {photoURL ? (
@@ -508,7 +500,7 @@ function TermsContent() {
         • <span style={{ color: COLORS.text }}>South Africa (POPIA):</span> right to access, correction, and objection to processing of personal information.<br />
         • <span style={{ color: COLORS.text }}>Other jurisdictions:</span> applicable local data-protection rights.
       </p>
-      <p style={{ marginBottom: 12 }}>To exercise any privacy right, contact us at thaps.busy@gmail.com. We will respond within the timeframe required by your local law (typically 30 days).</p>
+      <p style={{ marginBottom: 12 }}>To exercise any privacy right, contact us at info@link-ap.online. We will respond within the timeframe required by your local law (typically 30 days).</p>
 
       <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>7. Intellectual Property</p>
       <p style={{ marginBottom: 12 }}>All platform content, trademarks, and technology (excluding user content) belong to Link-Ap or its licensors. You may not copy, modify, distribute, or create derivative works without our written permission.</p>
@@ -529,7 +521,7 @@ function TermsContent() {
       <p style={{ marginBottom: 12 }}>We may update these Terms at any time. We will notify you of material changes via the app or email. Continued use after the effective date of updated Terms constitutes acceptance. If you do not agree with changes, you must stop using Link-Ap and may delete your account.</p>
 
       <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>13. Contact</p>
-      <p style={{ marginBottom: 4 }}>For any questions about these Terms or to exercise your privacy rights, contact: thaps.busy@gmail.com</p>
+      <p style={{ marginBottom: 4 }}>For any questions about these Terms or to exercise your privacy rights, contact: info@link-ap.online</p>
     </div>
   );
 }
@@ -543,11 +535,15 @@ function Onboarding({ firebaseUser, onComplete }) {
     pronouns: "", role: "", location: "",
     bio: "", skills: [], lookingFor: [], achievements: "", linkedin: "",
     lookingForDetails: {}, bringToTable: "",
+    currentlyExploring: "", openTo: [],
   });
 
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleLF = (v) => setForm(f => ({
     ...f, lookingFor: f.lookingFor.includes(v) ? f.lookingFor.filter(x => x !== v) : [...f.lookingFor, v]
+  }));
+  const toggleOpenTo = (v) => setForm(f => ({
+    ...f, openTo: f.openTo.includes(v) ? f.openTo.filter(x => x !== v) : [...f.openTo, v]
   }));
 
   const saveProfile = async () => {
@@ -575,6 +571,8 @@ function Onboarding({ firebaseUser, onComplete }) {
         lastNameLower: form.lastName.trim().toLowerCase(),
         lookingForDetails: form.lookingForDetails,
         bringToTable: form.bringToTable,
+        currentlyExploring: form.currentlyExploring.split(",").map(s => s.trim()).filter(Boolean),
+        openTo: form.openTo,
         linkedinProfileUrl: form.linkedin.trim() && validateLinkedIn(form.linkedin) ? normalizeUrl(form.linkedin) : "",
         linkedinVerified: !!(form.linkedin.trim() && validateLinkedIn(form.linkedin) && linkedinNameMatches(form.linkedin, fullName)),
         photoURL: firebaseUser.photoURL || "",
@@ -689,7 +687,7 @@ function Onboarding({ firebaseUser, onComplete }) {
     {
       title: "What I bring to the table",
       content: (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <p style={{ color: COLORS.textMuted, fontSize: 13, fontStyle: "italic", margin: 0 }}>
             {getBringToTablePrompt(form.lookingFor)}
           </p>
@@ -704,6 +702,33 @@ function Onboarding({ firebaseUser, onComplete }) {
               color: COLORS.text, fontSize: 14, outline: "none", resize: "none", boxSizing: "border-box",
             }}
           />
+          <div>
+            <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>Currently Exploring (comma separated, optional)</label>
+            <input
+              type="text"
+              value={form.currentlyExploring}
+              onChange={e => update("currentlyExploring", e.target.value)}
+              placeholder="e.g. AI tools, Bootstrapping, No-code"
+              style={{
+                width: "100%", padding: "12px 16px", borderRadius: 12,
+                background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+                color: COLORS.text, fontSize: 14, outline: "none", boxSizing: "border-box",
+              }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8, display: "block" }}>Open To (optional)</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {OPEN_TO_OPTIONS.map(opt => (
+                <button key={opt} onClick={() => toggleOpenTo(opt)} style={{
+                  padding: "7px 14px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+                  border: `1px solid ${form.openTo.includes(opt) ? COLORS.accent : COLORS.border}`,
+                  background: form.openTo.includes(opt) ? `${COLORS.accent}22` : "transparent",
+                  color: form.openTo.includes(opt) ? COLORS.accent : COLORS.textMuted,
+                }}>{opt}</button>
+              ))}
+            </div>
+          </div>
         </div>
       ),
       valid: true,
@@ -768,7 +793,7 @@ function Onboarding({ firebaseUser, onComplete }) {
   );
 }
 
-function PublicProfile({ profileUser, onClose }) {
+function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock, onUnblock }) {
   return (
     <div style={{
       position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)",
@@ -789,7 +814,7 @@ function PublicProfile({ profileUser, onClose }) {
         {/* Header */}
         <div style={{ background: "#16161F", padding: "24px 24px 20px" }}>
           <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
-            <Avatar initials={profileUser.avatar} color={profileUser.color} size={72} online photoURL={profileUser.photoURL} />
+            <Avatar initials={profileUser.avatar} color={profileUser.color} size={72} photoURL={profileUser.photoURL} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
                 <div>
@@ -922,6 +947,19 @@ function PublicProfile({ profileUser, onClose }) {
             </div>
           )}
 
+          {currentUserUid && currentUserUid !== profileUser.uid && (() => {
+            const isBlocked = blocked && blocked.some(b => b.uid === profileUser.uid);
+            return (
+              <div style={{ paddingTop: 24, textAlign: "center" }}>
+                <button
+                  onClick={() => isBlocked ? onUnblock(profileUser.uid) : onBlock(profileUser)}
+                  style={{ background: "none", border: "none", color: COLORS.red, cursor: "pointer", fontSize: 12, opacity: 0.6, textDecoration: "underline" }}
+                >
+                  {isBlocked ? "Unblock user" : "Block user"}
+                </button>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
@@ -1109,7 +1147,10 @@ function ShareModal({ user, onClose }) {
 }
 
 function MainApp({ user, firebaseUser, onProfileUpdate }) {
-  const [tab, setTab] = useState("profile");
+  const [tab, setTab] = useState(() => {
+    const urlTab = new URLSearchParams(window.location.search).get("tab");
+    return ["discover", "matches", "messages", "profile", "settings"].includes(urlTab) ? urlTab : "profile";
+  });
   const [allUsers, setAllUsers] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -1123,6 +1164,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [unreadChats, setUnreadChats] = useState(new Set());
   const [viewingProfile, setViewingProfile] = useState(null);
   const [profileEditTrigger, setProfileEditTrigger] = useState(0);
+  const [seenUids, setSeenUids] = useState(new Set());
 
   const lastDocRef = useRef(null);
   const hasMoreRef = useRef(true);
@@ -1208,6 +1250,21 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     return unsub;
   }, [firebaseUser.uid]);
 
+  const [blocked, setBlocked] = useState([]);
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "blocked"), snap => {
+      setBlocked(snap.docs.map(d => d.data()));
+    });
+    return unsub;
+  }, [firebaseUser.uid]);
+
+  const handleBlock = async (targetUser) => {
+    await setDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUser.uid), targetUser);
+  };
+  const handleUnblock = async (targetUid) => {
+    await deleteDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUid));
+  };
+
   const handleConnect = async (targetUser) => {
     const theirRequest = await getDoc(doc(db, "users", targetUser.uid, "sent", firebaseUser.uid));
     if (theirRequest.exists()) {
@@ -1269,8 +1326,9 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     if (uid) setUnreadChats(prev => { const s = new Set(prev); s.delete(uid); return s; });
   };
 
+  const blockedUids = new Set(blocked.map(b => b.uid));
   const unmatched = allUsers === null ? null : allUsers.filter(u =>
-    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid) && !u.deactivated && !received.find(r => r.uid === u.uid)
+    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid) && !u.deactivated && !received.find(r => r.uid === u.uid) && !blockedUids.has(u.uid)
   );
 
   const intentFiltered = unmatched === null ? null : (() => {
@@ -1322,16 +1380,16 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
             background: "none", border: `1px solid ${COLORS.border}`, color: COLORS.text,
             borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 13,
           }}>🔍 Search</button>
-          <Avatar initials={user.avatar} color={user.color} size={36} online photoURL={user.photoURL} />
+          <Avatar initials={user.avatar} color={user.color} size={36} photoURL={user.photoURL} />
         </div>
       </div>
 
       <div style={{ paddingBottom: 90 }}>
-        {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} />}
+        {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnect} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
-        {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} />}
+        {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} blocked={blocked} onUnblock={handleUnblock} />}
       </div>
 
       {tab === "messages" && activeChat && (
@@ -1344,8 +1402,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         </div>
       )}
 
-      {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => setViewingProfile(null)} />}
-      {showSearch && <SearchModal currentUser={user} sent={sent} matches={matches} onClose={() => setShowSearch(false)} onSendRequest={handleSendRequestWithNote} />}
+      {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => setViewingProfile(null)} currentUserUid={firebaseUser.uid} blocked={blocked} onBlock={handleBlock} onUnblock={handleUnblock} />}
+      {showSearch && <SearchModal currentUser={user} sent={sent} matches={matches} onClose={() => setShowSearch(false)} onSendRequest={handleSendRequestWithNote} blocked={blocked} />}
 
       <div style={{
         position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
@@ -1389,8 +1447,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   );
 }
 
-function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loadingMore, hasMore, user }) {
-  const [seenUids, setSeenUids] = useState(new Set());
+function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loadingMore, hasMore, user, seenUids, setSeenUids }) {
   const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
@@ -1462,7 +1519,7 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
             onClick={() => onViewProfile && onViewProfile(current)}
             style={{ display: "flex", gap: 16, alignItems: "flex-start", marginBottom: 20, cursor: "pointer" }}
           >
-            <Avatar initials={current.avatar} color={current.color} size={60} online photoURL={current.photoURL} />
+            <Avatar initials={current.avatar} color={current.color} size={60} photoURL={current.photoURL} />
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>{current.name}</div>
@@ -1509,7 +1566,7 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
   );
 }
 
-function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
+function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, blocked }) {
   const [term, setTerm] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -1533,10 +1590,11 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest }) {
           getDocs(query(collection(db, 'users'), where('deactivated', '!=', true), where('name', '>=', tCap), where('name', '<=', endCap_), limit(15))),
         ]);
         const seen = new Set();
+        const blockedSet = new Set((blocked || []).map(b => b.uid));
         const merged = [...s1.docs, ...s2.docs, ...s3.docs]
           .map(d => d.data())
           .filter(u => {
-            if (u.uid === currentUser.uid || seen.has(u.uid) || u.deactivated) return false;
+            if (u.uid === currentUser.uid || seen.has(u.uid) || u.deactivated || blockedSet.has(u.uid)) return false;
             seen.add(u.uid);
             return true;
           });
@@ -1777,7 +1835,7 @@ function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile,
             borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", cursor: "pointer",
           }}>
             <div onClick={(e) => { e.stopPropagation(); onViewProfile && onViewProfile(u); }} style={{ flexShrink: 0 }}>
-              <Avatar initials={u.avatar} color={u.color} size={48} online photoURL={u.photoURL} />
+              <Avatar initials={u.avatar} color={u.color} size={48} photoURL={u.photoURL} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
@@ -1878,7 +1936,7 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
             borderRadius: 16, padding: 16, display: "flex", gap: 14, alignItems: "center", cursor: "pointer",
           }}>
             <div onClick={(e) => { e.stopPropagation(); onViewProfile && onViewProfile(u); }} style={{ flexShrink: 0, position: "relative" }}>
-              <Avatar initials={u.avatar} color={u.color} size={48} online photoURL={u.photoURL} />
+              <Avatar initials={u.avatar} color={u.color} size={48} photoURL={u.photoURL} />
               {unreadChats.has(u.uid) && (
                 <div style={{
                   position: "absolute", top: 0, right: 0,
@@ -1909,7 +1967,7 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
           onClick={() => onViewProfile && onViewProfile(chatUser)}
           style={{ display: "flex", gap: 12, alignItems: "center", cursor: "pointer", flex: 1 }}
         >
-          <Avatar initials={chatUser?.avatar} color={chatUser?.color} size={40} online photoURL={chatUser?.photoURL} />
+          <Avatar initials={chatUser?.avatar} color={chatUser?.color} size={40} photoURL={chatUser?.photoURL} />
           <div>
             <div style={{ fontWeight: 700, color: COLORS.text }}>{chatUser?.name}</div>
             <div style={{ color: COLORS.textMuted, fontSize: 12 }}>{chatUser?.role}</div>
@@ -1973,7 +2031,7 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
   );
 }
 
-function Settings({ user, firebaseUser, onEditProfile }) {
+function Settings({ user, firebaseUser, onEditProfile, blocked, onUnblock }) {
   const [showTerms, setShowTerms] = useState(false);
   const [showBlockList, setShowBlockList] = useState(false);
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
@@ -2056,10 +2114,27 @@ function Settings({ user, firebaseUser, onEditProfile }) {
     setAccountError("");
     try {
       const uid = firebaseUser.uid;
-      for (const sub of ["sent", "received", "matches"]) {
-        const snap = await getDocs(collection(db, "users", uid, sub));
-        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
-      }
+      // Read affected UIDs BEFORE deleting anything so we can clean up other users
+      const [matchesSnap, receivedSnap, sentSnap] = await Promise.all([
+        getDocs(collection(db, "users", uid, "matches")),
+        getDocs(collection(db, "users", uid, "received")),
+        getDocs(collection(db, "users", uid, "sent")),
+      ]);
+      const matchUids = matchesSnap.docs.map(d => d.id);
+      const receivedUids = receivedSnap.docs.map(d => d.id);
+      const sentUids = sentSnap.docs.map(d => d.id);
+      // Delete this user's own subcollection docs
+      await Promise.all([
+        ...matchesSnap.docs.map(d => deleteDoc(d.ref)),
+        ...receivedSnap.docs.map(d => deleteDoc(d.ref)),
+        ...sentSnap.docs.map(d => deleteDoc(d.ref)),
+      ]);
+      // Clean up stale references in other users' subcollections
+      await Promise.all([
+        ...matchUids.map(otherUid => deleteDoc(doc(db, "users", otherUid, "matches", uid))),
+        ...receivedUids.map(senderUid => deleteDoc(doc(db, "users", senderUid, "sent", uid))),
+        ...sentUids.map(recipientUid => deleteDoc(doc(db, "users", recipientUid, "received", uid))),
+      ]);
       await deleteDoc(doc(db, "users", uid));
       await firebaseUser.delete();
     } catch (e) {
@@ -2079,7 +2154,28 @@ function Settings({ user, firebaseUser, onEditProfile }) {
           <button onClick={() => setShowBlockList(false)} style={{ background: "none", border: "none", color: COLORS.text, cursor: "pointer", padding: 0, fontSize: 22, lineHeight: 1 }}>‹</button>
           <div style={{ fontSize: 20, fontWeight: 800, color: COLORS.text }}>Block List</div>
         </div>
-        <div style={{ color: COLORS.textMuted, fontSize: 14, textAlign: "center", marginTop: 60 }}>Blocked users will appear here.</div>
+        {(!blocked || blocked.length === 0) ? (
+          <div style={{ color: COLORS.textMuted, fontSize: 14, textAlign: "center", marginTop: 60 }}>No blocked users.</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {blocked.map(u => (
+              <div key={u.uid} style={{
+                background: COLORS.card, border: `1px solid ${COLORS.border}`,
+                borderRadius: 16, padding: 16, display: "flex", gap: 12, alignItems: "center",
+              }}>
+                <Avatar initials={u.avatar} color={u.color} size={44} photoURL={u.photoURL} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: COLORS.text }}>{u.name}</div>
+                  <div style={{ color: u.color, fontSize: 12 }}>{u.role}</div>
+                </div>
+                <button onClick={() => onUnblock(u.uid)} style={{
+                  padding: "7px 14px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
+                  background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 12,
+                }}>Unblock</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -2273,6 +2369,8 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
     openTo: user.openTo || [],
     lookingForDetails: user.lookingForDetails || {},
     linkedin: user.linkedinProfileUrl || "",
+    title: user.title || "",
+    pronouns: user.pronouns || "",
   });
 
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -2310,6 +2408,8 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
       const photoURL = photoPreview || "";
       const updated = {
         ...user,
+        title: form.title,
+        pronouns: form.pronouns,
         name: form.name,
         role: form.role,
         location: form.location,
@@ -2349,6 +2449,9 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
       currentlyExploring: user.currentlyExploring?.join(", ") || "",
       openTo: user.openTo || [],
       lookingForDetails: user.lookingForDetails || {},
+      linkedin: user.linkedinProfileUrl || "",
+      title: user.title || "",
+      pronouns: user.pronouns || "",
     });
     setSaveError("");
   };
@@ -2377,7 +2480,15 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
           <span style={{ fontSize: 12, color: COLORS.textMuted }}>Tap camera to change photo</span>
         </div>
 
-        <Input label="Full Name" value={form.name} onChange={v => update("name", v)} placeholder="Your name" />
+        <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ flex: "0 0 130px" }}>
+            <Select label="Title (optional)" value={form.title} onChange={v => update("title", v)} options={TITLE_OPTIONS} placeholder="Select title" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <Input label="Full Name" value={form.name} onChange={v => update("name", v)} placeholder="Your name" />
+          </div>
+        </div>
+        <Select label="Pronouns (optional)" value={form.pronouns} onChange={v => update("pronouns", v)} options={PRONOUN_OPTIONS} placeholder="Select pronouns" />
         <Input label="What do you do?" value={form.role} onChange={v => update("role", v)} placeholder="e.g. Entrepreneur, Developer" />
         <Input label="Location" value={form.location} onChange={v => update("location", v)} placeholder="e.g. Cape Town, SA" />
         <div>
@@ -2499,7 +2610,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
           {/* Header */}
           <div style={{ background: "#16161F", padding: "24px 24px 20px" }}>
             <div style={{ display: "flex", gap: 14, alignItems: "flex-start", marginBottom: 16 }}>
-              <Avatar initials={user.avatar} color={user.color} size={64} online photoURL={user.photoURL} />
+              <Avatar initials={user.avatar} color={user.color} size={64} photoURL={user.photoURL} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
                   <div>
