@@ -1584,11 +1584,13 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
         const tCap = t_.charAt(0).toUpperCase() + t_.slice(1);
         const end_ = t_ + "";
         const endCap_ = tCap + "";
+        console.log("[Search] lower=", JSON.stringify(t_), "upper=", JSON.stringify(end_));
         const [s1, s2, s3] = await Promise.all([
-          getDocs(query(collection(db, 'users'), where('deactivated', '!=', true), where('nameLower', '>=', t_), where('nameLower', '<=', end_), limit(15))),
-          getDocs(query(collection(db, 'users'), where('deactivated', '!=', true), where('lastNameLower', '>=', t_), where('lastNameLower', '<=', end_), limit(15))),
-          getDocs(query(collection(db, 'users'), where('deactivated', '!=', true), where('name', '>=', tCap), where('name', '<=', endCap_), limit(15))),
+          getDocs(query(collection(db, 'users'), where('nameLower', '>=', t_), where('nameLower', '<=', end_), limit(15))),
+          getDocs(query(collection(db, 'users'), where('lastNameLower', '>=', t_), where('lastNameLower', '<=', end_), limit(15))),
+          getDocs(query(collection(db, 'users'), where('name', '>=', tCap), where('name', '<=', endCap_), limit(15))),
         ]);
+        console.log("[Search] raw hits: nameLower=", s1.size, "lastNameLower=", s2.size, "name=", s3.size);
         const seen = new Set();
         const blockedSet = new Set((blocked || []).map(b => b.uid));
         const merged = [...s1.docs, ...s2.docs, ...s3.docs]
@@ -1599,7 +1601,7 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
             return true;
           });
         setResults(merged);
-      } catch (e) { setResults([]); }
+      } catch (e) { console.error("[Search] query error:", e); setResults([]); }
       setSearching(false);
     }, 400);
     return () => clearTimeout(t);
