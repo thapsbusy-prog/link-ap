@@ -1265,25 +1265,6 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     await deleteDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUid));
   };
 
-  const handleConnect = async (targetUser) => {
-    const theirRequest = await getDoc(doc(db, "users", targetUser.uid, "sent", firebaseUser.uid));
-    if (theirRequest.exists()) {
-      await Promise.all([
-        setDoc(doc(db, "users", firebaseUser.uid, "matches", targetUser.uid), targetUser),
-        setDoc(doc(db, "users", targetUser.uid, "matches", firebaseUser.uid), user),
-        deleteDoc(doc(db, "users", targetUser.uid, "sent", firebaseUser.uid)),
-        deleteDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid)),
-      ]);
-      showNotif(`Connected with ${targetUser.name}! 🎉`);
-    } else {
-      await Promise.all([
-        setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), targetUser),
-        setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), user),
-      ]);
-      showNotif(`Request sent to ${targetUser.name}!`);
-    }
-  };
-
   const handlePass = async (targetUser) => {
     await setDoc(doc(db, "users", firebaseUser.uid, "passed", targetUser.uid), { passedAt: serverTimestamp() });
   };
