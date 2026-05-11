@@ -1163,6 +1163,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [activeChat, setActiveChat] = useState(null);
   const [notification, setNotification] = useState(null);
   const [unreadChats, setUnreadChats] = useState(new Set());
+  const [lastMessages, setLastMessages] = useState({});
   const [viewingProfile, setViewingProfile] = useState(null);
   const [profileEditTrigger, setProfileEditTrigger] = useState(0);
   const [seenUids, setSeenUids] = useState(new Set());
@@ -1214,6 +1215,10 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt"));
       let initialized = false;
       return onSnapshot(q, snap => {
+        if (snap.docs.length > 0) {
+          const lastData = snap.docs[snap.docs.length - 1].data();
+          setLastMessages(prev => ({ ...prev, [match.uid]: lastData }));
+        }
         if (!initialized) { initialized = true; return; }
         snap.docChanges().forEach(change => {
           if (change.type !== "added") return;
@@ -1388,7 +1393,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnectWithNote} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} blockedUids={blockedUids} blockedByUids={blockedByUids} />}
-        {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} />}
+        {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} lastMessages={lastMessages} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} blocked={blocked} onUnblock={handleUnblock} />}
       </div>
@@ -1399,7 +1404,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           width: "100%", maxWidth: 430, height: "100dvh", zIndex: 20,
           background: COLORS.bg, display: "flex", flexDirection: "column",
         }}>
-          <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} />
+          <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} lastMessages={lastMessages} />
         </div>
       )}
 
@@ -1994,7 +1999,23 @@ function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile,
   );
 }
 
-function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile, blockedUids = new Set(), blockedByUids = [] }) {
+function formatRelativeTime(ts) {
+  if (!ts) return "";
+  const date = ts.toDate ? ts.toDate() : new Date(ts);
+  const now = new Date();
+  const diffMin = Math.floor((now - date) / 60000);
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+  if (diffHours < 168) return date.toLocaleDateString("en-US", { weekday: "short" });
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile, blockedUids = new Set(), blockedByUids = [], lastMessages = {} }) {
   const [input, setInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const bottomRef = useRef(null);
@@ -2062,9 +2083,20 @@ function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat,
                 }} />
               )}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text }}>{u.name}</div>
-              <div style={{ color: COLORS.textMuted, fontSize: 13 }}>Tap to chat 💬</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: COLORS.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
+                {lastMessages[u.uid]?.createdAt && (
+                  <div style={{ color: COLORS.textMuted, fontSize: 11, flexShrink: 0 }}>{formatRelativeTime(lastMessages[u.uid].createdAt)}</div>
+                )}
+              </div>
+              <div style={{ color: COLORS.textMuted, fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {lastMessages[u.uid]?.text
+                  ? lastMessages[u.uid].text.length > 40
+                    ? lastMessages[u.uid].text.slice(0, 40) + "..."
+                    : lastMessages[u.uid].text
+                  : "Start a conversation"}
+              </div>
             </div>
           </div>
         ))}
