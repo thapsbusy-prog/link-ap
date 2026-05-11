@@ -5,7 +5,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   collection, addDoc, onSnapshot, query,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
-  getDocs, startAfter, limit, where,
+  getDocs, startAfter, limit, where, writeBatch,
 } from "firebase/firestore";
 import {
   onAuthStateChanged, signInWithPopup, signOut,
@@ -2602,6 +2602,27 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         lastNameLower: form.name.trim().split(/\s+/).pop()?.toLowerCase() || "",
       };
       await setDoc(doc(db, "users", firebaseUser.uid), updated);
+      const matchesSnap = await getDocs(collection(db, "users", firebaseUser.uid, "matches"));
+      if (!matchesSnap.empty) {
+        const batch = writeBatch(db);
+        const propagated = {
+          name: updated.name,
+          role: updated.role,
+          location: updated.location,
+          bio: updated.bio,
+          skills: updated.skills,
+          photoURL: updated.photoURL,
+          avatar: updated.avatar,
+          color: updated.color,
+          lookingFor: updated.lookingFor,
+          pronouns: updated.pronouns,
+          title: updated.title,
+        };
+        matchesSnap.forEach((matchDoc) => {
+          batch.update(doc(db, "users", matchDoc.id, "matches", firebaseUser.uid), propagated);
+        });
+        await batch.commit();
+      }
       onProfileUpdate(updated);
       setEditing(false);
     } catch (e) {
