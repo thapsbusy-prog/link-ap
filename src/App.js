@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import logoImg from "./link-ap-logo.png";
-import { db, auth } from "./firebase";
+import { db, auth, storage } from "./firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import {
   collection, addDoc, onSnapshot, query,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
@@ -2490,6 +2491,7 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [photoPreview, setPhotoPreview] = useState(user.photoURL || null);
+  const [photoBlob, setPhotoBlob] = useState(null);
   const [form, setForm] = useState({
     name: user.name || "", role: user.role || "", location: user.location || "",
     bio: user.bio || "", skills: user.skills || [],
@@ -2528,6 +2530,9 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
       canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
       setPhotoPreview(canvas.toDataURL("image/jpeg", 0.7));
+      canvas.toBlob((blob) => {
+        setPhotoBlob(blob);
+      }, "image/jpeg", 0.7);
     };
     img.src = objectUrl;
   };
@@ -2536,7 +2541,12 @@ function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
     setSaving(true);
     setSaveError("");
     try {
-      const photoURL = photoPreview || "";
+      let photoURL = photoPreview || "";
+      if (photoBlob) {
+        const storageRef = ref(storage, `avatars/${firebaseUser.uid}.jpg`);
+        const snapshot = await uploadBytes(storageRef, photoBlob, { contentType: "image/jpeg" });
+        photoURL = await getDownloadURL(snapshot.ref);
+      }
       const updated = {
         ...user,
         title: form.title,
