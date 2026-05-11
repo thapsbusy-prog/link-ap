@@ -183,22 +183,19 @@ On completion, `saveProfile()` constructs the full profile document and writes i
 | `bio` | string | Max 20 words |
 | `skills` | string[] | Max 5, each max 3 words |
 | `lookingFor` | string[] | From LOOKING_FOR_OPTIONS |
-| `lookingForDetails` | object | Keys match question keys from LOOKING_FOR_QUESTIONS (e.g. `job_industry`, `investor_raise`) |
+| `lookingForDetails` | object | Keys match question keys from LOOKING_FOR_QUESTIONS |
 | `achievements` | string[] | Parsed from comma-separated input |
 | `bringToTable` | string | Free text pitch |
 | `currentlyExploring` | string[] | Parsed from comma-separated input |
 | `openTo` | string[] | From OPEN_TO_OPTIONS |
 | `linkedinProfileUrl` | string | Normalised URL or empty string |
 | `linkedinVerified` | boolean | Client-side name-match heuristic |
-| `photoURL` | string | Base64 data URL (resized to max 200×200 px) or Google OAuth photo URL |
+| `photoURL` | string | Firebase Storage download URL (migrated from base64 on 11 May 2026) |
 | `avatar` | string | 1–2 initials from name |
 | `color` | string | Random hex from USER_COLORS (assigned at onboarding, never changed) |
 | `createdAt` | Timestamp | Firestore server timestamp |
 | `termsAcceptedAt` | Timestamp | Firestore server timestamp |
 | `deactivated` | boolean | Set to `true` on deactivation; absent on active accounts |
-
-### Visibility
-Every field written to `users/{uid}` is effectively public to other authenticated users, since Discover, Search, and profile views all read directly from this document. There is no private/public field split and no Firestore Security Rules visible in the codebase — rules are managed outside the repo in the Firebase console.
 
 ---
 
@@ -208,13 +205,7 @@ Every field written to `users/{uid}` is effectively public to other authenticate
 - Google OAuth (`signInWithPopup`, `select_account` prompt always shown)
 - Email/password (`createUserWithEmailAndPassword`, `signInWithEmailAndPassword`)
 
-**Sign-up gate:** Terms of Service checkbox must be checked before the sign-up button or Google button is active. The `termsAcceptedAt` timestamp is written to Firestore at profile creation.
-
-**Session management:** `onAuthStateChanged` in the root `App` component is the only state driver. On every auth change it:
-1. Sets `loading = true` and clears `profile` to prevent stale data
-2. Fetches the user's Firestore doc
-3. Back-fills `nameLower`/`lastNameLower` if they are missing (migration shim for early users)
-4. Sets `loading = false` and renders the correct screen
+**Sign-up gate:** Terms of Service checkbox must be checked before the sign-up button or Google button is active.
 
 **Screen routing logic (in order):**
 1. Splash screen shown until 4.1 s timer completes (first load only)
@@ -223,20 +214,14 @@ Every field written to `users/{uid}` is effectively public to other authenticate
 4. `!profile || profile.uid !== firebaseUser.uid` → `Onboarding`
 5. Otherwise → `MainApp`
 
-**Password reset:** Available in Settings for email-auth users only. Sends Firebase's built-in reset email.
-
-**Account deletion:** Calls `firebaseUser.delete()`. Handles `auth/requires-recent-login` error with a human-readable message.
-
 ---
 
 ## 7. Database Structure
 
-All data lives in Cloud Firestore under the `link-ap` project.
-
 ```
 users/
-  {uid}                          ← profile document (see Section 5)
-  {uid}/matches/{targetUid}      ← snapshot of the matched user's profile at time of match
+  {uid}                          ← profile document
+  {uid}/matches/{targetUid}      ← snapshot of matched user's profile
   {uid}/sent/{targetUid}         ← snapshot of target's profile + note + sentAt
   {uid}/received/{senderUid}     ← snapshot of sender's profile + note + sentAt
   {uid}/passed/{targetUid}       ← { passedAt: Timestamp } or { uid: string }
@@ -244,108 +229,52 @@ users/
   {uid}/blockedBy/{blockerUid}   ← { blockedAt: Timestamp }
 
 chats/
-  {uid_a}_{uid_b}/               ← chatId: two UIDs sorted alphabetically, joined with "_"
-    messages/{msgId}             ← { text: string, from: uid, createdAt: Timestamp }
+  {uid_a}_{uid_b}/
+    messages/{msgId}             ← { text, from, createdAt }
+
+storage/
+  avatars/{uid}.jpg              ← profile photo (migrated 11 May 2026)
 ```
-
-**Key design decisions:**
-- Match subcollections store a **snapshot** of the matched profile, not a reference. This means if someone updates their profile, their appearance in your matches list becomes stale.
-- There is no top-level `chats` document — only the `messages` subcollection exists.
-- `passed` writes use either `{ passedAt }` (for user-initiated passes) or `{ uid }` (for declined requests), inconsistently.
-- No Firestore Security Rules are visible in the codebase. They live externally in the Firebase console.
-
-**Queries in use:**
-- `where("deactivated", "!=", true)` + `orderBy("deactivated") + orderBy("createdAt")` on `users` (requires a composite Firestore index)
-- Range prefix search on `nameLower`, `lastNameLower`, `name` in SearchModal
-- `orderBy("createdAt")` on `chats/{chatId}/messages`
 
 ---
 
 ## 8. Known Issues / Incomplete Features
 
 ### Critical
-1. **Photo storage via base64 in Firestore.** Profile photos are resized to 200×200 px and stored as base64 data URLs directly in the `users/{uid}` document. A Firestore document has a 1 MB maximum size. A 200×200 JPEG at 70% quality is typically 10–30 KB in base64 (~40 KB), which is within limits for now, but any profile that uses a high-entropy image could approach the cap. More critically, every Discover card read, match list read, and search result downloads the full base64 string, creating unnecessary bandwidth overhead. Firebase Storage is already configured in `firebase.js` but the SDK is never imported.
+1. ~~**Photo storage via base64 in Firestore**~~ — **FIXED 11 May 2026.** Photos now upload to Firebase Storage at `avatars/{uid}.jpg`. Download URL stored in Firestore.
 
-2. **Search is broken for prefix matching.** In `SearchModal`, the upper bound for the Firestore range query is set to the exact same string as the lower bound (`end_ = t_ + ""`). This means `where('nameLower', '>=', 'ali'), where('nameLower', '<=', 'ali')` only returns exact matches for `"ali"` — it does not return `"alice"`, `"alison"`, etc. The standard fix is `end_ = t_ + ""`. The search effectively only works for users who type someone's full first or last name exactly.
+2. **Search prefix matching** — confirmed working in testing; partial name search returns results correctly.
 
 ### Moderate
-3. **Stale match snapshots.** When two users match, a snapshot of each profile is written to the other's `matches` subcollection. Subsequent profile edits are not propagated to existing matches. A matched user's name, role, photo, and skills shown in the Connections and Messages tabs can be permanently stale.
+3. ~~**Stale match snapshots**~~ — **FIXED 11 May 2026.** `saveProfile` now batch-updates all matched users' snapshot docs when a profile is edited.
 
-4. **`seenUids` resets on page refresh.** The set of Discover profiles already browsed is held in React state only. Refreshing the page resets it, so users see already-passed-on profiles again (unless they clicked "Pass", which writes to Firestore). This could be confusing.
+4. **`seenUids` resets on page refresh** — browsed profiles reset on refresh; passed profiles still filtered via Firestore.
 
-5. **Deactivation doesn't hide user from active chats and match lists.** Setting `deactivated: true` filters the user from Discover and Search queries, but their snapshot in other users' `matches` subcollections is untouched. Deactivated users remain visible in Connections and Messages until the data is manually cleaned up.
+5. **Deactivation doesn't hide user from active chats and match lists.**
 
-6. **No cascading chat deletion.** `handleDelete` cleans up `matches`, `sent`, and `received` subcollections, but does NOT delete `chats/{chatId}/messages` documents or `blocked`/`blockedBy` subcollections.
+6. **No cascading chat deletion** on account delete.
 
-7. **`blockedBy` users not filtered from Search results.** The SearchModal filters users you have blocked, but does not filter users who have blocked you (the `blockedByUids` array is not passed into `SearchModal`).
+7. **`blockedBy` users not filtered from Search results.**
 
-8. **Passed profiles are unrecoverable.** Once a user clicks "Pass", the target UID is added to the `passed` subcollection and is excluded from Discover forever (for that user). There is no "undo pass" mechanism.
+8. **Passed profiles are unrecoverable** — no undo pass mechanism.
 
 ### Minor
-9. **Version mismatch.** `package.json` has `"version": "0.1.0"` but the Settings screen displays "1.0.0 Beta".
+9. **Version mismatch** — `package.json` has `"version": "0.1.0"` but Settings displays "1.0.0 Beta".
 
-10. **`/privacy` route handled via `window.location.pathname` check.** This is checked before the splash screen and before auth checks. The `public/privacy.html` file also exists as a static alternative — these serve different content (one is the React component, one is a static HTML page) and may diverge.
+10. **No push notifications** — audio/vibration only fires when app is foregrounded.
 
-11. **No last-message preview in Messages list.** The conversation list shows only the contact's name and "Tap to chat 💬". There is no preview of the last message or timestamp.
+11. ~~**No last-message preview in Messages list**~~ — **FIXED 11 May 2026.** Last message text and relative timestamp now shown per conversation row.
 
-12. **No push notifications.** Audio and vibration only fire when the app is open and in focus on the messages tab for another chat. There is no mechanism to notify users of new connections or messages when the app is backgrounded or closed.
+12. **No read receipts or typing indicators** in chat.
 
-13. **No read receipts or typing indicators** in chat.
-
-14. **Intentional complement filter fallback may be confusing.** If no complementary profiles exist in Discover, the filter silently falls back to showing all unmatched users. A user looking for "A Job" could end up seeing other job seekers with no explanation.
-
-15. **LinkedIn verification is client-side only.** The name-matching heuristic runs entirely in the browser. It can be spoofed by editing the URL slug on LinkedIn or using an alias profile. The verified badge may mislead other users.
+13. **LinkedIn verification is client-side only.**
 
 ---
 
-## 9. Code Quality Notes
+## 9. Recommended Next Steps
 
-### Monolith structure
-The entire application — ~2,965 lines — lives in a single file, `src/App.js`. This includes utility functions, SVG icon components, UI primitives (Input, TextArea, Select, Tag, Avatar, SkillsInput), business logic components (Onboarding, Discover, Matches, Messages, Profile, Settings), modal components (ConnectNoteModal, SearchModal, ShareModal, PublicProfile), canvas drawing code (`drawInvitePoster`, `roundRect`), and the root `App` component. This makes it difficult to navigate, test in isolation, or onboard contributors.
-
-### Inline styles throughout
-All component styles are written as inline React style objects. There are no CSS modules, no CSS-in-JS library, no Tailwind, and no design tokens beyond the `COLORS` and `USER_COLORS` constants. While this eliminates class-name conflicts and keeps styles co-located with components, it produces verbose JSX, duplicates common patterns across components (border-radius, padding, borderRadius values repeated dozens of times), and is not amenable to theming or responsive breakpoints.
-
-### Photo storage as base64 in Firestore
-As noted in Section 8, storing base64-encoded images in Firestore documents is a structural issue that will become a reliability and performance problem at scale. The Firebase Storage bucket is already configured — migrating to Storage + a URL reference would resolve this cleanly.
-
-### No custom hooks
-Multiple `onSnapshot` subscriptions follow an identical pattern (`useEffect` → subscribe → return unsubscribe). These could be extracted into a reusable `useFirestoreCollection` hook. Similarly, the intent-filtering logic in `MainApp` and the profile-save logic in both `Onboarding` and `Profile` share significant structure.
-
-### Suppressed ESLint warnings
-There are multiple `// eslint-disable-line` comments on `useEffect` dependency arrays throughout the file, indicating hooks with intentionally incomplete dependency arrays. These are worth auditing to confirm they do not introduce stale closure bugs.
-
-### Canvas drawing in main bundle
-The `drawInvitePoster` and `roundRect` functions (~100 lines of canvas code) are loaded for every user even if they never open the Share modal. This is minor in isolation but symptomatic of the monolith pattern.
-
-### Inconsistent `passed` document shape
-`handlePass` writes `{ passedAt: serverTimestamp() }` while `handleDeclineRequest` writes `{ uid: senderUser.uid }`. Both land in the same `passed` subcollection. The shape inconsistency is harmless now (only `d.id` is read from these docs) but is a latent data quality issue.
-
-### Missing `firstName`/`lastName` in Profile edit
-The Profile edit form uses a single `name` field (full name combined), while the onboarding form captures `firstName` and `lastName` separately. Editing a profile via the Profile tab will recompute `lastNameLower` as the last word of the combined name string, which may produce unexpected search results for names that don't follow a first-last pattern.
-
----
-
-## 10. Recommended Next Steps
-
-Listed in order of impact relative to what is already built.
-
-### 1. Migrate photo storage to Firebase Storage
-**Why:** The current approach (base64 in Firestore) risks hitting the 1 MB document limit, bloats every read that touches a user doc, and does not scale. Firebase Storage is already configured.  
-**What to build:** On photo select, upload to `gs://link-ap.firebasestorage.app/avatars/{uid}.jpg`, store the download URL in `users/{uid}.photoURL`. Add a `storage` export to `firebase.js`. This change is backwards-compatible — existing base64 values continue to render until overwritten.
-
-### 2. Fix the search prefix query
-**Why:** The search is functionally broken for prefix matching — it only returns exact-string matches. This silently disappoints users who type partial names.  
-**What to fix:** Change `end_ = t_ + ""` to `end_ = t_ + ""` (and same for `endCap_`). This is a one-line fix that makes the search work as intended.
-
-### 3. Add a last-message preview and timestamp to the Messages list
-**Why:** The Messages tab currently shows every conversation as "Tap to chat 💬". Users cannot tell which conversations have unread messages, how recent they are, or what was last said. This is a high-frequency friction point.  
-**What to build:** On each chat snapshot subscription (already running in `MainApp`), store the last message text and timestamp alongside the `unreadChats` set. Render a 1-line preview and a relative timestamp ("2 min ago", "Yesterday") in the Messages list row.
-
-### 4. Propagate profile updates to existing match snapshots
-**Why:** Because matches store a profile snapshot, anyone who edits their name, photo, or role is invisible to their existing connections (they see an outdated version forever).  
-**What to build:** When `saveProfile` in `Profile` is called, after saving `users/{uid}`, fetch the current user's `matches` subcollection and batch-update each matched user's `users/{matchedUid}/matches/{uid}` document with the updated profile fields. This keeps the denormalised data fresh.
-
-### 5. Implement push notifications via Firebase Cloud Messaging (FCM)
-**Why:** New connection requests and messages currently only produce audio/vibration when the app is foregrounded. Users who close the tab or minimise the browser receive no signal — a critical gap for a networking app where timely responses drive engagement.  
-**What to build:** Register a FCM service worker, request notification permission during onboarding or Settings, store the FCM token in `users/{uid}.fcmToken`, and trigger a Cloud Function (or a Vercel Edge Function) that sends a push notification when a `received` or `messages` document is created. The service worker is already registered — it only needs FCM integrated.
+1. ~~Migrate photo storage to Firebase Storage~~ — **Done**
+2. ~~Add last-message preview to Messages list~~ — **Done**
+3. ~~Propagate profile updates to match snapshots~~ — **Done**
+4. **Implement push notifications via FCM** — remaining top priority
+5. **Fix cascading deletion** on account delete to include chats and blocked subcollections
