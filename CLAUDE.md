@@ -27,15 +27,28 @@ Everything lives in a single file: `src/App.js`. There is no routing library —
 - Screen decision: loading → `<AuthScreen>` → `<Onboarding>` → `<MainApp>`
 
 **Firestore data model**
-- `users/{uid}` — user profile document (fields: `uid`, `name`, `role`, `location`, `bio`, `skills[]`, `lookingFor[]`, `achievements[]`, `linkedin`, `avatar`, `color`, `createdAt`)
-- `users/{uid}/matches/{targetUid}` — a copy of the matched user's profile document
+- `users/{uid}` — user profile document (fields: `uid`, `name`, `role`, `location`, `bio`, `skills[]`, `lookingFor[]`, `achievements[]`, `linkedin`, `avatar`, `color`, `createdAt`, `pronouns`, `title`, `photoURL`)
+- `users/{uid}/matches/{targetUid}` — a copy of the matched user's profile document; updated on every profile save via `writeBatch` (fields synced: `name`, `role`, `location`, `bio`, `skills`, `photoURL`, `avatar`, `color`, `lookingFor`, `pronouns`, `title`)
 - `chats/{chatId}/messages/{msgId}` — real-time chat messages; `chatId` is the two UIDs sorted and joined with `_`
+
+**Firebase Storage**
+- `firebase.js` exports `storage` (via `getStorage`); `App.js` imports it alongside `ref`, `uploadBytes`, and `getDownloadURL` from `firebase/storage`.
+- Profile photos are uploaded to `avatars/{uid}.jpg`; `photoURL` in Firestore stores the resulting download URL (not a base64 string).
 
 **Key design decisions**
 - All styling is inline — no CSS files are used for component styles (`App.css` and `index.css` only handle body resets).
 - `COLORS` and `USER_COLORS` constants at the top of `App.js` are the single source of styling truth — always use these, never hardcode hex values.
 - `Discover` tracks seen profiles via a `seenUids` Set (not an index) so it stays correct when the `users` list updates reactively from Firestore.
 - `AuthScreen` handlers do NOT update app state directly — they just call Firebase auth and let `onAuthStateChanged` drive all state transitions.
+
+**State inventory (key additions — 11 May 2026)**
+- `MainApp`: `lastMessages` — `{ [uid]: { text, createdAt } }` map, one entry per conversation, used to drive the Messages list preview.
+- `Profile` component: `photoBlob` — resized image `Blob` held in state until `saveProfile` uploads it to Storage.
+
+**Messages component**
+- Accepts `lastMessages` prop from `MainApp`.
+- `formatRelativeTime(ts)` helper (defined before the component) converts a Firestore `Timestamp` to a human-readable string: `"Xm ago"`, `"Xh ago"`, `"Yesterday"`, weekday name, or a date string.
+- Conversation rows display a 40-character-truncated last-message preview and a relative timestamp instead of static "Tap to chat" text.
 
 ## Project Rules
 
@@ -44,6 +57,10 @@ Everything lives in a single file: `src/App.js`. There is no routing library —
 - **Never change `src/firebase.js`** — Firebase config is fixed.
 - Make small, focused changes — don't touch unrelated code.
 - `npm run eject` is never used.
+
+## After every feature change
+
+After completing any feature addition or fix, update CLAUDE.md to reflect new state variables, new imports, new Firebase collections or storage paths, and any new architectural decisions.
 
 ## Color Scheme
 
