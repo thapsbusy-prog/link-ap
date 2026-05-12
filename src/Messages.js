@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase";
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc } from "firebase/firestore";
 import { COLORS, Avatar, formatRelativeTime } from "./shared";
 
 export function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile, blockedUids = new Set(), blockedByUids = [], lastMessages = {} }) {
@@ -37,6 +37,24 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
       createdAt: serverTimestamp(),
     });
     setInput("");
+    // Notify recipient via FCM
+    try {
+      const recipientDoc = await getDoc(doc(db, "users", activeChat));
+      const fcmToken = recipientDoc.data()?.fcmToken;
+      if (fcmToken) {
+        await fetch("/api/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: fcmToken,
+            title: "New message on Link-Ap",
+            body: input.trim().slice(0, 100),
+          }),
+        });
+      }
+    } catch (e) {
+      console.warn("FCM notify error:", e);
+    }
   };
 
   if (activeChat && !chatUser) return null;
