@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import logoImg from "./link-ap-logo.png";
-import { db, auth, messaging, getFCMToken, onMessage } from "./firebase";
+import { db, auth } from "./firebase";
 import {
   collection, onSnapshot, query,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
@@ -1980,6 +1980,34 @@ function Settings({ user, firebaseUser, onEditProfile, blocked, onUnblock }) {
       <div style={{ marginBottom: 24 }}>
         {sectionLabel("Account Actions")}
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+          <button onClick={async () => {
+            try {
+              const permission = await Notification.requestPermission();
+              if (permission !== "granted") {
+                alert("Notifications blocked. Please allow them in your browser settings.");
+                return;
+              }
+              const { getFCMToken } = await import("./firebase");
+              const token = await getFCMToken();
+              if (token) {
+                await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
+                alert("Notifications enabled! ✓");
+              }
+            } catch (err) {
+              console.warn("FCM error:", err);
+              alert("Could not enable notifications. Try again.");
+            }
+          }} style={{
+            width: "100%", background: "none", border: "none", cursor: "pointer",
+            padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
+            borderBottom: `1px solid ${COLORS.border}`,
+          }}>
+            <svg viewBox="0 0 24 24" fill={COLORS.accent} width="20" height="20">
+              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+            <span style={{ flex: 1, fontSize: 14, color: COLORS.accent, textAlign: "left" }}>Enable Notifications</span>
+            <span style={{ color: COLORS.textMuted, fontSize: 18, lineHeight: 1 }}>›</span>
+          </button>
           <button onClick={() => signOut(auth)} style={{
             width: "100%", background: "none", border: "none", cursor: "pointer",
             padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
@@ -2151,39 +2179,6 @@ export default function App() {
     });
     return unsub;
   }, []);
-
-  useEffect(() => {
-    if (!firebaseUser) return;
-    const setupFCM = async () => {
-      try {
-        if (!("Notification" in window)) return;
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") return;
-        const token = await getFCMToken();
-        if (token) {
-          await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
-        }
-      } catch (err) {
-        console.warn("FCM setup failed:", err);
-      }
-    };
-    setupFCM();
-  }, [firebaseUser]); // eslint-disable-line
-
-  useEffect(() => {
-    if (!firebaseUser) return;
-    const unsub = onMessage(messaging, (payload) => {
-      const title = payload.notification?.title || "New message";
-      const body = payload.notification?.body || "";
-      if (Notification.permission === "granted") {
-        new Notification(title, {
-          body,
-          icon: '/icons/icon-192.png',
-        });
-      }
-    });
-    return unsub;
-  }, [firebaseUser]); // eslint-disable-line
 
 if (window.location.pathname === "/privacy") return <PrivacyPolicy />;
   if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;

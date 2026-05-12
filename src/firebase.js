@@ -23,7 +23,7 @@ export async function getFCMToken() {
   try {
     const registration = await navigator.serviceWorker.ready;
     const token = await getToken(messaging, {
-      vapidKey: process.env.REACT_APP_VAPID_KEY,
+      vapidKey: process.env.REACT_APP_VAPID_KEY || "BEIVCbXbvIz1ECF-6luz3TtsfihwFv_Of1XHnlOp87HQqOUNaWBW2apdO1w1sZi0IRFNypesgC-O0pwFmWh117g",
       serviceWorkerRegistration: registration,
     });
     return token || null;
