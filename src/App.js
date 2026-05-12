@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import logoImg from "./link-ap-logo.png";
-import { db, auth } from "./firebase";
+import { db, auth, messaging, getFCMToken, onMessage } from "./firebase";
 import {
   collection, onSnapshot, query,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
@@ -2151,7 +2151,40 @@ export default function App() {
     });
     return unsub;
   }, []);
-  
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    const setupFCM = async () => {
+      try {
+        if (!("Notification" in window)) return;
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") return;
+        const token = await getFCMToken();
+        if (token) {
+          await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
+        }
+      } catch (err) {
+        console.warn("FCM setup failed:", err);
+      }
+    };
+    setupFCM();
+  }, [firebaseUser]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!firebaseUser) return;
+    const unsub = onMessage(messaging, (payload) => {
+      const title = payload.notification?.title || "New message";
+      const body = payload.notification?.body || "";
+      if (Notification.permission === "granted") {
+        new Notification(title, {
+          body,
+          icon: '/icons/icon-192.png',
+        });
+      }
+    });
+    return unsub;
+  }, [firebaseUser]); // eslint-disable-line
+
 if (window.location.pathname === "/privacy") return <PrivacyPolicy />;
   if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
 
