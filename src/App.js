@@ -1409,7 +1409,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       )}
 
       {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => setViewingProfile(null)} currentUserUid={firebaseUser.uid} blocked={blocked} onBlock={handleBlock} onUnblock={handleUnblock} />}
-      {showSearch && <SearchModal currentUser={user} sent={sent} matches={matches} onClose={() => setShowSearch(false)} onSendRequest={handleSendRequestWithNote} blocked={blocked} />}
+      {showSearch && <SearchModal currentUser={user} sent={sent} matches={matches} onClose={() => setShowSearch(false)} onSendRequest={handleSendRequestWithNote} blocked={blocked} blockedByUids={blockedByUids} />}
 
       <div style={{
         position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
@@ -1683,7 +1683,7 @@ function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loading
   );
 }
 
-function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, blocked }) {
+function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, blocked, blockedByUids = [] }) {
   const [term, setTerm] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -1707,7 +1707,10 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
           getDocs(query(collection(db, 'users'), where('name', '>=', tCap), where('name', '<=', endCap_), limit(15))),
         ]);
         const seen = new Set();
-        const blockedSet = new Set((blocked || []).map(b => b.uid));
+        const blockedSet = new Set([
+          ...(blocked || []).map(b => b.uid),
+          ...(blockedByUids || []),
+        ]);
         const merged = [...s1.docs, ...s2.docs, ...s3.docs]
           .map(d => d.data())
           .filter(u => {
