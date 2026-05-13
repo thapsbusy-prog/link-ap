@@ -42,9 +42,13 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
       const recipientDoc = await getDoc(doc(db, "users", activeChat));
       const fcmToken = recipientDoc.data()?.fcmToken;
       if (fcmToken) {
+        const idToken = await firebaseUser.getIdToken();
         await fetch("/api/notify", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
           body: JSON.stringify({
             token: fcmToken,
             title: "New message on Link-Ap",
