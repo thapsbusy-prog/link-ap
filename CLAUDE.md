@@ -59,6 +59,13 @@ Everything lives in a single file: `src/App.js`. There is no routing library —
 - `formatRelativeTime(ts)` helper (defined before the component) converts a Firestore `Timestamp` to a human-readable string: `"Xm ago"`, `"Xh ago"`, `"Yesterday"`, weekday name, or a date string.
 - Conversation rows display a 40-character-truncated last-message preview and a relative timestamp instead of static "Tap to chat" text.
 
+**Account deletion (13 May 2026)**
+- `handleDelete` in `Settings` performs full Firestore cleanup before calling `firebaseUser.delete()`.
+- Reads `matches`, `sent`, `received`, `blocked`, `blockedBy`, and `passed` subcollections first to collect UIDs for bilateral cleanup.
+- Deletes the user's own subcollection docs in all six subcollections, then does bilateral cleanup on other users' `matches`, `sent`, `received`, `blocked`, and `blockedBy` docs.
+- Deletes all messages in `chats/{chatId}/messages/` for each matched conversation (chatId = sorted `[uid, otherUid].join("_")`).
+- Deletes `users/{uid}` last, then calls `firebaseUser.delete()`.
+
 ## Project Rules
 
 - **Never rewrite the entire App.js** unless explicitly asked.

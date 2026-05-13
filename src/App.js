@@ -1922,27 +1922,58 @@ function Settings({ user, firebaseUser, onEditProfile, blocked, onUnblock }) {
     setAccountError("");
     try {
       const uid = firebaseUser.uid;
-      // Read affected UIDs BEFORE deleting anything so we can clean up other users
-      const [matchesSnap, receivedSnap, sentSnap] = await Promise.all([
+
+      // Read all subcollections first so we have UIDs for bilateral cleanup
+      const [matchesSnap, sentSnap, receivedSnap, blockedSnap, blockedBySnap, passedSnap] = await Promise.all([
         getDocs(collection(db, "users", uid, "matches")),
-        getDocs(collection(db, "users", uid, "received")),
         getDocs(collection(db, "users", uid, "sent")),
+        getDocs(collection(db, "users", uid, "received")),
+        getDocs(collection(db, "users", uid, "blocked")),
+        getDocs(collection(db, "users", uid, "blockedBy")),
+        getDocs(collection(db, "users", uid, "passed")),
       ]);
+
       const matchUids = matchesSnap.docs.map(d => d.id);
-      const receivedUids = receivedSnap.docs.map(d => d.id);
       const sentUids = sentSnap.docs.map(d => d.id);
-      // Delete this user's own subcollection docs
+      const receivedUids = receivedSnap.docs.map(d => d.id);
+      const blockedUids = blockedSnap.docs.map(d => d.id);
+      const blockedByUids = blockedBySnap.docs.map(d => d.id);
+
+      // Delete all of this user's own subcollection docs
       await Promise.all([
         ...matchesSnap.docs.map(d => deleteDoc(d.ref)),
-        ...receivedSnap.docs.map(d => deleteDoc(d.ref)),
         ...sentSnap.docs.map(d => deleteDoc(d.ref)),
+        ...receivedSnap.docs.map(d => deleteDoc(d.ref)),
+        ...blockedSnap.docs.map(d => deleteDoc(d.ref)),
+        ...blockedBySnap.docs.map(d => deleteDoc(d.ref)),
+        ...passedSnap.docs.map(d => deleteDoc(d.ref)),
       ]);
-      // Clean up stale references in other users' subcollections
+
+      // Bilateral cleanup on other users' subcollections
       await Promise.all([
+        // Remove this user from matched users' match/sent/received docs
         ...matchUids.map(otherUid => deleteDoc(doc(db, "users", otherUid, "matches", uid))),
-        ...receivedUids.map(senderUid => deleteDoc(doc(db, "users", senderUid, "sent", uid))),
+        ...matchUids.map(otherUid => deleteDoc(doc(db, "users", otherUid, "sent", uid))),
+        ...matchUids.map(otherUid => deleteDoc(doc(db, "users", otherUid, "received", uid))),
+        // Remove this user from pending sent/received on non-matched users
         ...sentUids.map(recipientUid => deleteDoc(doc(db, "users", recipientUid, "received", uid))),
+        ...receivedUids.map(senderUid => deleteDoc(doc(db, "users", senderUid, "sent", uid))),
+        // Remove this user from other users' blocked/blockedBy docs
+        ...blockedUids.map(blockedUid => deleteDoc(doc(db, "users", blockedUid, "blockedBy", uid))),
+        ...blockedByUids.map(blockerUid => deleteDoc(doc(db, "users", blockerUid, "blocked", uid))),
       ]);
+
+      // Delete all chat messages for every conversation this user participated in
+      // Chat IDs are the two participant UIDs sorted and joined with "_"
+      await Promise.all(
+        matchUids.map(async otherUid => {
+          const chatId = [uid, otherUid].sort().join("_");
+          const msgsSnap = await getDocs(collection(db, "chats", chatId, "messages"));
+          await Promise.all(msgsSnap.docs.map(d => deleteDoc(d.ref)));
+        })
+      );
+
+      // Delete the top-level user document, then the Firebase Auth account
       await deleteDoc(doc(db, "users", uid));
       await firebaseUser.delete();
     } catch (e) {
