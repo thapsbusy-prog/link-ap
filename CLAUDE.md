@@ -45,6 +45,15 @@ Everything lives in a single file: `src/App.js`. There is no routing library —
 - `MainApp`: `lastMessages` — `{ [uid]: { text, createdAt } }` map, one entry per conversation, used to drive the Messages list preview.
 - `Profile` component: `photoBlob` — resized image `Blob` held in state until `saveProfile` uploads it to Storage.
 
+**State inventory (key additions — 13 May 2026)**
+- `Matches` component: `disconnectTarget` — the match user object selected for removal; drives the in-component confirmation modal.
+- `PublicProfile` component: `showDisconnectConfirm` (bool), `isMutualMatch` (bool derived from `matches` prop) — controls the Remove Connection confirmation modal.
+
+**Disconnect / Remove Connection feature (13 May 2026)**
+- `handleDisconnect(targetUid)` lives in `MainApp`. It deletes both sides of the match, plus any stale sent/received docs, updates local `matches` state immediately, clears `activeChat` if the disconnected user was active, and shows a "Connection removed" toast.
+- `Matches` receives `onDisconnect` prop; each card in the Connected section has a `✕ remove` button that opens a confirmation modal before calling `onDisconnect`.
+- `PublicProfile` receives `matches` and `onDisconnect` props; shows a "Remove Connection" button only when `isMutualMatch` is true. Confirmation modal closes the profile on confirm.
+
 **Messages component**
 - Accepts `lastMessages` prop from `MainApp`.
 - `formatRelativeTime(ts)` helper (defined before the component) converts a Firestore `Timestamp` to a human-readable string: `"Xm ago"`, `"Xh ago"`, `"Yesterday"`, weekday name, or a date string.

@@ -549,7 +549,9 @@ function Onboarding({ firebaseUser, onComplete }) {
   );
 }
 
-function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock, onUnblock }) {
+function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock, onUnblock, matches, onDisconnect }) {
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const isMutualMatch = matches?.some(m => m.uid === profileUser.uid);
   return (
     <div style={{
       position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)",
@@ -706,7 +708,15 @@ function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock,
           {currentUserUid && currentUserUid !== profileUser.uid && (() => {
             const isBlocked = blocked && blocked.some(b => b.uid === profileUser.uid);
             return (
-              <div style={{ paddingTop: 24, textAlign: "center" }}>
+              <div style={{ paddingTop: 24, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                {isMutualMatch && onDisconnect && (
+                  <button
+                    onClick={() => setShowDisconnectConfirm(true)}
+                    style={{ background: "none", border: `1px solid ${COLORS.red}55`, borderRadius: 10, color: COLORS.red, cursor: "pointer", fontSize: 13, fontWeight: 600, padding: "9px 20px" }}
+                  >
+                    Remove Connection
+                  </button>
+                )}
                 <button
                   onClick={() => isBlocked ? onUnblock(profileUser.uid) : onBlock(profileUser)}
                   style={{ background: "none", border: "none", color: COLORS.red, cursor: "pointer", fontSize: 12, opacity: 0.6, textDecoration: "underline" }}
@@ -718,6 +728,24 @@ function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock,
           })()}
         </div>
       </div>
+
+      {showDisconnectConfirm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px" }}>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 16, width: "100%", maxWidth: 360, padding: 24 }}>
+            <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 17, marginBottom: 10 }}>Remove {profileUser.name.split(" ")[0]}?</div>
+            <p style={{ color: COLORS.textMuted, fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>
+              They will be removed from your connections. Your chat history is kept. They can reappear in Discover.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowDisconnectConfirm(false)} style={{ flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "none", color: COLORS.text, cursor: "pointer", fontSize: 14 }}>Cancel</button>
+              <button
+                onClick={() => { onDisconnect(profileUser.uid); setShowDisconnectConfirm(false); onClose(); }}
+                style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: COLORS.red, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+              >Remove</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1094,6 +1122,19 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     ]);
   };
 
+  const handleDisconnect = async (targetUid) => {
+    await Promise.all([
+      deleteDoc(doc(db, "users", firebaseUser.uid, "matches", targetUid)),
+      deleteDoc(doc(db, "users", targetUid, "matches", firebaseUser.uid)),
+      deleteDoc(doc(db, "users", firebaseUser.uid, "sent", targetUid)),
+      deleteDoc(doc(db, "users", targetUid, "sent", firebaseUser.uid)),
+      deleteDoc(doc(db, "users", firebaseUser.uid, "received", targetUid)),
+      deleteDoc(doc(db, "users", targetUid, "received", firebaseUser.uid)),
+    ]);
+    setMatches(prev => prev.filter(m => m.uid !== targetUid));
+    if (activeChat === targetUid) setActiveChat(null);
+    showNotif("Connection removed");
+  };
 
   const handleOpenChat = (uid) => {
     setActiveChat(uid);
@@ -1160,7 +1201,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnectWithNote} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
-        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} blockedUids={blockedUids} blockedByUids={blockedByUids} />}
+        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} blockedUids={blockedUids} blockedByUids={blockedByUids} onDisconnect={handleDisconnect} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} lastMessages={lastMessages} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} blocked={blocked} onUnblock={handleUnblock} />}
@@ -1176,7 +1217,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         </div>
       )}
 
-      {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => setViewingProfile(null)} currentUserUid={firebaseUser.uid} blocked={blocked} onBlock={handleBlock} onUnblock={handleUnblock} />}
+      {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => setViewingProfile(null)} currentUserUid={firebaseUser.uid} blocked={blocked} onBlock={handleBlock} onUnblock={handleUnblock} matches={matches} onDisconnect={handleDisconnect} />}
       {showSearch && <SearchModal currentUser={user} sent={sent} matches={matches} onClose={() => setShowSearch(false)} onSendRequest={handleSendRequestWithNote} blocked={blocked} blockedByUids={blockedByUids} />}
 
       <div style={{
@@ -1629,7 +1670,8 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
 }
 
 
-function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onDiscover, blockedUids = new Set(), blockedByUids = [] }) {
+function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onDiscover, blockedUids = new Set(), blockedByUids = [], onDisconnect }) {
+  const [disconnectTarget, setDisconnectTarget] = useState(null);
   const hasActivity = matches.length > 0 || sent.length > 0 || received.length > 0;
 
   return (
@@ -1732,7 +1774,16 @@ function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile,
                 {u.lookingFor?.slice(0, 2).map(l => <Tag key={l} label={l} color={COLORS.accent} />)}
               </div>
             </div>
-            <div style={{ color: COLORS.textMuted, fontSize: 20 }}>→</div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              <div style={{ color: COLORS.textMuted, fontSize: 20 }}>→</div>
+              {onDisconnect && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDisconnectTarget(u); }}
+                  style={{ background: "none", border: "none", color: COLORS.red, cursor: "pointer", fontSize: 11, opacity: 0.65, padding: "2px 4px", lineHeight: 1 }}
+                  title="Remove connection"
+                >✕ remove</button>
+              )}
+            </div>
           </div>
         ))}
 
@@ -1766,6 +1817,24 @@ function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile,
           </>
         )}
       </div>
+
+      {disconnectTarget && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px" }}>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 16, width: "100%", maxWidth: 360, padding: 24 }}>
+            <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 17, marginBottom: 10 }}>Remove {disconnectTarget.name.split(" ")[0]}?</div>
+            <p style={{ color: COLORS.textMuted, fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>
+              They will be removed from your connections. Your chat history is kept. They can reappear in Discover.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setDisconnectTarget(null)} style={{ flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "none", color: COLORS.text, cursor: "pointer", fontSize: 14 }}>Cancel</button>
+              <button
+                onClick={() => { onDisconnect(disconnectTarget.uid); setDisconnectTarget(null); }}
+                style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: COLORS.red, color: "#fff", cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+              >Remove</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
