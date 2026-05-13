@@ -263,3 +263,67 @@ export function Select({ label, value, onChange, options, placeholder }) {
     </div>
   );
 }
+
+export function TermsContent() {
+  return (
+    <div style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1.7 }}>
+      <p style={{ color: COLORS.text, fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Link-Ap Terms of Use</p>
+      <p style={{ marginBottom: 12 }}>Effective: 2 May 2026 &nbsp;|&nbsp; Applies worldwide</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>1. Acceptance</p>
+      <p style={{ marginBottom: 12 }}>By creating an account you enter into a binding agreement with Link-Ap ("we", "us"). If you do not agree, do not use the platform.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>2. Eligibility</p>
+      <p style={{ marginBottom: 12 }}>You must be at least 18 years old and legally capable of forming a contract in your jurisdiction. By accepting, you confirm you meet these requirements. Use of Link-Ap is void where prohibited by local law.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>3. Your Account</p>
+      <p style={{ marginBottom: 12 }}>You are responsible for all activity under your account. Provide accurate, current information. Keep your credentials secure and do not share access. Notify us immediately of any unauthorised use.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>4. Acceptable Use</p>
+      <p style={{ marginBottom: 4 }}>You agree not to:</p>
+      <p style={{ marginBottom: 12, paddingLeft: 8 }}>
+        • Post false, misleading, or impersonating content<br />
+        • Harass, threaten, or discriminate against any person<br />
+        • Send unsolicited commercial messages (spam)<br />
+        • Scrape, copy, or reverse-engineer the platform<br />
+        • Use Link-Ap for unlawful purposes or to facilitate illegal activity<br />
+        • Upload malware, viruses, or harmful code<br />
+        • Circumvent security or access controls
+      </p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>5. Your Content</p>
+      <p style={{ marginBottom: 12 }}>You retain ownership of content you post. By posting, you grant Link-Ap a worldwide, non-exclusive, royalty-free licence to display and distribute your content solely to operate the platform. You warrant that your content does not infringe any third-party rights and complies with all applicable laws.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>6. Privacy and Data</p>
+      <p style={{ marginBottom: 4 }}>We collect and process personal data to operate Link-Ap. Depending on your location, you have rights that may include:</p>
+      <p style={{ marginBottom: 12, paddingLeft: 8 }}>
+        • <span style={{ color: COLORS.text }}>EU / EEA / UK (GDPR/UK GDPR):</span> access, rectification, erasure, restriction, portability, and the right to object to processing.<br />
+        • <span style={{ color: COLORS.text }}>California (CCPA/CPRA):</span> right to know, delete, correct, and opt out of sale of personal information.<br />
+        • <span style={{ color: COLORS.text }}>South Africa (POPIA):</span> right to access, correction, and objection to processing of personal information.<br />
+        • <span style={{ color: COLORS.text }}>Other jurisdictions:</span> applicable local data-protection rights.
+      </p>
+      <p style={{ marginBottom: 12 }}>To exercise any privacy right, contact us at info@link-ap.online. We will respond within the timeframe required by your local law (typically 30 days).</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>7. Intellectual Property</p>
+      <p style={{ marginBottom: 12 }}>All platform content, trademarks, and technology (excluding user content) belong to Link-Ap or its licensors. You may not copy, modify, distribute, or create derivative works without our written permission.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>8. Disclaimers</p>
+      <p style={{ marginBottom: 12 }}>Link-Ap is provided "as is" and "as available" without warranties of any kind, express or implied. We do not verify the accuracy of user profiles or guarantee any outcome from connections made on the platform. Some jurisdictions do not allow exclusion of implied warranties; in such cases this section applies to the maximum extent permitted.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>9. Limitation of Liability</p>
+      <p style={{ marginBottom: 12 }}>To the fullest extent permitted by applicable law, Link-Ap's total liability for any claim arising from these Terms or your use of the platform is limited to the greater of USD $100 or the amount you paid us in the 12 months before the claim. We are not liable for indirect, incidental, consequential, or punitive damages. Nothing in these Terms limits liability for fraud, gross negligence, or death/personal injury caused by our negligence.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>10. Termination</p>
+      <p style={{ marginBottom: 12 }}>We may suspend or permanently terminate your account for material violations of these Terms, with or without notice. You may delete your account at any time. Upon termination, your right to use Link-Ap ceases immediately. Sections 5, 7, 8, 9, and 11 survive termination.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>11. Governing Law and Disputes</p>
+      <p style={{ marginBottom: 12 }}>These Terms are governed by the laws of the Republic of South Africa, without regard to conflict-of-law principles. Disputes shall first be referred to good-faith negotiation. If unresolved after 30 days, disputes shall be submitted to binding arbitration under the Arbitration Foundation of South Africa (AFSA) rules, conducted in English. Nothing prevents either party from seeking urgent interim relief from a competent court. Where mandatory local law requires a different forum or governing law, that law applies to the extent required.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>12. Changes to These Terms</p>
+      <p style={{ marginBottom: 12 }}>We may update these Terms at any time. We will notify you of material changes via the app or email. Continued use after the effective date of updated Terms constitutes acceptance. If you do not agree with changes, you must stop using Link-Ap and may delete your account.</p>
+
+      <p style={{ color: COLORS.text, fontWeight: 600, marginBottom: 4 }}>13. Contact</p>
+      <p style={{ marginBottom: 4 }}>For any questions about these Terms or to exercise your privacy rights, contact: info@link-ap.online</p>
+    </div>
+  );
+}
