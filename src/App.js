@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Component } from "react";
 import logoImg from "./link-ap-logo.png";
 import { db, auth } from "./firebase";
 import {
@@ -2150,6 +2150,44 @@ function SplashScreen({ onDone }) {
     </>
   );
 }
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error, info) {
+    console.error("ErrorBoundary caught:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: "100vh", background: COLORS.bg,
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 12,
+        }}>
+          <p style={{ color: COLORS.text, fontSize: 18, margin: 0 }}>Something went wrong</p>
+          <p style={{ color: COLORS.textMuted, fontSize: 14, margin: 0 }}>Tap below to reload</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              marginTop: 8, padding: "10px 24px", borderRadius: 8,
+              background: COLORS.accent, color: "#fff", border: "none",
+              fontSize: 15, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState(undefined);
@@ -2180,11 +2218,12 @@ export default function App() {
     return unsub;
   }, []);
 
-if (window.location.pathname === "/privacy") return <PrivacyPolicy />;
-  if (!splashDone) return <SplashScreen onDone={() => setSplashDone(true)} />;
-
-  if (loading) return <div style={{ minHeight: "100vh", background: COLORS.bg }} />;
-  if (!firebaseUser) return <AuthScreen />;
-  if (!profile || profile.uid !== firebaseUser.uid) return <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
-  return <MainApp user={profile} firebaseUser={firebaseUser} onProfileUpdate={setProfile} />;
+  let content;
+  if (window.location.pathname === "/privacy") content = <PrivacyPolicy />;
+  else if (!splashDone) content = <SplashScreen onDone={() => setSplashDone(true)} />;
+  else if (loading) content = <div style={{ minHeight: "100vh", background: COLORS.bg }} />;
+  else if (!firebaseUser) content = <AuthScreen />;
+  else if (!profile || profile.uid !== firebaseUser.uid) content = <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
+  else content = <MainApp user={profile} firebaseUser={firebaseUser} onProfileUpdate={setProfile} />;
+  return <ErrorBoundary>{content}</ErrorBoundary>;
 }
