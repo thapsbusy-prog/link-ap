@@ -85,6 +85,13 @@ The app is split across several source files. There is no routing library — `M
 - Make small, focused changes — don't touch unrelated code.
 - `npm run eject` is never used.
 
+**Component & File Structure**
+- Every new screen, major component, or feature gets its own file in `src/` from day one — never add new components directly into `App.js`.
+- `App.js` is reserved for: `MainApp` state and handlers, `ErrorBoundary`, `App` root, and top-level constants only.
+- New files follow the established naming pattern: `PascalCase.js` (e.g. `src/NewFeature.js`).
+- Each new file must have a default export unless it exports multiple related components (like `Discover.js` exports `Discover` and `PublicProfile`).
+- Shared constants, helpers, and UI primitives go in `src/shared.js`.
+
 ## After every feature change
 
 After completing any feature addition or fix, update CLAUDE.md to reflect new state variables, new imports, new Firebase collections or storage paths, and any new architectural decisions.
