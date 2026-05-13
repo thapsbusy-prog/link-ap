@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Component } from "react";
 import logoImg from "./link-ap-logo.png";
-import { db, auth } from "./firebase";
+import { db, auth, messaging, onMessage } from "./firebase";
 import {
   collection, onSnapshot, query,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
@@ -962,6 +962,19 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
   useEffect(() => { tabRef.current = tab; }, [tab]);
   useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
+
+  useEffect(() => {
+    const unsub = onMessage(messaging, (payload) => {
+      const isInActiveChat = tabRef.current === "messages" && activeChatRef.current !== null;
+      if (isInActiveChat) return;
+      const title = payload?.notification?.title || "New message";
+      const body = payload?.notification?.body;
+      showNotif(body ? `${title}: ${body}` : title);
+      playBeep();
+      triggerVibrate();
+    });
+    return unsub;
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     if (!matches.length) return;
