@@ -3,7 +3,7 @@ import { db, storage } from "./firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, doc, setDoc, getDocs, writeBatch } from "firebase/firestore";
 import { COLORS, Avatar, LocationPin, LinkedInIcon, Input, TextArea, Select, SkillsInput, LOOKING_FOR_OPTIONS, LOOKING_FOR_QUESTIONS, OPEN_TO_OPTIONS, PRONOUN_OPTIONS, TITLE_OPTIONS, getBringToTablePrompt, normalizeUrl, validateLinkedIn, linkedinNameMatches } from "./shared";
-import { ShareModal } from "./App";
+import { ShareModal } from "./Discover";
 
 export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
   const [editing, setEditing] = useState(false);

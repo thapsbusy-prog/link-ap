@@ -19,7 +19,18 @@ git add . && git commit -m "description" && git push
 
 ## Architecture
 
-Everything lives in a single file: `src/App.js`. There is no routing library — the app uses a `tab` state string (`"discover"`, `"matches"`, `"messages"`, `"profile"`) in `MainApp` to switch between screens.
+The app is split across several source files. There is no routing library — `MainApp` uses a `tab` state string (`"discover"`, `"matches"`, `"messages"`, `"profile"`) to switch between screens.
+
+**Source file map**
+- `src/App.js` — `MainApp`, `SearchModal`, `SplashScreen`, `ErrorBoundary`, `App` root, and helpers (`playBeep`, `triggerVibrate`)
+- `src/Discover.js` — `Discover`, `PublicProfile`, `ShareModal`, `ConnectNoteModal`, and canvas helpers (`roundRect`, `drawInvitePoster`)
+- `src/Matches.js` — `Matches` component
+- `src/Messages.js` — `Messages` component and `formatRelativeTime`
+- `src/Profile.js` — `Profile` component
+- `src/Settings.js` — `Settings` component
+- `src/AuthScreen.js` — `AuthScreen` component
+- `src/Onboarding.js` — `Onboarding` component
+- `src/shared.js` — shared constants (`COLORS`, `USER_COLORS`, option arrays), shared helpers (`normalizeUrl`, `validateLinkedIn`, `linkedinNameMatches`, `getBringToTablePrompt`, `formatRelativeTime`), and shared UI components (`Avatar`, `Tag`, `Input`, `TextArea`, `Select`, `SkillsInput`, `LocationPin`, `LinkedInIcon`, `TermsContent`)
 
 **Auth flow (`App` root component)**
 - `firebaseUser` starts as `undefined` (loading), becomes `null` (signed out) or a Firebase user object (signed in).
