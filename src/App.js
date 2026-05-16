@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Component } from "react";
 import logoImg from "./link-ap-logo.png";
-import { db, auth, messaging, onMessage } from "./firebase";
+import { db, auth, messaging, onMessage, getFCMToken } from "./firebase";
 import {
   collection, onSnapshot, query,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
@@ -98,6 +98,16 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   useEffect(() => { loadMoreUsers(); }, []); // eslint-disable-line
+
+  useEffect(() => {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    (async () => {
+      try {
+        const token = await getFCMToken();
+        if (token) await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
+      } catch {}
+    })();
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "matches"), snap => {
@@ -213,6 +223,22 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), { ...targetUser, note, sentAt: serverTimestamp() }),
       setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), { ...user, note, sentAt: serverTimestamp() }),
     ]);
+    try {
+      const targetDoc = await getDoc(doc(db, "users", targetUser.uid));
+      const fcmToken = targetDoc.data()?.fcmToken;
+      if (fcmToken) {
+        const idToken = await firebaseUser.getIdToken();
+        await fetch("/api/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
+          body: JSON.stringify({
+            token: fcmToken,
+            title: "New Connection Request",
+            body: `${user.name} wants to connect with you`,
+          }),
+        });
+      }
+    } catch {}
   };
 
   const handleConnectWithNote = async (targetUser, note) => {
@@ -230,6 +256,22 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       deleteDoc(doc(db, "users", senderUser.uid, "received", firebaseUser.uid)),
     ]);
     showNotif(`Connected with ${senderUser.name}! 🎉`);
+    try {
+      const senderDoc = await getDoc(doc(db, "users", senderUser.uid));
+      const fcmToken = senderDoc.data()?.fcmToken;
+      if (fcmToken) {
+        const idToken = await firebaseUser.getIdToken();
+        await fetch("/api/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
+          body: JSON.stringify({
+            token: fcmToken,
+            title: "Connection Accepted",
+            body: `${user.name} accepted your connection request`,
+          }),
+        });
+      }
+    } catch {}
   };
 
   const handleDeclineRequest = async (senderUser) => {
