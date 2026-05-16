@@ -1,5 +1,6 @@
 # Link-Ap — Status Report v0.5
 **Generated:** 2026-05-16  
+**Last updated:** 2026-05-16 — Bug 11 fixed; search permissions resolved.  
 **Branch:** main  
 **Scope:** Full audit of App.js, Messages.js, Profile.js, shared.js, firebase.js, api/notify.js, firestore.rules, public/service-worker.js, public/manifest.json, package.json, plus all component files.
 
@@ -40,7 +41,7 @@
 | Unread indicators | App.js, Messages.js | ✅ Complete | Badge on nav tab; dot on avatar in Messages list |
 | Block / Unblock user | App.js, Settings.js, Discover.js | 🔧 Partial | UI and handler code correct; **Firestore rules missing** for `blocked` and `blockedBy` — all writes denied (Bug 2) |
 | Block list (Settings) | Settings.js | 🔧 Partial | Reads and renders correctly; writes silently fail due to missing rules |
-| Search by name | App.js (`SearchModal`) | 🔧 Partial | UI works; **prefix range query broken** — equality match only (Bug 1) |
+| Search by name | App.js (`SearchModal`) | ✅ Complete | Permissions fixed (Bug 11); note: prefix range query still needs `end_` suffix fix (Bug 1) |
 | FCM push notifications | App.js, firebase.js, api/notify.js, Settings.js | 🔧 Partial | Architecture complete; only chat messages trigger push; connection events do not; 401 issue unresolved per project memory |
 | FCM — in-app foreground | App.js (`onMessage`) | ✅ Complete | Toast + beep + vibrate |
 | FCM — background (SW) | public/service-worker.js | ✅ Complete | `onBackgroundMessage` registered |
@@ -480,6 +481,13 @@ match /blockedBy/{blockerId} {
 **Location:** Profile.js (view section, lines 271–433)  
 **Description:** Pronouns are displayed in the Discover card (Discover.js:561) and in PublicProfile (Discover.js:33), but the own-profile view in Profile.js has no render path for `user.pronouns`.  
 **Fix:** Add pronouns display next to or below the name in Profile.js:300, consistent with PublicProfile.
+
+---
+
+### Bug 11 — HIGH | ✅ FIXED | Search returns Firestore permissions error
+**Location:** firestore.rules (`match /users/{uid}`)  
+**Description:** The search feature (`SearchModal`, App.js:443–448) runs three parallel `getDocs` collection queries against `users`. The existing rule `allow read:` was split into `allow get:` (single-document reads, with the deactivated check preserved) and a new `allow list: if isAuth();` (collection-level queries). Without a `list` rule, Firestore denied all collection queries with "Missing or insufficient permissions."  
+**Fix:** Replaced `allow read:` with separate `allow get:` and `allow list: if isAuth()` inside `match /users/{uid}`. Deployed via `firebase deploy --only firestore:rules`.
 
 ---
 

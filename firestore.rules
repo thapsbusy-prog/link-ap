@@ -11,7 +11,8 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if isAuth() && (isOwner(uid) || resource.data.deactivated != true);
+      allow get: if isAuth() && (isOwner(uid) || resource.data.deactivated != true);
+      allow list: if isAuth();
       allow create, update: if isAuth() && isOwner(uid);
       allow delete: if isAuth() && isOwner(uid);
 
