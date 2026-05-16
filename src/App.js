@@ -219,6 +219,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   const handleSendRequestWithNote = async (targetUser, note) => {
+    if (blockedByUids.includes(targetUser.uid)) return;
     await Promise.all([
       setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), { ...targetUser, note, sentAt: serverTimestamp() }),
       setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), { ...user, note, sentAt: serverTimestamp() }),
@@ -303,7 +304,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
   const blockedUids = new Set(blocked.map(b => b.uid));
   const unmatched = allUsers === null ? null : allUsers.filter(u =>
-    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid) && !u.deactivated && !received.find(r => r.uid === u.uid) && !blockedUids.has(u.uid)
+    !matches.find(m => m.uid === u.uid) && !sent.find(s => s.uid === u.uid) && !passed.has(u.uid) && !u.deactivated && !received.find(r => r.uid === u.uid) && !blockedUids.has(u.uid) && !blockedByUids.includes(u.uid)
   );
 
   const intentFiltered = unmatched === null ? null : (() => {
