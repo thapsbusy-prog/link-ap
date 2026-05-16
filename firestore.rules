@@ -30,6 +30,16 @@ service cloud.firestore {
       match /passed/{passedUid} {
         allow read, write: if isAuth() && isOwner(uid);
       }
+
+      match /blocked/{blockedUid} {
+        allow read: if isAuth() && isOwner(uid);
+        allow write: if isAuth() && (isOwner(uid) || isOwner(blockedUid));
+      }
+
+      match /blockedBy/{blockerId} {
+        allow read: if isAuth() && isOwner(uid);
+        allow write: if isAuth() && (isOwner(uid) || isOwner(blockerId));
+      }
     }
 
     match /chats/{chatId}/messages/{msgId} {
