@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import logoImg from "./link-ap-logo.png";
 import { auth } from "./firebase";
 import {
-  signInWithPopup, GoogleAuthProvider,
+  signInWithRedirect, getRedirectResult, GoogleAuthProvider,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
 } from "firebase/auth";
 import { COLORS, Input, TermsContent } from "./shared";
@@ -27,13 +27,26 @@ export default function AuthScreen() {
   const [termsChecked, setTermsChecked] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
 
+  useEffect(() => {
+    setLoading(true);
+    getRedirectResult(auth)
+      .then(result => {
+        if (!result) setLoading(false);
+        // onAuthStateChanged drives state transitions on successful result
+      })
+      .catch(e => {
+        setError(e.message.replace("Firebase: ", ""));
+        setLoading(false);
+      });
+  }, []);
+
   const handleGoogle = async () => {
     setLoading(true);
     setError("");
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
     } catch (e) {
       setError(e.message.replace("Firebase: ", ""));
       setLoading(false);
