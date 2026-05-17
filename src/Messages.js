@@ -9,7 +9,6 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
   const bottomRef = useRef(null);
 
   const chatUser = matches.find(u => u.uid === activeChat);
-  const isPending = sent.some(u => u.uid === activeChat);
   const chatId = activeChat ? [firebaseUser.uid, activeChat].sort().join("_") : null;
   const iBlockedThem = activeChat ? blockedUids.has(activeChat) : false;
   const theyBlockedMe = activeChat ? blockedByUids.includes(activeChat) : false;
@@ -30,7 +29,7 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
   }, [chatMessages.length]);
 
   const send = async () => {
-    if (!input.trim() || isPending || !chatUser || iBlockedThem) return;
+    if (!input.trim() || !chatUser || iBlockedThem) return;
     await addDoc(collection(db, "chats", chatId, "messages"), {
       text: input.trim(),
       from: firebaseUser.uid,
@@ -170,13 +169,6 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
             <div ref={bottomRef} />
           </div>
 
-          {isPending ? (
-            <div style={{ padding: "14px 16px", borderTop: `1px solid ${COLORS.border}`, background: COLORS.card, textAlign: "center" }}>
-              <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>
-                Messaging unlocks once {chatUser?.name} connects back with you.
-              </p>
-            </div>
-          ) : (
             <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}`, display: "flex", gap: 10, background: COLORS.card }}>
               <input
                 value={input}
@@ -197,7 +189,6 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
                 fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
               }}>→</button>
             </div>
-          )}
         </>
       )}
     </div>
