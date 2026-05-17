@@ -620,12 +620,12 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
           </div>
           <button
             onClick={handleSend}
-            disabled={!note.trim() || sending || sentOk}
+            disabled={note.trim().length < 10 || sending || sentOk}
             style={{
               padding: "14px", borderRadius: 12, border: "none",
-              background: sentOk ? COLORS.green : note.trim() && !sending ? COLORS.accent : COLORS.border,
-              color: sentOk || (note.trim() && !sending) ? "#000" : COLORS.textMuted,
-              cursor: note.trim() && !sending && !sentOk ? "pointer" : "not-allowed",
+              background: sentOk ? COLORS.green : note.trim().length >= 10 && !sending ? COLORS.accent : COLORS.border,
+              color: sentOk || (note.trim().length >= 10 && !sending) ? "#000" : COLORS.textMuted,
+              cursor: note.trim().length >= 10 && !sending && !sentOk ? "pointer" : "not-allowed",
               fontSize: 14, fontWeight: 700,
             }}
           >
