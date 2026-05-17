@@ -37,7 +37,10 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
       createdAt: serverTimestamp(),
     });
     setInput("");
-    // Notify recipient via FCM
+    // CRITICAL — pass recipientUid to /api/notify
+    // Server fetches fcmTokens array from Firestore.
+    // Do not revert to passing a single fcmToken from client.
+    // Single token approach breaks multi-device notifications.
     try {
       const idToken = await firebaseUser.getIdToken();
       await fetch("/api/notify", {

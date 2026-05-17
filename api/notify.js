@@ -17,6 +17,28 @@ if (!admin.apps.length) {
   }
 }
 
+/**
+ * CRITICAL — FCM Notification Server Function
+ *
+ * Accepts: { recipientUid, title, body }
+ * Fetches: fcmTokens array from Firestore for that user
+ * Sends:   push to ALL of the user's devices simultaneously
+ *
+ * Uses sendEachForMulticast (not send) to support multiple
+ * device tokens per user. Falls back to legacy fcmToken
+ * string for accounts created before the array migration.
+ *
+ * Required Vercel environment variables:
+ * - FIREBASE_PROJECT_ID
+ * - FIREBASE_CLIENT_EMAIL
+ * - FIREBASE_PRIVATE_KEY (must include quotes when pasting,
+ *   e.g. "-----BEGIN PRIVATE KEY-----\n...\n-----END...")
+ *
+ * If notifications stop working, check Vercel function logs
+ * at: vercel.com > link-ap > Logs > filter by /api/notify
+ * A working call returns: { success: true, sent: N }
+ * where N is the number of devices notified.
+ */
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });

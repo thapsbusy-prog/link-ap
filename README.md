@@ -68,3 +68,43 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+---
+
+## Push Notifications — Critical Architecture Notes
+
+### How it works
+1. User opens app → auto notification useEffect requests permission → `getFCMToken()` generates device token → stored in `users/{uid}/fcmTokens[]` in Firestore
+2. Sender sends message → `Messages.js` calls `/api/notify` with `recipientUid` → server fetches all device tokens → `sendEachForMulticast` sends to all devices
+3. App open (foreground) → `onMessage` in `App.js` shows toast + beep via Firestore onSnapshot
+4. App closed (background) → `firebase-messaging-sw.js` receives push → `showNotification` displays on lock screen
+
+### Files involved (DO NOT break these)
+- `public/firebase-messaging-sw.js` — MUST stay at this exact path; required by mobile browsers
+- `src/firebase.js` — `getFCMToken` must register the SW explicitly with `navigator.serviceWorker.register`
+- `src/App.js` — auto notification useEffect, `onMessage` handler, notify calls in `handleSendRequestWithNote` and `handleAcceptRequest`
+- `src/Messages.js` — `send()` calls `/api/notify` with `recipientUid`
+- `api/notify.js` — fetches `fcmTokens` array from Firestore, sends multicast push
+
+### Vercel environment variables required
+- `REACT_APP_VAPID_KEY` — Firebase Web Push Key Pair
+  (Firebase Console > Project Settings > Cloud Messaging > Web Push certificates > Key pair)
+- `FIREBASE_PROJECT_ID` — from service account JSON
+- `FIREBASE_CLIENT_EMAIL` — from service account JSON
+- `FIREBASE_PRIVATE_KEY` — from service account JSON
+  (paste with surrounding quotes, `\n` as literal text, e.g. `"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"`)
+
+### Testing push notifications
+1. Open app on phone → allow notifications
+2. Close the browser completely
+3. Send a message from another account
+4. Push should appear on the lock screen within 3 seconds
+
+### Common failure modes
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| No push on mobile | `firebase-messaging-sw.js` renamed/moved | Restore to `public/firebase-messaging-sw.js` |
+| No push on mobile | Wrong VAPID key | Use Firebase Web Push Key Pair (starts with `B`, ~88 chars) |
+| Only one device gets push | `fcmToken` string used instead of `fcmTokens` array | Use `arrayUnion` when saving; pass `recipientUid` to `/api/notify` |
+| No push at all | `FIREBASE_PRIVATE_KEY` missing quotes in Vercel | Paste with surrounding double-quotes |
+| 401 from `/api/notify` | Bearer token not sent | Ensure `firebaseUser.getIdToken()` result is the `Authorization` header |

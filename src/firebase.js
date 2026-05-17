@@ -19,6 +19,27 @@ export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const messaging = getMessaging(app);
 
+/**
+ * CRITICAL — FCM Token Generation
+ *
+ * This function explicitly registers firebase-messaging-sw.js
+ * and passes it to getToken. This is required for mobile
+ * devices to receive background push notifications.
+ *
+ * DO NOT change to navigator.serviceWorker.ready — that
+ * picks up whichever SW is registered and may not find
+ * the FCM service worker on mobile, silently breaking
+ * background push.
+ *
+ * DO NOT remove the serviceWorkerRegistration parameter
+ * from getToken — without it, mobile Chrome cannot
+ * deliver background pushes.
+ *
+ * VAPID key comes from process.env.REACT_APP_VAPID_KEY
+ * Set in Vercel > link-ap project > Environment Variables
+ * Must be marked Sensitive. Must be the Firebase Web Push
+ * certificate Key Pair (starts with 'B', ~88 chars).
+ */
 export async function getFCMToken() {
   try {
     const registration = await navigator.serviceWorker.register(

@@ -100,6 +100,21 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
   useEffect(() => { loadMoreUsers(); }, []); // eslint-disable-line
 
+  /**
+   * CRITICAL — Auto Notification Permission
+   *
+   * Requests notification permission on first app load for
+   * all users. Stores FCM token using arrayUnion so multiple
+   * devices are supported simultaneously.
+   *
+   * DO NOT change arrayUnion(token) to { fcmToken: token }
+   * The array approach (fcmTokens) allows a user to receive
+   * push on both their phone and laptop at the same time.
+   * Overwriting with a single token breaks multi-device push.
+   *
+   * The server (api/notify.js) reads fcmTokens array and
+   * falls back to legacy fcmToken string for old accounts.
+   */
   useEffect(() => {
     (async () => {
       try {
@@ -241,6 +256,9 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), { ...user, note, sentAt: serverTimestamp() }),
     ]);
     try {
+      // CRITICAL — pass recipientUid (not token) to /api/notify
+      // Server fetches fresh fcmTokens from Firestore to support
+      // multi-device push. Do not revert to client-side token fetch.
       const idToken = await firebaseUser.getIdToken();
       await fetch("/api/notify", {
         method: "POST",
@@ -270,6 +288,9 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     ]);
     showNotif(`Connected with ${senderUser.name}! 🎉`);
     try {
+      // CRITICAL — pass recipientUid (not token) to /api/notify
+      // Server fetches fresh fcmTokens from Firestore to support
+      // multi-device push. Do not revert to client-side token fetch.
       const idToken = await firebaseUser.getIdToken();
       await fetch("/api/notify", {
         method: "POST",
