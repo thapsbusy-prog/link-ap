@@ -277,7 +277,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           body: `${user.name} wants to connect with you`,
         }),
       });
-    } catch {}
+    } catch (e) { console.warn("FCM notify error (send request):", e); }
   };
 
   const handleConnectWithNote = async (targetUser, note) => {
@@ -309,7 +309,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           body: `${user.name} accepted your connection request`,
         }),
       });
-    } catch {}
+    } catch (e) { console.warn("FCM notify error (accept request):", e); }
   };
 
   const handleDeclineRequest = async (senderUser) => {
