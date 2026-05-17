@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import QRCode from "qrcode";
 import { COLORS, Avatar, Tag, LocationPin, LinkedInIcon, LOOKING_FOR_QUESTIONS } from "./shared";
 
 export function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock, onUnblock, matches, onDisconnect }) {
@@ -315,13 +316,27 @@ function drawInvitePoster(canvas) {
 
 export function ShareModal({ user, onClose }) {
   const canvasRef = useRef(null);
+  const qrCanvasRef = useRef(null);
   const [posterBlob, setPosterBlob] = useState(null);
+  const [view, setView] = useState("invite");
+  const [copied, setCopied] = useState(false);
+
+  const profileUrl = `https://link-ap.online/user/${user.uid}`;
 
   useEffect(() => {
     if (!canvasRef.current) return;
     drawInvitePoster(canvasRef.current);
     canvasRef.current.toBlob(blob => setPosterBlob(blob));
   }, []); // eslint-disable-line
+
+  useEffect(() => {
+    if (view !== "profile" || !qrCanvasRef.current) return;
+    QRCode.toCanvas(qrCanvasRef.current, profileUrl, {
+      width: 220,
+      margin: 2,
+      color: { dark: "#F0EEE8", light: "#13131A" },
+    });
+  }, [view, profileUrl]);
 
   const linkMessage = `Hey! Join me on Link-Ap - a networking app that connects you with the right people - https://link-ap.online`;
 
@@ -333,6 +348,21 @@ export function ShareModal({ user, onClose }) {
     a.click();
   };
 
+  const handleSaveQR = () => {
+    if (!qrCanvasRef.current) return;
+    const a = document.createElement("a");
+    a.download = "link-ap-profile-qr.png";
+    a.href = qrCanvasRef.current.toDataURL("image/png");
+    a.click();
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(profileUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   const handleWhatsApp = async () => {
     if (posterBlob && navigator.share && navigator.canShare) {
       const file = new File([posterBlob], "link-ap-invite.png", { type: "image/png" });
@@ -341,6 +371,13 @@ export function ShareModal({ user, onClose }) {
       }
     }
     window.open(`https://wa.me/?text=${encodeURIComponent(linkMessage)}`, "_blank");
+  };
+
+  const handleShareProfile = async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: `${user.name} on Link-Ap`, url: profileUrl }); return; } catch (err) { if (err.name === "AbortError") return; }
+    }
+    handleCopy();
   };
 
   return (
@@ -356,27 +393,85 @@ export function ShareModal({ user, onClose }) {
         maxHeight: "92dvh", overflowY: "auto",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Invite someone</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Share</div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 24, lineHeight: 1 }}>×</button>
         </div>
-        <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0, lineHeight: 1.6 }}>
-          Share this with someone you think belongs on Link-Ap. On mobile, tap Share to send the image directly via WhatsApp.
-        </p>
-        <div style={{ display: "flex", justifyContent: "center", background: COLORS.bg, borderRadius: 14, padding: 10 }}>
-          <canvas ref={canvasRef} style={{ width: 240, height: 427, borderRadius: 8, display: "block" }} />
+
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 8, background: COLORS.bg, borderRadius: 12, padding: 4 }}>
+          {[{ id: "invite", label: "Invite Someone" }, { id: "profile", label: "My Profile" }].map(t => (
+            <button key={t.id} onClick={() => setView(t.id)} style={{
+              flex: 1, padding: "8px 0", borderRadius: 10, border: "none", cursor: "pointer",
+              background: view === t.id ? COLORS.card : "transparent",
+              color: view === t.id ? COLORS.text : COLORS.textMuted,
+              fontSize: 13, fontWeight: view === t.id ? 700 : 500,
+              boxShadow: view === t.id ? `0 1px 4px rgba(0,0,0,0.3)` : "none",
+            }}>{t.label}</button>
+          ))}
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={handleSave} style={{
-            flex: 1, padding: "12px 8px", borderRadius: 12,
-            border: `1px solid ${COLORS.border}`, background: "transparent",
-            color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
-          }}>Save Poster</button>
-          <button onClick={handleWhatsApp} style={{
-            flex: 2, padding: "12px 8px", borderRadius: 12, border: "none",
-            background: "#25D366", color: "#fff", cursor: "pointer",
-            fontSize: 13, fontWeight: 700,
-          }}>Share on WhatsApp</button>
-        </div>
+
+        {view === "invite" && (
+          <>
+            <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0, lineHeight: 1.6 }}>
+              Share this with someone you think belongs on Link-Ap. On mobile, tap Share to send the image directly via WhatsApp.
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", background: COLORS.bg, borderRadius: 14, padding: 10 }}>
+              <canvas ref={canvasRef} style={{ width: 240, height: 427, borderRadius: 8, display: "block" }} />
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={handleSave} style={{
+                flex: 1, padding: "12px 8px", borderRadius: 12,
+                border: `1px solid ${COLORS.border}`, background: "transparent",
+                color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
+              }}>Save Poster</button>
+              <button onClick={handleWhatsApp} style={{
+                flex: 2, padding: "12px 8px", borderRadius: 12, border: "none",
+                background: "#25D366", color: "#fff", cursor: "pointer",
+                fontSize: 13, fontWeight: 700,
+              }}>Share on WhatsApp</button>
+            </div>
+          </>
+        )}
+
+        {view === "profile" && (
+          <>
+            <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0, lineHeight: 1.6 }}>
+              Share your profile link or let someone scan your QR code to connect with you directly.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, background: COLORS.bg, borderRadius: 14, padding: 20 }}>
+              <canvas ref={qrCanvasRef} style={{ borderRadius: 8, display: "block" }} />
+              <div style={{ fontSize: 12, color: COLORS.textMuted, textAlign: "center" }}>
+                Scan to view {user.name.split(" ")[0]}'s profile on Link-Ap
+              </div>
+            </div>
+            <div style={{
+              background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              borderRadius: 12, padding: "12px 14px",
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+            }}>
+              <div style={{ fontSize: 12, color: COLORS.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                {profileUrl}
+              </div>
+              <button onClick={handleCopy} style={{
+                padding: "6px 14px", borderRadius: 8, border: "none", flexShrink: 0,
+                background: copied ? COLORS.green : COLORS.accent,
+                color: "#000", cursor: "pointer", fontSize: 12, fontWeight: 700,
+              }}>{copied ? "Copied ✓" : "Copy"}</button>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={handleSaveQR} style={{
+                flex: 1, padding: "12px 8px", borderRadius: 12,
+                border: `1px solid ${COLORS.border}`, background: "transparent",
+                color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
+              }}>Save QR</button>
+              <button onClick={handleShareProfile} style={{
+                flex: 2, padding: "12px 8px", borderRadius: 12, border: "none",
+                background: COLORS.accent, color: "#000", cursor: "pointer",
+                fontSize: 13, fontWeight: 700,
+              }}>Share Profile Link</button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
