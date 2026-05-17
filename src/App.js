@@ -316,7 +316,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     await Promise.all([
       deleteDoc(doc(db, "users", firebaseUser.uid, "received", senderUser.uid)),
       deleteDoc(doc(db, "users", senderUser.uid, "sent", firebaseUser.uid)),
-      setDoc(doc(db, "users", firebaseUser.uid, "passed", senderUser.uid), { uid: senderUser.uid }),
+      setDoc(doc(db, "users", firebaseUser.uid, "passed", senderUser.uid), { passedAt: serverTimestamp() }),
     ]);
   };
 
