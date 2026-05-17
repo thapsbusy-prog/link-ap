@@ -148,8 +148,9 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       const title = payload?.notification?.title || "New message";
       const body = payload?.notification?.body;
       showNotif(body ? `${title}: ${body}` : title);
-      playBeep();
-      triggerVibrate();
+      // playBeep/triggerVibrate intentionally omitted here — the Firestore
+      // onSnapshot listener handles audio+haptics for foreground messages,
+      // so calling them here too would double-fire for foreground users.
     });
     return unsub;
   }, []); // eslint-disable-line

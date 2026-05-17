@@ -12,30 +12,32 @@ firebase.initializeApp({
 
 const firebaseMessaging = firebase.messaging();
 
-firebaseMessaging.onBackgroundMessage(payload => {
-  const title = payload.notification?.title || payload.data?.title || "New message on Link-Ap";
-  const body = payload.notification?.body || payload.data?.body || "You have a new notification";
-  const url = payload.data?.url || "/";
-  self.registration.showNotification(title, {
+firebaseMessaging.onBackgroundMessage((payload) => {
+  const title = payload.notification?.title || payload.data?.title || 'New message';
+  const body = payload.notification?.body || payload.data?.body || '';
+  const options = {
     body,
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
-    data: { url },
-  });
+    data: { url: payload.data?.url || '/?tab=messages' },
+  };
+  return self.registration.showNotification(title, options);
 });
 
-self.addEventListener('notificationclick', event => {
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || '/';
+  const url = event.notification.data?.url || '/?tab=messages';
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+    clients.matchAll({ type: 'window' }).then(windowClients => {
       for (const client of windowClients) {
-        if ('focus' in client) {
-          client.navigate(url);
-          return client.focus();
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.focus();
+          return;
         }
       }
-      return clients.openWindow(url);
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
     })
   );
 });
