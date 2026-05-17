@@ -90,7 +90,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         nameLower: form.name.toLowerCase(),
         lastNameLower: form.name.trim().split(/\s+/).pop()?.toLowerCase() || "",
       };
-      await setDoc(doc(db, "users", firebaseUser.uid), updated);
+      await setDoc(doc(db, "users", firebaseUser.uid), updated, { merge: true });
       const matchesSnap = await getDocs(collection(db, "users", firebaseUser.uid, "matches"));
       if (!matchesSnap.empty) {
         const batch = writeBatch(db);
