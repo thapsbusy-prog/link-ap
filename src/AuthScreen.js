@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import logoImg from "./link-ap-logo.png";
 import { auth } from "./firebase";
 import {
-  signInWithRedirect, getRedirectResult, GoogleAuthProvider,
+  signInWithPopup, GoogleAuthProvider,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { COLORS, Input, TermsContent } from "./shared";
 
@@ -18,6 +19,32 @@ function GoogleIcon() {
   );
 }
 
+function getErrorMessage(err) {
+  switch (err?.code) {
+    case "auth/user-not-found":
+    case "auth/invalid-credential":
+      return "No account found with that email address.";
+    case "auth/wrong-password":
+      return "Incorrect password. Please try again.";
+    case "auth/email-already-in-use":
+      return "An account with this email already exists. Try signing in instead.";
+    case "auth/weak-password":
+      return "Password must be at least 6 characters.";
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    case "auth/too-many-requests":
+      return "Too many attempts — please wait before trying again.";
+    case "auth/popup-closed-by-user":
+      return "Sign-in was cancelled. Please try again.";
+    case "auth/popup-blocked":
+      return "Pop-up was blocked by your browser. Please allow pop-ups and try again.";
+    case "auth/network-request-failed":
+      return "Network error — check your connection and try again.";
+    default:
+      return "Something went wrong. Please try again.";
+  }
+}
+
 export default function AuthScreen() {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -26,34 +53,27 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    getRedirectResult(auth)
-      .then(result => {
-        if (!result) setLoading(false);
-        // onAuthStateChanged drives state transitions on successful result
-      })
-      .catch(e => {
-        setError(e.message.replace("Firebase: ", ""));
-        setLoading(false);
-      });
-  }, []);
+  const clearError = () => { if (error) setError(""); };
 
   const handleGoogle = async () => {
+    if (loading) return;
     setLoading(true);
     setError("");
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
+      // onAuthStateChanged in App.js drives the screen transition — no manual redirect needed
     } catch (e) {
-      setError(e.message.replace("Firebase: ", ""));
+      setError(getErrorMessage(e));
       setLoading(false);
     }
   };
 
   const handleEmail = async () => {
+    if (loading) return;
     setLoading(true);
     setError("");
     try {
@@ -62,11 +82,36 @@ export default function AuthScreen() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
+      // onAuthStateChanged handles transition; no setLoading(false) needed on success
     } catch (e) {
-      setError(e.message.replace("Firebase: ", ""));
+      setError(getErrorMessage(e));
       setLoading(false);
     }
   };
+
+  const handleForgotPassword = async () => {
+    if (loading || !email) return;
+    setLoading(true);
+    setError("");
+    setResetSent(false);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetSent(true);
+    } catch (e) {
+      setError(getErrorMessage(e));
+    }
+    setLoading(false);
+  };
+
+  const switchMode = () => {
+    setMode(m => m === "login" ? "signup" : "login");
+    setError("");
+    setResetSent(false);
+    setTermsChecked(false);
+    // email and password intentionally retained — user may have just misclicked mode
+  };
+
+  const canSubmit = email && password && (mode === "login" || termsChecked);
 
   return (
     <div style={{
@@ -95,7 +140,7 @@ export default function AuthScreen() {
               fontSize: 14, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
               opacity: mode === "signup" && !termsChecked ? 0.45 : 1,
             }}>
-              <GoogleIcon /> Continue with Google
+              <GoogleIcon /> {loading ? "Please wait..." : "Continue with Google"}
             </button>
           </div>
 
@@ -106,8 +151,22 @@ export default function AuthScreen() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <Input label="Email" value={email} onChange={setEmail} placeholder="you@example.com" type="email" autoComplete="new-password" />
-            <Input label="Password" value={password} onChange={setPassword} placeholder="••••••••" type="password" autoComplete="new-password" />
+            <Input
+              label="Email"
+              value={email}
+              onChange={v => { setEmail(v); clearError(); }}
+              placeholder="you@example.com"
+              type="email"
+              autoComplete="email"
+            />
+            <Input
+              label="Password"
+              value={password}
+              onChange={v => { setPassword(v); clearError(); }}
+              placeholder="••••••••"
+              type="password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+            />
           </div>
 
           {mode === "signup" && (
@@ -128,29 +187,53 @@ export default function AuthScreen() {
           )}
 
           {error && (
-            <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: `${COLORS.red}18`, color: COLORS.red, fontSize: 13 }}>
+            <div style={{
+              marginTop: 12, padding: "10px 14px", borderRadius: 10,
+              background: `${COLORS.red}28`, border: `1px solid ${COLORS.red}55`,
+              color: COLORS.red, fontSize: 13,
+            }}>
               {error}
             </div>
           )}
 
-          {(() => {
-            const canSubmit = email && password && (mode === "login" || termsChecked);
-            return (
-              <button onClick={handleEmail} disabled={loading || !canSubmit} style={{
-                width: "100%", marginTop: 20, padding: "13px", borderRadius: 12, border: "none",
-                background: canSubmit && !loading ? COLORS.accent : COLORS.border,
-                color: canSubmit && !loading ? "#000" : COLORS.textMuted,
-                cursor: canSubmit && !loading ? "pointer" : "not-allowed",
-                fontSize: 14, fontWeight: 700,
-              }}>
-                {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
-              </button>
-            );
-          })()}
+          {resetSent && !error && (
+            <div style={{
+              marginTop: 12, padding: "10px 14px", borderRadius: 10,
+              background: `${COLORS.green}18`, border: `1px solid ${COLORS.green}55`,
+              color: COLORS.green, fontSize: 13,
+            }}>
+              Password reset email sent — check your inbox.
+            </div>
+          )}
+
+          <button onClick={handleEmail} disabled={loading || !canSubmit} style={{
+            width: "100%", marginTop: 20, padding: "13px", borderRadius: 12, border: "none",
+            background: canSubmit && !loading ? COLORS.accent : COLORS.border,
+            color: canSubmit && !loading ? "#000" : COLORS.textMuted,
+            cursor: canSubmit && !loading ? "pointer" : "not-allowed",
+            fontSize: 14, fontWeight: 700,
+          }}>
+            {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Account"}
+          </button>
+
+          {mode === "login" && email && (
+            <p style={{ textAlign: "center", marginTop: 12, marginBottom: 0, fontSize: 13 }}>
+              <span
+                onClick={handleForgotPassword}
+                style={{
+                  color: COLORS.accent,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.5 : 1,
+                }}
+              >
+                Forgot password?
+              </span>
+            </p>
+          )}
 
           <p style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: COLORS.textMuted }}>
             {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-            <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setEmail(""); setPassword(""); setTermsChecked(false); }} style={{ color: COLORS.accent, cursor: "pointer" }}>
+            <span onClick={switchMode} style={{ color: COLORS.accent, cursor: "pointer" }}>
               {mode === "login" ? "Sign up" : "Sign in"}
             </span>
           </p>
