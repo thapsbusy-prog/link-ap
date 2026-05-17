@@ -258,7 +258,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   const handleSendRequestWithNote = async (targetUser, note) => {
-    if (blockedByUids.includes(targetUser.uid)) return;
+    if (blockedByUids.includes(targetUser.uid)) return false;
     await Promise.all([
       setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), { ...targetUser, note, sentAt: serverTimestamp() }),
       setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), { ...user, note, sentAt: serverTimestamp() }),
@@ -278,11 +278,12 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         }),
       });
     } catch (e) { console.warn("FCM notify error (send request):", e); }
+  return true;
   };
 
   const handleConnectWithNote = async (targetUser, note) => {
-    await handleSendRequestWithNote(targetUser, note);
-    showNotif(`Request sent to ${targetUser.name}!`);
+    const ok = await handleSendRequestWithNote(targetUser, note);
+    if (ok) showNotif(`Request sent to ${targetUser.name}!`);
   };
 
   const handleAcceptRequest = async (senderUser) => {
