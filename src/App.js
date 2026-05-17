@@ -23,26 +23,34 @@ function playBeep() {
   try {
     if (localStorage.getItem("linkap_sound") !== "true") return;
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Two-tone descending chime: D6 then A5
-    [[1174, 0], [880, 0.18]].forEach(([freq, delay]) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      gain.gain.setValueAtTime(0, ctx.currentTime + delay);
-      gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + delay + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.35);
-      osc.start(ctx.currentTime + delay);
-      osc.stop(ctx.currentTime + delay + 0.4);
-    });
+    const doPlay = () => {
+      // Two-tone descending chime: D6 then A5
+      [[1174, 0], [880, 0.18]].forEach(([freq, delay]) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0, ctx.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + delay + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.35);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.4);
+      });
+    };
+    if (ctx.state === "running") {
+      doPlay();
+    } else if (ctx.state === "suspended") {
+      ctx.resume().then(doPlay).catch(() => {});
+    }
   } catch {}
 }
 
 function triggerVibrate() {
   try {
     if (localStorage.getItem("linkap_vibrate") !== "true") return;
+    if (!document.hasFocus()) return;
     navigator.vibrate([100, 50, 100, 50, 100, 50, 100, 50, 100]);
   } catch {}
 }
@@ -100,12 +108,26 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   useEffect(() => { loadMoreUsers(); }, []); // eslint-disable-line
 
   useEffect(() => {
-    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
     (async () => {
       try {
-        const token = await getFCMToken();
-        if (token) await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
-      } catch {}
+        if (typeof Notification === "undefined") return;
+        if (Notification.permission === "granted") {
+          const token = await getFCMToken();
+          if (token && !user.fcmToken) {
+            await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
+          }
+        } else if (Notification.permission === "default") {
+          const permission = await Notification.requestPermission();
+          if (permission === "granted") {
+            const token = await getFCMToken();
+            if (token) {
+              await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Auto notification setup error:", e);
+      }
     })();
   }, []); // eslint-disable-line
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { db, auth } from "./firebase";
-import { doc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
+import { db, auth, getFCMToken } from "./firebase";
+import { doc, setDoc, collection, getDocs, deleteDoc, updateDoc, deleteField } from "firebase/firestore";
 import { signOut, sendPasswordResetEmail } from "firebase/auth";
 import { COLORS, Avatar, TermsContent } from "./shared";
 
@@ -40,6 +40,47 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
     const next = !vibrateEnabled;
     setVibrateEnabled(next);
     localStorage.setItem("linkap_vibrate", String(next));
+  };
+
+  const [notifEnabled, setNotifEnabled] = useState(!!user.fcmToken);
+  const [notifBlocked, setNotifBlocked] = useState(
+    typeof Notification !== "undefined" && Notification.permission === "denied"
+  );
+  const [notifLoading, setNotifLoading] = useState(false);
+
+  const toggleNotifications = async () => {
+    if (notifLoading) return;
+    if (notifEnabled) {
+      setNotifLoading(true);
+      try {
+        await updateDoc(doc(db, "users", firebaseUser.uid), { fcmToken: deleteField() });
+        setNotifEnabled(false);
+      } catch (e) {
+        console.warn("Notif disable error:", e);
+      }
+      setNotifLoading(false);
+    } else {
+      if (typeof Notification === "undefined") return;
+      if (Notification.permission === "denied") { setNotifBlocked(true); return; }
+      setNotifLoading(true);
+      try {
+        let perm = Notification.permission;
+        if (perm === "default") perm = await Notification.requestPermission();
+        if (perm === "granted") {
+          const token = await getFCMToken();
+          if (token) {
+            await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
+            setNotifEnabled(true);
+            setNotifBlocked(false);
+          }
+        } else {
+          setNotifBlocked(true);
+        }
+      } catch (e) {
+        console.warn("Notif enable error:", e);
+      }
+      setNotifLoading(false);
+    }
   };
 
   const toggle = (on) => (
@@ -202,6 +243,15 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
       <div style={{ marginBottom: 24 }}>
         {sectionLabel("Notifications")}
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+          <div onClick={toggleNotifications} style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${COLORS.border}`, cursor: notifLoading ? "default" : "pointer" }}>
+            <span style={{ fontSize: 14, color: COLORS.text }}>Notifications</span>
+            {toggle(notifEnabled)}
+          </div>
+          {notifBlocked && (
+            <div style={{ padding: "8px 16px", fontSize: 12, color: COLORS.textMuted, borderBottom: `1px solid ${COLORS.border}` }}>
+              Notifications blocked in browser settings
+            </div>
+          )}
           <div onClick={toggleSound} style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${COLORS.border}`, cursor: "pointer" }}>
             <span style={{ fontSize: 14, color: COLORS.text }}>Message Sound</span>
             {toggle(soundEnabled)}
@@ -265,34 +315,6 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
       <div style={{ marginBottom: 24 }}>
         {sectionLabel("Account Actions")}
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
-          <button onClick={async () => {
-            try {
-              const permission = await Notification.requestPermission();
-              if (permission !== "granted") {
-                alert("Notifications blocked. Please allow them in your browser settings.");
-                return;
-              }
-              const { getFCMToken } = await import("./firebase");
-              const token = await getFCMToken();
-              if (token) {
-                await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
-                alert("Notifications enabled! ✓");
-              }
-            } catch (err) {
-              console.warn("FCM error:", err);
-              alert("Could not enable notifications. Try again.");
-            }
-          }} style={{
-            width: "100%", background: "none", border: "none", cursor: "pointer",
-            padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
-            borderBottom: `1px solid ${COLORS.border}`,
-          }}>
-            <svg viewBox="0 0 24 24" fill={COLORS.accent} width="20" height="20">
-              <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
-            </svg>
-            <span style={{ flex: 1, fontSize: 14, color: COLORS.accent, textAlign: "left" }}>Enable Notifications</span>
-            <span style={{ color: COLORS.textMuted, fontSize: 18, lineHeight: 1 }}>›</span>
-          </button>
           <button onClick={() => signOut(auth)} style={{
             width: "100%", background: "none", border: "none", cursor: "pointer",
             padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,

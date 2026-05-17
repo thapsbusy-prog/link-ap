@@ -13,13 +13,31 @@ firebase.initializeApp({
 const firebaseMessaging = firebase.messaging();
 
 firebaseMessaging.onBackgroundMessage(payload => {
-  const title = payload.notification?.title || "New message on Link-Ap";
-  const body = payload.notification?.body || "You have a new message";
+  const title = payload.notification?.title || payload.data?.title || "New message on Link-Ap";
+  const body = payload.notification?.body || payload.data?.body || "You have a new notification";
+  const url = payload.data?.url || "/";
   self.registration.showNotification(title, {
     body,
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
+    data: { url },
   });
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      for (const client of windowClients) {
+        if ('focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      return clients.openWindow(url);
+    })
+  );
 });
 
 const CACHE_NAME = 'link-ap-v1';

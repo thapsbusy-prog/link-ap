@@ -43,11 +43,19 @@ module.exports = async function handler(req, res) {
     await admin.messaging().send({
       token,
       notification: { title, body: body || "" },
+      data: {
+        title,
+        body: body || "",
+        url: "/?tab=messages",
+      },
       webpush: {
+        fcmOptions: {
+          link: "/?tab=messages",
+        },
         notification: {
-          title,
-          body: body || "",
-          icon: "https://www.link-ap.online/icons/icon-192.png",
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          requireInteraction: false,
         },
       },
     });
