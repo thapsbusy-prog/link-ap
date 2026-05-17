@@ -228,16 +228,24 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   }, [firebaseUser.uid]);
 
   const handleBlock = async (targetUser) => {
-    await Promise.all([
-      setDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUser.uid), targetUser),
-      setDoc(doc(db, "users", targetUser.uid, "blockedBy", firebaseUser.uid), { blockedAt: serverTimestamp() }),
-    ]);
+    try {
+      await Promise.all([
+        setDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUser.uid), targetUser),
+        setDoc(doc(db, "users", targetUser.uid, "blockedBy", firebaseUser.uid), { blockedAt: serverTimestamp() }),
+      ]);
+    } catch (e) {
+      showNotif("Failed to block user. Please try again.");
+    }
   };
   const handleUnblock = async (targetUid) => {
-    await Promise.all([
-      deleteDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUid)),
-      deleteDoc(doc(db, "users", targetUid, "blockedBy", firebaseUser.uid)),
-    ]);
+    try {
+      await Promise.all([
+        deleteDoc(doc(db, "users", firebaseUser.uid, "blocked", targetUid)),
+        deleteDoc(doc(db, "users", targetUid, "blockedBy", firebaseUser.uid)),
+      ]);
+    } catch (e) {
+      showNotif("Failed to unblock user. Please try again.");
+    }
   };
 
   const handlePass = async (targetUser) => {
