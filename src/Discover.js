@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
+import { analytics, logEvent } from "./firebase";
 import { COLORS, Avatar, Tag, LocationPin, LinkedInIcon, LOOKING_FOR_QUESTIONS } from "./shared";
 
 export function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock, onUnblock, matches, onDisconnect }) {
@@ -331,6 +332,7 @@ export function ShareModal({ user, onClose }) {
 
   useEffect(() => {
     if (view !== "profile" || !qrCanvasRef.current) return;
+    logEvent(analytics, "qr_code_viewed");
     QRCode.toCanvas(qrCanvasRef.current, profileUrl, {
       width: 220,
       margin: 2,
@@ -357,6 +359,7 @@ export function ShareModal({ user, onClose }) {
   };
 
   const handleCopy = () => {
+    logEvent(analytics, "profile_link_copied");
     navigator.clipboard.writeText(profileUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

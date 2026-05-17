@@ -3,6 +3,7 @@ import { initializeFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getAnalytics, logEvent } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA4kG7r9eAsg0fONVB9-p4A3prvcGb4nOo",
@@ -10,7 +11,8 @@ const firebaseConfig = {
   projectId: "link-ap",
   storageBucket: "link-ap.firebasestorage.app",
   messagingSenderId: "480905186078",
-  appId: "1:480905186078:web:16bae391fc4c6361db570f"
+  appId: "1:480905186078:web:16bae391fc4c6361db570f",
+  measurementId: "G-RGZ7P9257K"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -18,6 +20,8 @@ export const db = initializeFirestore(app, { experimentalForceLongPolling: true 
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const messaging = getMessaging(app);
+export const analytics = getAnalytics(app);
+export { logEvent };
 
 /**
  * CRITICAL — FCM Token Generation

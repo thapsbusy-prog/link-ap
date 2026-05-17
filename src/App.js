@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Component } from "react";
 import logoImg from "./link-ap-logo.png";
-import { db, auth, messaging, onMessage, getFCMToken } from "./firebase";
+import { db, auth, messaging, onMessage, getFCMToken, analytics, logEvent } from "./firebase";
 import {
   collection, onSnapshot, query,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
@@ -77,7 +77,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     if (!match) return;
     const uid = match[1];
     getDoc(doc(db, "users", uid)).then(snap => {
-      if (snap.exists()) setViewingProfile({ uid, ...snap.data() });
+      if (snap.exists()) { setViewingProfile({ uid, ...snap.data() }); logEvent(analytics, "deep_link_opened", { uid }); }
     });
     window.history.replaceState({}, "", "/");
   }, []); // eslint-disable-line
@@ -288,6 +288,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         }),
       });
     } catch (e) { console.warn("FCM notify error (send request):", e); }
+  logEvent(analytics, "connection_request_sent");
   return true;
   };
 
@@ -306,6 +307,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       deleteDoc(doc(db, "users", senderUser.uid, "received", firebaseUser.uid)),
     ]);
     showNotif(`Connected with ${senderUser.name}! 🎉`);
+    logEvent(analytics, "connection_accepted");
     try {
       // CRITICAL — pass recipientUid (not token) to /api/notify
       // Server fetches fresh fcmTokens from Firestore to support
@@ -324,6 +326,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   const handleDeclineRequest = async (senderUser) => {
+    logEvent(analytics, "connection_declined");
     await Promise.all([
       deleteDoc(doc(db, "users", firebaseUser.uid, "received", senderUser.uid)),
       deleteDoc(doc(db, "users", senderUser.uid, "sent", firebaseUser.uid)),
@@ -440,7 +443,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         </div>
       )}
 
-      {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => { setViewingProfile(null); }} currentUserUid={firebaseUser.uid} blocked={blocked} onBlock={handleBlock} onUnblock={handleUnblock} matches={matches} onDisconnect={handleDisconnect} />}
+      {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => { setViewingProfile(null); }} onView={() => logEvent(analytics, "profile_viewed", { uid: viewingProfile.uid })} currentUserUid={firebaseUser.uid} blocked={blocked} onBlock={handleBlock} onUnblock={handleUnblock} matches={matches} onDisconnect={handleDisconnect} />}
       {showSearch && <SearchModal currentUser={user} sent={sent} matches={matches} onClose={() => setShowSearch(false)} onSendRequest={handleSendRequestWithNote} blocked={blocked} blockedByUids={blockedByUids} />}
 
       <div style={{
