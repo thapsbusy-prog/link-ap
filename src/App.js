@@ -4,7 +4,7 @@ import { db, auth, messaging, onMessage, getFCMToken } from "./firebase";
 import {
   collection, onSnapshot, query,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
-  getDocs, startAfter, limit, where,
+  getDocs, startAfter, limit, where, arrayUnion,
 } from "firebase/firestore";
 import {
   onAuthStateChanged,
@@ -19,32 +19,25 @@ import Settings from "./Settings";
 import { Matches } from "./Matches";
 import { Discover, PublicProfile } from "./Discover";
 
-function playBeep() {
+async function playBeep() {
   try {
     if (localStorage.getItem("linkap_sound") !== "true") return;
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const doPlay = () => {
-      // Two-tone descending chime: D6 then A5
-      [[1174, 0], [880, 0.18]].forEach(([freq, delay]) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = freq;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        gain.gain.setValueAtTime(0, ctx.currentTime + delay);
-        gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + delay + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.35);
-        osc.start(ctx.currentTime + delay);
-        osc.stop(ctx.currentTime + delay + 0.4);
-      });
-    };
-    if (ctx.state === "running") {
-      doPlay();
-    } else if (ctx.state === "suspended") {
-      ctx.resume().then(doPlay).catch(() => {});
+    if (ctx.state === "suspended") {
+      await ctx.resume();
     }
-  } catch {}
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.frequency.value = 520;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.3);
+  } catch (e) {
+    // silently skip if audio not available
+  }
 }
 
 function triggerVibrate() {
@@ -113,15 +106,15 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         if (typeof Notification === "undefined") return;
         if (Notification.permission === "granted") {
           const token = await getFCMToken();
-          if (token && !user.fcmToken) {
-            await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
+          if (token) {
+            await setDoc(doc(db, "users", firebaseUser.uid), { fcmTokens: arrayUnion(token) }, { merge: true });
           }
         } else if (Notification.permission === "default") {
           const permission = await Notification.requestPermission();
           if (permission === "granted") {
             const token = await getFCMToken();
             if (token) {
-              await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
+              await setDoc(doc(db, "users", firebaseUser.uid), { fcmTokens: arrayUnion(token) }, { merge: true });
             }
           }
         }
@@ -248,20 +241,16 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), { ...user, note, sentAt: serverTimestamp() }),
     ]);
     try {
-      const targetDoc = await getDoc(doc(db, "users", targetUser.uid));
-      const fcmToken = targetDoc.data()?.fcmToken;
-      if (fcmToken) {
-        const idToken = await firebaseUser.getIdToken();
-        await fetch("/api/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
-          body: JSON.stringify({
-            token: fcmToken,
-            title: "New Connection Request",
-            body: `${user.name} wants to connect with you`,
-          }),
-        });
-      }
+      const idToken = await firebaseUser.getIdToken();
+      await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
+        body: JSON.stringify({
+          recipientUid: targetUser.uid,
+          title: "New Connection Request",
+          body: `${user.name} wants to connect with you`,
+        }),
+      });
     } catch {}
   };
 
@@ -281,20 +270,16 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     ]);
     showNotif(`Connected with ${senderUser.name}! 🎉`);
     try {
-      const senderDoc = await getDoc(doc(db, "users", senderUser.uid));
-      const fcmToken = senderDoc.data()?.fcmToken;
-      if (fcmToken) {
-        const idToken = await firebaseUser.getIdToken();
-        await fetch("/api/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
-          body: JSON.stringify({
-            token: fcmToken,
-            title: "Connection Accepted",
-            body: `${user.name} accepted your connection request`,
-          }),
-        });
-      }
+      const idToken = await firebaseUser.getIdToken();
+      await fetch("/api/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
+        body: JSON.stringify({
+          recipientUid: senderUser.uid,
+          title: "Connection Accepted",
+          body: `${user.name} accepted your connection request`,
+        }),
+      });
     } catch {}
   };
 

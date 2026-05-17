@@ -33,15 +33,28 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { token, title, body } = req.body;
+  const { recipientUid, title, body } = req.body;
 
-  if (!token || !title) {
-    return res.status(400).json({ error: "Missing token or title" });
+  if (!recipientUid || !title) {
+    return res.status(400).json({ error: "Missing recipientUid or title" });
   }
 
   try {
-    await admin.messaging().send({
-      token,
+    const userDoc = await admin.firestore()
+      .collection("users")
+      .doc(recipientUid)
+      .get();
+
+    const userData = userDoc.data();
+    const tokens = userData?.fcmTokens ||
+      (userData?.fcmToken ? [userData.fcmToken] : []);
+
+    if (!tokens.length) {
+      return res.json({ success: false, reason: "no_token" });
+    }
+
+    const message = {
+      tokens,
       notification: { title, body: body || "" },
       data: {
         title,
@@ -49,17 +62,17 @@ module.exports = async function handler(req, res) {
         url: "/?tab=messages",
       },
       webpush: {
-        fcmOptions: {
-          link: "/?tab=messages",
-        },
+        fcmOptions: { link: "/?tab=messages" },
         notification: {
           icon: "/icons/icon-192.png",
           badge: "/icons/icon-192.png",
           requireInteraction: false,
         },
       },
-    });
-    return res.status(200).json({ success: true });
+    };
+
+    const response = await admin.messaging().sendEachForMulticast(message);
+    return res.status(200).json({ success: true, sent: response.successCount, failed: response.failureCount });
   } catch (err) {
     console.error("FCM send error:", err);
     return res.status(500).json({ error: err.message });
