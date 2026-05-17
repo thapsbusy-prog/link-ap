@@ -71,6 +71,16 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [seenUids, setSeenUids] = useState(new Set());
 
   const lastDocRef = useRef(null);
+
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/user\/(.+)$/);
+    if (!match) return;
+    const uid = match[1];
+    getDoc(doc(db, "users", uid)).then(snap => {
+      if (snap.exists()) setViewingProfile({ uid, ...snap.data() });
+    });
+    window.history.replaceState({}, "", "/");
+  }, []); // eslint-disable-line
   const hasMoreRef = useRef(true);
   const loadingMoreRef = useRef(false);
   const tabRef = useRef(tab);
@@ -430,7 +440,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         </div>
       )}
 
-      {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => setViewingProfile(null)} currentUserUid={firebaseUser.uid} blocked={blocked} onBlock={handleBlock} onUnblock={handleUnblock} matches={matches} onDisconnect={handleDisconnect} />}
+      {viewingProfile && <PublicProfile profileUser={viewingProfile} onClose={() => { setViewingProfile(null); }} currentUserUid={firebaseUser.uid} blocked={blocked} onBlock={handleBlock} onUnblock={handleUnblock} matches={matches} onDisconnect={handleDisconnect} />}
       {showSearch && <SearchModal currentUser={user} sent={sent} matches={matches} onClose={() => setShowSearch(false)} onSendRequest={handleSendRequestWithNote} blocked={blocked} blockedByUids={blockedByUids} />}
 
       <div style={{
