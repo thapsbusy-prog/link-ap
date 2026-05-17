@@ -299,6 +299,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       <div style={{ fontSize: 19, fontWeight: 800, color: COLORS.text }}>{[user.title, user.name].filter(Boolean).join(" ")}</div>
+                      {user.pronouns && <span style={{ fontSize: 11, color: COLORS.textMuted, fontStyle: "italic" }}>{user.pronouns}</span>}
                       {user.linkedinVerified && user.linkedinProfileUrl && (
                         <a href={user.linkedinProfileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
                           <LinkedInIcon />
