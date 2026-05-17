@@ -91,29 +91,33 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         lastNameLower: form.name.trim().split(/\s+/).pop()?.toLowerCase() || "",
       };
       await setDoc(doc(db, "users", firebaseUser.uid), updated, { merge: true });
-      const matchesSnap = await getDocs(collection(db, "users", firebaseUser.uid, "matches"));
-      if (!matchesSnap.empty) {
-        const batch = writeBatch(db);
-        const propagated = {
-          name: updated.name,
-          role: updated.role,
-          location: updated.location,
-          bio: updated.bio,
-          skills: updated.skills,
-          photoURL: updated.photoURL,
-          avatar: updated.avatar,
-          color: updated.color,
-          lookingFor: updated.lookingFor,
-          pronouns: updated.pronouns,
-          title: updated.title,
-        };
-        matchesSnap.forEach((matchDoc) => {
-          batch.update(doc(db, "users", matchDoc.id, "matches", firebaseUser.uid), propagated);
-        });
-        await batch.commit();
-      }
       onProfileUpdate(updated);
       setEditing(false);
+      try {
+        const matchesSnap = await getDocs(collection(db, "users", firebaseUser.uid, "matches"));
+        if (!matchesSnap.empty) {
+          const batch = writeBatch(db);
+          const propagated = {
+            name: updated.name,
+            role: updated.role,
+            location: updated.location,
+            bio: updated.bio,
+            skills: updated.skills,
+            photoURL: updated.photoURL,
+            avatar: updated.avatar,
+            color: updated.color,
+            lookingFor: updated.lookingFor,
+            pronouns: updated.pronouns,
+            title: updated.title,
+          };
+          matchesSnap.forEach((matchDoc) => {
+            batch.set(doc(db, "users", matchDoc.id, "matches", firebaseUser.uid), propagated, { merge: true });
+          });
+          await batch.commit();
+        }
+      } catch (propErr) {
+        console.warn("Profile saved but match propagation failed:", propErr);
+      }
     } catch (e) {
       setSaveError("Failed to save. Please try again.");
     }
