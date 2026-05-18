@@ -504,8 +504,8 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
       try {
         const t_ = term.trim().toLowerCase();
         const tCap = t_.charAt(0).toUpperCase() + t_.slice(1);
-        const end_ = t_ + "";
-        const endCap_ = tCap + "";
+        const end_ = t_ + "􏿿";
+        const endCap_ = tCap + "􏿿";
         const [s1, s2, s3] = await Promise.all([
           getDocs(query(collection(db, 'users'), where('nameLower', '>=', t_), where('nameLower', '<=', end_), limit(15))),
           getDocs(query(collection(db, 'users'), where('lastNameLower', '>=', t_), where('lastNameLower', '<=', end_), limit(15))),
