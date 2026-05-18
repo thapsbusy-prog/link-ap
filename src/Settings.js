@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { db, auth, getFCMToken } from "./firebase";
-import { doc, setDoc, collection, getDocs, deleteDoc, updateDoc, deleteField } from "firebase/firestore";
+import { doc, setDoc, collection, getDocs, deleteDoc, updateDoc, deleteField, arrayUnion } from "firebase/firestore";
 import { signOut, sendPasswordResetEmail } from "firebase/auth";
 import { COLORS, Avatar, TermsContent } from "./shared";
 
@@ -42,7 +42,7 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
     localStorage.setItem("linkap_vibrate", String(next));
   };
 
-  const [notifEnabled, setNotifEnabled] = useState(!!user.fcmToken);
+  const [notifEnabled, setNotifEnabled] = useState(!!(user.fcmTokens?.length > 0 || user.fcmToken));
   const [notifBlocked, setNotifBlocked] = useState(
     typeof Notification !== "undefined" && Notification.permission === "denied"
   );
@@ -53,7 +53,10 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
     if (notifEnabled) {
       setNotifLoading(true);
       try {
-        await updateDoc(doc(db, "users", firebaseUser.uid), { fcmToken: deleteField() });
+        await updateDoc(doc(db, "users", firebaseUser.uid), {
+          fcmToken: deleteField(),
+          fcmTokens: [],
+        });
         setNotifEnabled(false);
       } catch (e) {
         console.warn("Notif disable error:", e);
@@ -69,7 +72,7 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
         if (perm === "granted") {
           const token = await getFCMToken();
           if (token) {
-            await setDoc(doc(db, "users", firebaseUser.uid), { fcmToken: token }, { merge: true });
+            await updateDoc(doc(db, "users", firebaseUser.uid), { fcmTokens: arrayUnion(token) });
             setNotifEnabled(true);
             setNotifBlocked(false);
           }

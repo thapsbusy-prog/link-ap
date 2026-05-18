@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import logoImg from "./link-ap-logo.png";
 import { auth } from "./firebase";
 import {
-  signInWithPopup, GoogleAuthProvider,
+  signInWithRedirect, getRedirectResult, GoogleAuthProvider,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
@@ -55,6 +55,10 @@ export default function AuthScreen() {
   const [showTerms, setShowTerms] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
+  useEffect(() => {
+    getRedirectResult(auth).catch(e => setError(getErrorMessage(e)));
+  }, []);
+
   const clearError = () => { if (error) setError(""); };
 
   const handleGoogle = async () => {
@@ -64,8 +68,7 @@ export default function AuthScreen() {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      await signInWithPopup(auth, provider);
-      // onAuthStateChanged in App.js drives the screen transition — no manual redirect needed
+      await signInWithRedirect(auth, provider);
     } catch (e) {
       setError(getErrorMessage(e));
       setLoading(false);
