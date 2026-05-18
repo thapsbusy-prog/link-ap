@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import logoImg from "./link-ap-logo.png";
 import { auth } from "./firebase";
 import {
-  signInWithRedirect, getRedirectResult, GoogleAuthProvider,
+  signInWithRedirect, signInWithPopup, getRedirectResult, GoogleAuthProvider,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
@@ -45,6 +45,10 @@ function getErrorMessage(err) {
   }
 }
 
+const isIosPwa =
+  /iphone|ipad|ipod/i.test(navigator.userAgent) &&
+  window.navigator.standalone === true;
+
 export default function AuthScreen() {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -56,6 +60,7 @@ export default function AuthScreen() {
   const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
+    if (!isIosPwa) return;
     getRedirectResult(auth).catch(e => setError(getErrorMessage(e)));
   }, []);
 
@@ -68,7 +73,11 @@ export default function AuthScreen() {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-      await signInWithRedirect(auth, provider);
+      if (isIosPwa) {
+        await signInWithRedirect(auth, provider);
+      } else {
+        await signInWithPopup(auth, provider);
+      }
     } catch (e) {
       setError(getErrorMessage(e));
       setLoading(false);
