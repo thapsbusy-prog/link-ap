@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
-import { analytics, logEvent } from "./firebase";
+import { analytics, logEvent, auth } from "./firebase";
 import { COLORS, Avatar, Tag, LocationPin, LinkedInIcon, LOOKING_FOR_QUESTIONS } from "./shared";
 
 export function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock, onUnblock, matches, onDisconnect }) {
@@ -587,39 +587,42 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
   const currentUid = firstUnseen?.uid ?? null;
 
   useEffect(() => {
-    if (!currentUid || !user) { setExplanation(null); setLoadingExplanation(false); return; }
-    if (explanationCache.current[currentUid] !== undefined) {
-      setExplanation(explanationCache.current[currentUid]);
-      setLoadingExplanation(false);
-      return;
-    }
-    setExplanation(null);
-    setLoadingExplanation(true);
-    const targetUser = users.find(u => u.uid === currentUid);
-    if (!targetUser) { setLoadingExplanation(false); return; }
     let cancelled = false;
-    fetch("/api/match-explain", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        currentUser: { lookingFor: user.lookingFor, bringToTable: user.bringToTable, lookingForDetails: user.lookingForDetails, currentlyExploring: user.currentlyExploring, skills: user.skills, role: user.role },
-        targetUser: { lookingFor: targetUser.lookingFor, bringToTable: targetUser.bringToTable, lookingForDetails: targetUser.lookingForDetails, currentlyExploring: targetUser.currentlyExploring, skills: targetUser.skills, role: targetUser.role, name: targetUser.name },
-      }),
-    })
-      .then(r => r.json())
-      .then(data => {
+    (async () => {
+      if (!currentUid || !user) { setExplanation(null); setLoadingExplanation(false); return; }
+      if (explanationCache.current[currentUid] !== undefined) {
+        setExplanation(explanationCache.current[currentUid]);
+        setLoadingExplanation(false);
+        return;
+      }
+      setExplanation(null);
+      setLoadingExplanation(true);
+      const targetUser = users.find(u => u.uid === currentUid);
+      if (!targetUser) { setLoadingExplanation(false); return; }
+      const idToken = await auth.currentUser?.getIdToken().catch(() => null);
+      if (cancelled) return;
+      try {
+        const r = await fetch("/api/match-explain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(idToken ? { "Authorization": `Bearer ${idToken}` } : {}) },
+          body: JSON.stringify({
+            currentUser: { lookingFor: user.lookingFor, bringToTable: user.bringToTable, lookingForDetails: user.lookingForDetails, currentlyExploring: user.currentlyExploring, skills: user.skills, role: user.role },
+            targetUser: { lookingFor: targetUser.lookingFor, bringToTable: targetUser.bringToTable, lookingForDetails: targetUser.lookingForDetails, currentlyExploring: targetUser.currentlyExploring, skills: targetUser.skills, role: targetUser.role, name: targetUser.name },
+          }),
+        });
+        const data = await r.json();
         if (cancelled) return;
         const result = data.explanation ?? null;
         explanationCache.current[currentUid] = result;
         setExplanation(result);
         setLoadingExplanation(false);
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return;
         explanationCache.current[currentUid] = null;
         setExplanation(null);
         setLoadingExplanation(false);
-      });
+      }
+    })();
     return () => { cancelled = true; };
   }, [currentUid]); // eslint-disable-line
 
