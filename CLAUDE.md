@@ -60,6 +60,12 @@ The app is split across several source files. There is no routing library — `M
 - `Matches` component: `disconnectTarget` — the match user object selected for removal; drives the in-component confirmation modal.
 - `PublicProfile` component: `showDisconnectConfirm` (bool), `isMutualMatch` (bool derived from `matches` prop) — controls the Remove Connection confirmation modal.
 
+**Smart Match Explanation feature (18 May 2026)**
+- `api/match-explain.js` — new Vercel serverless function; accepts `POST { currentUser, targetUser }`, calls Anthropic `claude-sonnet-4-6` (raw fetch, no SDK), returns `{ explanation: string | null }`. Requires `ANTHROPIC_API_KEY` Vercel env var. Never throws — always returns 200 with `{ explanation: null }` on any failure.
+- `Discover` component: `explanation` (string|null), `loadingExplanation` (bool) — drive the "✦ Why connect" block rendered between the card header and bio. `explanationCache` ref (plain object keyed by uid) prevents re-fetching the same card.
+- Fetch fires on card mount via `useEffect([currentUid])`. `currentUid` is derived from `users.find(u => !seenUids.has(u.uid))?.uid` before early returns, so the effect dep tracks card changes correctly.
+- If the API returns null, nothing renders — no error state shown to the user.
+
 **Disconnect / Remove Connection feature (13 May 2026)**
 - `handleDisconnect(targetUid)` lives in `MainApp`. It deletes both sides of the match, plus any stale sent/received docs, updates local `matches` state immediately, clears `activeChat` if the disconnected user was active, and shows a "Connection removed" toast.
 - `Matches` receives `onDisconnect` prop; each card in the Connected section has a `✕ remove` button that opens a confirmation modal before calling `onDisconnect`.

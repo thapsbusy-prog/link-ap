@@ -579,6 +579,49 @@ function ConnectNoteModal({ target, onSend, onCancel }) {
 export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, loadingMore, hasMore, user, seenUids, setSeenUids }) {
   const [showShare, setShowShare] = useState(false);
   const [connectTarget, setConnectTarget] = useState(null);
+  const [explanation, setExplanation] = useState(null);
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
+  const explanationCache = useRef({});
+
+  const firstUnseen = users ? users.find(u => !seenUids.has(u.uid)) : null;
+  const currentUid = firstUnseen?.uid ?? null;
+
+  useEffect(() => {
+    if (!currentUid || !user) { setExplanation(null); setLoadingExplanation(false); return; }
+    if (explanationCache.current[currentUid] !== undefined) {
+      setExplanation(explanationCache.current[currentUid]);
+      setLoadingExplanation(false);
+      return;
+    }
+    setExplanation(null);
+    setLoadingExplanation(true);
+    const targetUser = users.find(u => u.uid === currentUid);
+    if (!targetUser) { setLoadingExplanation(false); return; }
+    let cancelled = false;
+    fetch("/api/match-explain", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentUser: { lookingFor: user.lookingFor, bringToTable: user.bringToTable, lookingForDetails: user.lookingForDetails, currentlyExploring: user.currentlyExploring, skills: user.skills, role: user.role },
+        targetUser: { lookingFor: targetUser.lookingFor, bringToTable: targetUser.bringToTable, lookingForDetails: targetUser.lookingForDetails, currentlyExploring: targetUser.currentlyExploring, skills: targetUser.skills, role: targetUser.role, name: targetUser.name },
+      }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        const result = data.explanation ?? null;
+        explanationCache.current[currentUid] = result;
+        setExplanation(result);
+        setLoadingExplanation(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        explanationCache.current[currentUid] = null;
+        setExplanation(null);
+        setLoadingExplanation(false);
+      });
+    return () => { cancelled = true; };
+  }, [currentUid]); // eslint-disable-line
 
   useEffect(() => {
     if (!users || loadingMore || !hasMore) return;
@@ -662,6 +705,25 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
               <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {current.location}</div>
             </div>
           </div>
+          {loadingExplanation && (
+            <div style={{ marginBottom: 20 }}>
+              <style>{`@keyframes matchExplainPulse { 0%,100%{opacity:0.25} 50%{opacity:0.6} }`}</style>
+              <div style={{ height: 10, borderRadius: 4, background: COLORS.border, marginBottom: 6, width: "90%", animation: "matchExplainPulse 1.4s ease-in-out infinite" }} />
+              <div style={{ height: 10, borderRadius: 4, background: COLORS.border, width: "65%", animation: "matchExplainPulse 1.4s ease-in-out infinite 0.2s" }} />
+            </div>
+          )}
+          {!loadingExplanation && explanation && (
+            <div style={{
+              borderLeft: `2px solid ${COLORS.accent}`,
+              background: COLORS.bg,
+              borderRadius: "0 8px 8px 0",
+              padding: "10px 14px",
+              marginBottom: 20,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.accent, marginBottom: 6 }}>✦ Why connect</div>
+              <p style={{ fontSize: 13, lineHeight: 1.5, color: COLORS.text, margin: 0 }}>{explanation}</p>
+            </div>
+          )}
           <p style={{ fontSize: 14, lineHeight: 1.6, color: COLORS.text, marginBottom: 20 }}>{current.bio}</p>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, fontWeight: 600 }}>SKILLS</div>
