@@ -49,8 +49,10 @@ module.exports = async function handler(req, res) {
   if (!idToken) {
     return res.status(401).json({ error: "Unauthorized" });
   }
+  let callerUid;
   try {
-    await admin.auth().verifyIdToken(idToken);
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    callerUid = decoded.uid;
   } catch {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -59,6 +61,25 @@ module.exports = async function handler(req, res) {
 
   if (!recipientUid || !title) {
     return res.status(400).json({ error: "Missing recipientUid or title" });
+  }
+
+  const [matchDoc, receivedDoc] = await Promise.all([
+    admin.firestore()
+      .collection("users")
+      .doc(recipientUid)
+      .collection("matches")
+      .doc(callerUid)
+      .get(),
+    admin.firestore()
+      .collection("users")
+      .doc(recipientUid)
+      .collection("received")
+      .doc(callerUid)
+      .get(),
+  ]);
+
+  if (!matchDoc.exists && !receivedDoc.exists) {
+    return res.status(403).json({ error: "Forbidden: no relationship with recipient" });
   }
 
   try {

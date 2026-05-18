@@ -34,7 +34,7 @@ service cloud.firestore {
 
       match /blocked/{blockedUid} {
         allow read: if isAuth() && isOwner(uid);
-        allow write: if isAuth() && (isOwner(uid) || isOwner(blockedUid));
+        allow write: if isAuth() && isOwner(uid);
       }
 
       match /blockedBy/{blockerId} {
