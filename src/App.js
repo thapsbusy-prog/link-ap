@@ -14,6 +14,7 @@ import { COLORS, Avatar, LocationPin } from "./shared";
 import { Messages } from "./Messages";
 import { Profile } from "./Profile";
 import AuthScreen from "./AuthScreen";
+import { IntroScreen } from "./IntroScreen";
 import Onboarding from "./Onboarding";
 import Settings from "./Settings";
 import { Matches } from "./Matches";
@@ -752,6 +753,7 @@ class ErrorBoundary extends Component {
 
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
   const [firebaseUser, setFirebaseUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -784,6 +786,7 @@ export default function App() {
   if (window.location.pathname === "/privacy") content = <PrivacyPolicy />;
   else if (!splashDone) content = <SplashScreen onDone={() => setSplashDone(true)} />;
   else if (loading) content = <div style={{ minHeight: "100vh", background: COLORS.bg }} />;
+  else if (!firebaseUser && showIntro) content = <IntroScreen onContinue={() => setShowIntro(false)} />;
   else if (!firebaseUser) content = <AuthScreen />;
   else if (!profile || profile.uid !== firebaseUser.uid) content = <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
   else content = <MainApp user={profile} firebaseUser={firebaseUser} onProfileUpdate={setProfile} />;
