@@ -16,15 +16,14 @@ export function IntroScreen({ onContinue }) {
         <div style={{ height: 48 }} />
 
         {/* Logo block */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 20 }}>
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
           <img
             src={logoImg}
             alt="Link-Ap"
-            style={{ width: 56, height: 56, borderRadius: "50%", objectFit: "contain", marginBottom: 8 }}
+            style={{ width: 90, height: 90, objectFit: "contain", marginBottom: 8 }}
           />
-          <div style={{ fontSize: 13, letterSpacing: 3, textTransform: "uppercase", fontWeight: 700 }}>
-            <span style={{ color: COLORS.text }}>Link</span>
-            <span style={{ color: ORANGE }}>-Ap</span>
+          <div style={{ fontSize: 28, fontWeight: 800, color: COLORS.text, marginBottom: 4 }}>
+            Link<span style={{ color: COLORS.accent }}>-Ap</span>
           </div>
         </div>
 
@@ -66,7 +65,7 @@ export function IntroScreen({ onContinue }) {
           borderRadius: 14, padding: "14px 16px", marginBottom: 24,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <span style={{ fontSize: 16 }}>★</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={ORANGE} style={{ flexShrink: 0 }}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <span style={{ color: ORANGE, fontSize: 13, fontWeight: 700 }}>Founding member opportunity</span>
           </div>
           <p style={{ color: COLORS.textMuted, fontSize: 12, margin: 0, lineHeight: 1.6 }}>
@@ -78,17 +77,17 @@ export function IntroScreen({ onContinue }) {
         {/* 2×2 who-it's-for grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
           {[
-            { icon: "🚀", title: "Founders", desc: "Find co-founders, clients & backers" },
-            { icon: "💼", title: "Investors", desc: "Discover early-stage opportunities" },
-            { icon: "🎓", title: "Mentors", desc: "Guide ambitious builders" },
-            { icon: "🔍", title: "Job seekers", desc: "Connect with the people who hire" },
+            { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>, title: "Founders", desc: "Find co-founders, clients & backers" },
+            { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>, title: "Investors", desc: "Discover early-stage opportunities" },
+            { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>, title: "Mentors", desc: "Guide ambitious builders" },
+            { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-2 .89-2 2v11c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zM10 4h4v2h-4V4zm10 15H4V8h16v11z"/></svg>, title: "Job seekers", desc: "Connect with the people who hire" },
           ].map(card => (
             <div key={card.title} style={{
               background: COLORS.card,
               border: `1px solid ${COLORS.border}`,
               borderRadius: 12, padding: "12px 14px",
             }}>
-              <div style={{ fontSize: 18, marginBottom: 4 }}>{card.icon}</div>
+              <div style={{ marginBottom: 4 }}>{card.icon}</div>
               <div style={{ color: COLORS.text, fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{card.title}</div>
               <div style={{ color: COLORS.textMuted, fontSize: 11, lineHeight: 1.5 }}>{card.desc}</div>
             </div>
@@ -102,21 +101,20 @@ export function IntroScreen({ onContinue }) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {[
-              "Tell us what you're building and who you need to meet",
-              "We match you by intent — no random scrolling, just relevant people",
-              "Connect with a personal note — every request means something",
+              { text: "Tell us what you're building and who you need to meet", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={ORANGE}><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg> },
+              { text: "We match you by intent — no random scrolling, just relevant people", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={ORANGE}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-12c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg> },
+              { text: "Connect with a personal note — every request means something", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={ORANGE}><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
             ].map((step, i) => (
               <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div style={{
                   width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
                   background: "rgba(245,166,35,0.15)",
                   border: "1px solid rgba(245,166,35,0.3)",
-                  color: ORANGE, fontSize: 12, fontWeight: 700,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  {i + 1}
+                  {step.icon}
                 </div>
-                <p style={{ color: COLORS.textMuted, fontSize: 12, margin: 0, lineHeight: 1.6 }}>{step}</p>
+                <p style={{ color: COLORS.textMuted, fontSize: 12, margin: 0, lineHeight: 1.6 }}>{step.text}</p>
               </div>
             ))}
           </div>
