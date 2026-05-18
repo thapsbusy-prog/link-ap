@@ -174,16 +174,28 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     return unsub;
   }, []); // eslint-disable-line
 
+  const chatListenersRef = useRef({});
+
+  // Incremental diff: only add/remove listeners for matches that changed.
+  // No cleanup returned here — returning a cleanup would tear down ALL listeners
+  // on every matches update, defeating the purpose of the incremental approach.
   useEffect(() => {
-    if (!matches.length) return;
-    const unsubs = matches.map(match => {
+    if (!firebaseUser?.uid) return;
+    const currentMatchUids = new Set(matches.map(m => m.uid));
+    for (const uid of Object.keys(chatListenersRef.current)) {
+      if (!currentMatchUids.has(uid)) {
+        chatListenersRef.current[uid]();
+        delete chatListenersRef.current[uid];
+      }
+    }
+    for (const match of matches) {
+      if (chatListenersRef.current[match.uid]) continue;
       const chatId = [firebaseUser.uid, match.uid].sort().join("_");
       const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt"));
       let initialized = false;
-      return onSnapshot(q, snap => {
+      chatListenersRef.current[match.uid] = onSnapshot(q, snap => {
         if (snap.docs.length > 0) {
-          const lastData = snap.docs[snap.docs.length - 1].data();
-          setLastMessages(prev => ({ ...prev, [match.uid]: lastData }));
+          setLastMessages(prev => ({ ...prev, [match.uid]: snap.docs[snap.docs.length - 1].data() }));
         }
         if (!initialized) { initialized = true; return; }
         snap.docChanges().forEach(change => {
@@ -197,9 +209,18 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           }
         });
       });
-    });
-    return () => unsubs.forEach(u => u());
+    }
   }, [matches, firebaseUser.uid]); // eslint-disable-line
+
+  // Tear down all chat listeners when MainApp unmounts (sign-out / component removal).
+  useEffect(() => {
+    return () => {
+      for (const unsub of Object.values(chatListenersRef.current)) {
+        unsub();
+      }
+      chatListenersRef.current = {};
+    };
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "sent"), snap => {
