@@ -31,7 +31,7 @@ export function PublicProfile({ profileUser, onClose, currentUserUid, blocked, o
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <div style={{ fontSize: 19, fontWeight: 800, color: COLORS.text }}>{[profileUser.title, profileUser.name].filter(Boolean).join(" ")}</div>
+                    <div style={{ fontSize: 19, fontWeight: 800, color: COLORS.text }}>{profileUser.name}</div>
                     {profileUser.pronouns && <span style={{ fontSize: 11, color: COLORS.textMuted, fontStyle: "italic" }}>{profileUser.pronouns}</span>}
                     {profileUser.linkedinVerified && profileUser.linkedinProfileUrl && (
                       <a href={profileUser.linkedinProfileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center" }}>
