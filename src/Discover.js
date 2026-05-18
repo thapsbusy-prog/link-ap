@@ -333,7 +333,7 @@ export function ShareModal({ user, onClose }) {
   useEffect(() => {
     if (view !== "profile" || !qrCanvasRef.current) return;
     logEvent(analytics, "qr_code_viewed");
-    QRCode.toCanvas(qrCanvasRef.current, profileUrl, {
+    QRCode.toCanvas(qrCanvasRef.current, "https://link-ap.online", {
       width: 220,
       margin: 2,
       color: { dark: "#F0EEE8", light: "#13131A" },
