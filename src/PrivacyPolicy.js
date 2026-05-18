@@ -1,16 +1,17 @@
 import React from 'react';
+import { COLORS } from './shared';
 
 export default function PrivacyPolicy() {
   return (
     <div style={{ background: '#0A0A0F', minHeight: '100vh', padding: '40px 20px', fontFamily: 'sans-serif' }}>
-      <div style={{ maxWidth: 760, margin: '0 auto', color: '#b0b0c0', lineHeight: 1.8 }}>
+      <div style={{ maxWidth: 760, margin: '0 auto', color: COLORS.textMuted, lineHeight: 1.8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 48 }}>
           <img src="/link-ap-logo.png" alt="Link-AP" style={{ width: 40, height: 40, borderRadius: 8 }} />
-          <span style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>Link-<span style={{ color: '#C9A84C' }}>AP</span></span>
+          <span style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>Link-<span style={{ color: COLORS.accent }}>AP</span></span>
         </div>
 
         <h1 style={{ color: '#fff', fontSize: 32, marginBottom: 8 }}>Privacy Policy</h1>
-        <p style={{ color: '#888', marginBottom: 40 }}>Last updated: 8 May 2026</p>
+        <p style={{ color: COLORS.textMuted, marginBottom: 40 }}>Last updated: 8 May 2026</p>
 
         <p>Link-AP ("we", "our", or "us") operates the Link-AP mobile and web application. This Privacy Policy explains how we collect, use, and protect your personal information when you use our platform.</p>
 
@@ -26,19 +27,19 @@ export default function PrivacyPolicy() {
           { title: '9. Changes to This Policy', content: 'We may update this Privacy Policy from time to time. Continued use of the app after changes constitutes acceptance of the updated policy.' },
         ].map(({ title, content }) => (
           <div key={title}>
-            <h2 style={{ color: '#fff', fontSize: 18, marginTop: 36, marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #1e1e2e' }}>{title}</h2>
+            <h2 style={{ color: '#fff', fontSize: 18, marginTop: 36, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${COLORS.border}` }}>{title}</h2>
             <p>{content}</p>
           </div>
         ))}
 
-        <h2 style={{ color: '#fff', fontSize: 18, marginTop: 36, marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #1e1e2e' }}>10. Contact Us</h2>
-        <div style={{ background: '#13131f', border: '1px solid #1e1e2e', borderRadius: 12, padding: 24, marginTop: 16 }}>
+        <h2 style={{ color: '#fff', fontSize: 18, marginTop: 36, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${COLORS.border}` }}>10. Contact Us</h2>
+        <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 24, marginTop: 16 }}>
           <p><strong style={{ color: '#fff' }}>Link-AP</strong></p>
-          <p>Email: <a href="mailto:info@link-ap.online" style={{ color: '#C9A84C' }}>info@link-ap.online</a></p>
-          <p>Website: <a href="https://link-ap.online" style={{ color: '#C9A84C' }}>link-ap.online</a></p>
+          <p>Email: <a href="mailto:info@link-ap.online" style={{ color: COLORS.accent }}>info@link-ap.online</a></p>
+          <p>Website: <a href="https://link-ap.online" style={{ color: COLORS.accent }}>link-ap.online</a></p>
         </div>
 
-        <p style={{ marginTop: 60, paddingTop: 24, borderTop: '1px solid #1e1e2e', fontSize: 13, color: '#555', textAlign: 'center' }}>
+        <p style={{ marginTop: 60, paddingTop: 24, borderTop: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.textMuted, textAlign: 'center' }}>
           &copy; 2026 Link-AP. All rights reserved.
         </p>
       </div>

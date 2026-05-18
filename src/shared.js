@@ -4,6 +4,7 @@ export const COLORS = {
   bg: "#0A0A0F", card: "#13131A", border: "#2A2A3A",
   accent: "#F5A623", text: "#F0EEE8", textMuted: "#8A8A9A",
   green: "#4ADE80", purple: "#A78BFA", red: "#F87171", blue: "#60A5FA",
+  chatBlue: "#1D4ED8",
 };
 
 export const USER_COLORS = ["#A78BFA", "#4ADE80", "#F5A623", "#60A5FA", "#F87171", "#34D399"];

@@ -86,7 +86,7 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
               {unreadChats.has(u.uid) && (
                 <div style={{
                   position: "absolute", top: 0, right: 0,
-                  width: 10, height: 10, background: "#F5A623", borderRadius: "50%",
+                  width: 10, height: 10, background: COLORS.accent, borderRadius: "50%",
                   border: `2px solid ${COLORS.card}`,
                 }} />
               )}
@@ -156,7 +156,7 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
               <div key={msg.id} style={{ display: "flex", justifyContent: msg.from === firebaseUser.uid ? "flex-end" : "flex-start" }}>
                 <div style={{
                   maxWidth: "75%",
-                  background: msg.from === firebaseUser.uid ? "#1D4ED8" : COLORS.card,
+                  background: msg.from === firebaseUser.uid ? COLORS.chatBlue : COLORS.card,
                   color: COLORS.text,
                   border: msg.from === firebaseUser.uid ? "none" : `1px solid ${COLORS.border}`,
                   borderRadius: msg.from === firebaseUser.uid ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
