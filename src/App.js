@@ -497,6 +497,7 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
   const [sentOk, setSentOk] = useState(false);
+  const [sendError, setSendError] = useState("");
 
   useEffect(() => {
     if (term.trim().length < 2) { setResults([]); return; }
@@ -537,10 +538,15 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
   const handleSend = async () => {
     if (!note.trim() || !target || sending) return;
     setSending(true);
-    await onSendRequest(target, note.trim());
+    const success = await onSendRequest(target, note.trim());
     setSending(false);
-    setSentOk(true);
-    setTimeout(() => { setTarget(null); setNote(""); setSentOk(false); }, 1800);
+    if (success) {
+      setSentOk(true);
+      setTimeout(() => { setTarget(null); setNote(""); setSentOk(false); }, 1800);
+    } else {
+      setSendError("Couldn't send request. Please try again.");
+      setTimeout(() => setSendError(""), 3000);
+    }
   };
 
   return (
@@ -646,6 +652,13 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
             <p style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4 }}>
               A personal note greatly increases your chances of a response.
             </p>
+            {sendError && (
+              <div style={{
+                marginTop: 8, padding: "10px 14px", borderRadius: 10,
+                background: `${COLORS.red}28`, border: `1px solid ${COLORS.red}55`,
+                color: COLORS.red, fontSize: 13,
+              }}>{sendError}</div>
+            )}
           </div>
           <button
             onClick={handleSend}

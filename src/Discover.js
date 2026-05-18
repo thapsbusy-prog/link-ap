@@ -3,9 +3,13 @@ import QRCode from "qrcode";
 import { analytics, logEvent, auth } from "./firebase";
 import { COLORS, Avatar, Tag, LocationPin, LinkedInIcon, LOOKING_FOR_QUESTIONS } from "./shared";
 
-export function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock, onUnblock, matches, onDisconnect }) {
+export function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock, onUnblock, matches, onDisconnect, onView }) {
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const isMutualMatch = matches?.some(m => m.uid === profileUser.uid);
+
+  useEffect(() => {
+    if (onView) onView();
+  }, []); // eslint-disable-line
   return (
     <div style={{
       position: "fixed", top: 0, left: "50%", transform: "translateX(-50%)",
