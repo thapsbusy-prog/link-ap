@@ -1,7 +1,7 @@
 import logoImg from "./link-ap-logo.png";
 import { COLORS } from "./shared";
 
-const ORANGE = "#F97316";
+const ORANGE = "#F5A623";
 
 export function IntroScreen({ onContinue }) {
   return (
@@ -31,8 +31,8 @@ export function IntroScreen({ onContinue }) {
         {/* Badge pill */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
           <span style={{
-            background: "rgba(249,115,22,0.15)",
-            border: "1px solid rgba(249,115,22,0.3)",
+            background: "rgba(245,166,35,0.15)",
+            border: "1px solid rgba(245,166,35,0.3)",
             color: ORANGE,
             fontSize: 12, fontWeight: 600,
             padding: "5px 14px", borderRadius: 99,
@@ -61,8 +61,8 @@ export function IntroScreen({ onContinue }) {
 
         {/* Founding member callout */}
         <div style={{
-          background: "rgba(249,115,22,0.1)",
-          border: "1px solid rgba(249,115,22,0.25)",
+          background: "rgba(245,166,35,0.1)",
+          border: "1px solid rgba(245,166,35,0.25)",
           borderRadius: 14, padding: "14px 16px", marginBottom: 24,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -109,8 +109,8 @@ export function IntroScreen({ onContinue }) {
               <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div style={{
                   width: 24, height: 24, borderRadius: "50%", flexShrink: 0,
-                  background: "rgba(249,115,22,0.15)",
-                  border: "1px solid rgba(249,115,22,0.3)",
+                  background: "rgba(245,166,35,0.15)",
+                  border: "1px solid rgba(245,166,35,0.3)",
                   color: ORANGE, fontSize: 12, fontWeight: 700,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
