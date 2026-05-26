@@ -133,14 +133,14 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         if (Notification.permission === "granted") {
           const token = await getFCMToken();
           if (token) {
-            await setDoc(doc(db, "users", firebaseUser.uid), { fcmTokens: arrayUnion(token) }, { merge: true });
+            await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: arrayUnion(token) }, { merge: true });
           }
         } else if (Notification.permission === "default") {
           const permission = await Notification.requestPermission();
           if (permission === "granted") {
             const token = await getFCMToken();
             if (token) {
-              await setDoc(doc(db, "users", firebaseUser.uid), { fcmTokens: arrayUnion(token) }, { merge: true });
+              await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: arrayUnion(token) }, { merge: true });
             }
           }
         }

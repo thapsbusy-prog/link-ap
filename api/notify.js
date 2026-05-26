@@ -86,6 +86,8 @@ module.exports = async function handler(req, res) {
     const userDoc = await admin.firestore()
       .collection("users")
       .doc(recipientUid)
+      .collection("private")
+      .doc("push")
       .get();
 
     const userData = userDoc.data();

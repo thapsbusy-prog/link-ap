@@ -4,6 +4,7 @@
 **Scope:** Full re-audit of all source files. Every bug status verified against actual current code with line numbers. No status carried forward from v0.8 without re-verification.  
 **Key delta since v0.8:** Bug 1 (search prefix) fixed; Bug 18 (iOS OAuth) fixed; Bug 19 (notifications toggle) fixed; Smart Match Explanation AI feature shipped (api/match-explain.js + Discover.js); title prefix intentionally removed from name display per design decision.
 
+
 ---
 
 ## SECTION A — Feature Inventory (Full List)

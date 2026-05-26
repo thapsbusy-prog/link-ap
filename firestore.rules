@@ -41,6 +41,10 @@ service cloud.firestore {
         allow read: if isAuth() && isOwner(uid);
         allow write: if isAuth() && (isOwner(uid) || isOwner(blockerId));
       }
+
+      match /private/{doc} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     match /chats/{chatId}/messages/{msgId} {
