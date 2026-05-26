@@ -61,6 +61,13 @@ The app is split across several source files. There is no routing library — `M
 - `Matches` component: `disconnectTarget` — the match user object selected for removal; drives the in-component confirmation modal.
 - `PublicProfile` component: `showDisconnectConfirm` (bool), `isMutualMatch` (bool derived from `matches` prop) — controls the Remove Connection confirmation modal.
 
+**Conversation Starter Chips feature (26 May 2026)**
+- `api/chat-starters.js` — serverless GET `?partnerUid={uid}`; verifies auth token; fetches both profiles from Firestore server-side; calls Anthropic `claude-sonnet-4-6` to generate 3 specific openers (under 12 words each, profile-specific, never generic); cached permanently in `chatStarters/{chatId}` — generated once per pair, never regenerated.
+- `src/Messages.js` — `starters` state (`null` = loading, `[]` = dismissed/hidden, `string[]` = available); fetch triggered on `chatId` change; chip strip renders above the input bar only when `chatMessages.length === 0 && starters?.length > 0`; tapping a chip pre-fills the input and focuses it; `×` dismisses the strip; chips auto-hide once the first message is sent.
+- `inputRef` added to the input element for programmatic focus from chip tap.
+- `firestore.rules`: `chatStarters/{docId}` blocked from all client reads/writes.
+- `chatStarters/{chatId}` — permanent cache, one doc per connected pair.
+
 **AI Profile Score feature (26 May 2026)**
 - `api/profile-score.js` — serverless GET handler; verifies auth token; fetches profile from Firestore server-side; calls Anthropic `claude-sonnet-4-6` to score 5 dimensions (Identity, Story, Skills & Value, Intent, Trust) each out of 20; total score /100; cached in `users/{uid}/private/profileScore` with 7-day TTL; `?refresh=true` forces regeneration.
 - `src/Profile.js` — `ProfileScoreCard` component (score ring, dimension bars, quick-win tips, Share button); `SCORE_COLOR` helper; `scoreData`/`scoreLoading` state; `fetchScore(forceRefresh)` called on mount and after every successful profile save; score card rendered between page header and profile card in view mode.
@@ -209,7 +216,7 @@ This section is the live project health snapshot. Update it after every fix or f
 | AI Profile Score | ✅ Shipped (26 May 2026) | `src/Profile.js` + `api/profile-score.js`; 5 dimensions × 20pts; 7-day cache; refreshes on profile save |
 | AI Connection Note Assistant | ❌ Not built | — |
 | AI Profile Score / Optimiser | ❌ Not built | — |
-| Conversation Starter Chips | ❌ Not built | — |
+| Conversation Starter Chips | ✅ Shipped (26 May 2026) | `src/Messages.js` + `api/chat-starters.js`; permanent cache in `chatStarters/{chatId}`; chips shown above input bar on empty chats |
 
 #### Revenue features (ideated, not built)
 

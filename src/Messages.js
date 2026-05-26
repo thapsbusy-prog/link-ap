@@ -6,7 +6,9 @@ import { COLORS, Avatar, formatRelativeTime } from "./shared";
 export function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile, blockedUids = new Set(), blockedByUids = [], lastMessages = {}, currentUserName }) {
   const [input, setInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
+  const [starters, setStarters] = useState(null);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
   const chatUser = matches.find(u => u.uid === activeChat);
   const chatId = activeChat ? [firebaseUser.uid, activeChat].sort().join("_") : null;
@@ -16,6 +18,7 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
 
   useEffect(() => {
     setChatMessages([]);
+    setStarters(null);
     if (!chatId) return;
     const q = query(collection(db, "chats", chatId, "messages"), orderBy("createdAt"));
     const unsub = onSnapshot(q, snap => {
@@ -23,6 +26,25 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
     });
     return unsub;
   }, [chatId]);
+
+  useEffect(() => {
+    if (!activeChat || !chatId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await firebaseUser.getIdToken();
+        const res = await fetch(`/api/chat-starters?partnerUid=${activeChat}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!cancelled) setStarters(data.starters || []);
+      } catch {
+        if (!cancelled) setStarters([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [chatId]); // eslint-disable-line
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -169,8 +191,50 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
             <div ref={bottomRef} />
           </div>
 
+            {chatMessages.length === 0 && starters?.length > 0 && (
+              <div style={{
+                padding: "10px 14px 4px",
+                borderTop: `1px solid ${COLORS.border}`,
+                background: COLORS.bg,
+              }}>
+                <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.7, color: COLORS.textMuted, margin: "0 0 8px" }}>
+                  ✦ Starters — tap to use
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 4 }}>
+                  {starters.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setInput(s);
+                        inputRef.current?.focus();
+                      }}
+                      style={{
+                        background: "transparent",
+                        border: `1px solid ${COLORS.accent}55`,
+                        borderRadius: 20, padding: "6px 12px",
+                        color: COLORS.text, fontSize: 12, cursor: "pointer",
+                        textAlign: "left", lineHeight: 1.4,
+                      }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setStarters([])}
+                    style={{
+                      background: "transparent", border: "none",
+                      color: COLORS.textMuted, fontSize: 18, cursor: "pointer",
+                      padding: "0 4px", alignSelf: "center",
+                    }}
+                    title="Dismiss"
+                  >×</button>
+                </div>
+              </div>
+            )}
+
             <div style={{ padding: "12px 16px", borderTop: `1px solid ${COLORS.border}`, display: "flex", gap: 10, background: COLORS.card }}>
               <input
+                ref={inputRef}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && send()}
