@@ -224,6 +224,11 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
             setUnreadChats(prev => new Set([...prev, match.uid]));
           }
         });
+      }, (err) => {
+        if (err.code === "permission-denied") {
+          const unsub = chatListenersRef.current[match.uid];
+          if (unsub) { unsub(); delete chatListenersRef.current[match.uid]; }
+        }
       });
     }
   }, [matches, firebaseUser.uid]); // eslint-disable-line
@@ -336,31 +341,35 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   const handleAcceptRequest = async (senderUser) => {
-    await Promise.all([
-      setDoc(doc(db, "users", firebaseUser.uid, "matches", senderUser.uid), senderUser),
-      setDoc(doc(db, "users", senderUser.uid, "matches", firebaseUser.uid), user),
-      deleteDoc(doc(db, "users", senderUser.uid, "sent", firebaseUser.uid)),
-      deleteDoc(doc(db, "users", firebaseUser.uid, "received", senderUser.uid)),
-      deleteDoc(doc(db, "users", firebaseUser.uid, "sent", senderUser.uid)),
-      deleteDoc(doc(db, "users", senderUser.uid, "received", firebaseUser.uid)),
-    ]);
-    showNotif(`Connected with ${senderUser.name}! 🎉`);
-    logEvent(analytics, "connection_accepted");
     try {
-      // CRITICAL — pass recipientUid (not token) to /api/notify
-      // Server fetches fresh fcmTokens from Firestore to support
-      // multi-device push. Do not revert to client-side token fetch.
-      const idToken = await firebaseUser.getIdToken();
-      await fetch("/api/notify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
-        body: JSON.stringify({
-          recipientUid: senderUser.uid,
-          type: "connection_accepted",
-          senderName: user.name,
-        }),
-      });
-    } catch (e) { console.warn("FCM notify error (accept request):", e); }
+      await Promise.all([
+        setDoc(doc(db, "users", firebaseUser.uid, "matches", senderUser.uid), senderUser),
+        setDoc(doc(db, "users", senderUser.uid, "matches", firebaseUser.uid), user),
+        deleteDoc(doc(db, "users", senderUser.uid, "sent", firebaseUser.uid)),
+        deleteDoc(doc(db, "users", firebaseUser.uid, "received", senderUser.uid)),
+        deleteDoc(doc(db, "users", firebaseUser.uid, "sent", senderUser.uid)),
+        deleteDoc(doc(db, "users", senderUser.uid, "received", firebaseUser.uid)),
+      ]);
+      showNotif(`Connected with ${senderUser.name}! 🎉`);
+      logEvent(analytics, "connection_accepted");
+      try {
+        // CRITICAL — pass recipientUid (not token) to /api/notify
+        // Server fetches fresh fcmTokens from Firestore to support
+        // multi-device push. Do not revert to client-side token fetch.
+        const idToken = await firebaseUser.getIdToken();
+        await fetch("/api/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${idToken}` },
+          body: JSON.stringify({
+            recipientUid: senderUser.uid,
+            type: "connection_accepted",
+            senderName: user.name,
+          }),
+        });
+      } catch (e) { console.warn("FCM notify error (accept request):", e); }
+    } catch (err) {
+      console.error("[AcceptRequest] failed:", err);
+    }
   };
 
   const handleDeclineRequest = async (senderUser) => {

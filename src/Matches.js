@@ -73,7 +73,7 @@ export function Matches({ matches, sent, received, firebaseUser, onChat, onViewP
                 )}
 
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => onAcceptRequest(req)} style={{
+                  <button onClick={() => { console.log("[Accept] button clicked, requestUid:", req.uid); onAcceptRequest(req); }} style={{
                     flex: 2, padding: "9px 0", borderRadius: 10, border: "none",
                     background: COLORS.accent, color: "#000", cursor: "pointer", fontSize: 12, fontWeight: 700,
                   }}>Accept ✓</button>

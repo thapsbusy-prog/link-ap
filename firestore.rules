@@ -26,24 +26,30 @@ service cloud.firestore {
 
       match /sent/{targetId} {
         allow read: if request.auth != null && request.auth.uid == uid;
-        allow write: if request.auth != null &&
+        allow create, update: if request.auth != null &&
           (request.auth.uid == uid || request.auth.uid == targetId) &&
           request.resource.data.uid == request.auth.uid;
+        allow delete: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == targetId);
       }
 
       match /received/{senderId} {
         allow read: if request.auth != null && request.auth.uid == uid;
-        allow write: if request.auth != null &&
+        allow create, update: if request.auth != null &&
           request.auth.uid == senderId &&
           request.resource.data.uid == request.auth.uid;
+        allow delete: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == senderId);
       }
 
       match /matches/{matchedUid} {
         allow read: if request.auth != null &&
           (request.auth.uid == uid || request.auth.uid == matchedUid);
-        allow write: if request.auth != null &&
+        allow create, update: if request.auth != null &&
           (request.auth.uid == uid || request.auth.uid == matchedUid) &&
-          request.resource.data.uid == request.auth.uid;
+          request.resource.data.uid == matchedUid;
+        allow delete: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == matchedUid);
       }
 
       match /passed/{passedUid} {
