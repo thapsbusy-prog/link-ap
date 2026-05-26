@@ -61,7 +61,10 @@ export default function AuthScreen() {
 
   useEffect(() => {
     if (!isIosPwa) return;
-    getRedirectResult(auth).catch(e => setError(getErrorMessage(e)));
+    getRedirectResult(auth).catch(e => {
+      console.error("[Auth] iOS redirect result error:", e);
+      setError(getErrorMessage(e));
+    });
   }, []);
 
   const clearError = () => { if (error) setError(""); };

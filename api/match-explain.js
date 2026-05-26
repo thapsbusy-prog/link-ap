@@ -101,22 +101,23 @@ module.exports = async function handler(req, res) {
     // Proceed to Anthropic on cache read failure
   }
 
+  const san = (s, max = 200) => typeof s === "string" ? s.replace(/[<>]/g, "").trim().slice(0, max) : "";
+  const sanArr = (a, max = 10, itemMax = 100) => Array.isArray(a) ? a.slice(0, max).map(s => san(s, itemMax)).filter(Boolean) : [];
+
   try {
     const userMessage = `Current user profile:
-- Role: ${currentUser.role || "not specified"}
-- Skills: ${(currentUser.skills || []).join(", ") || "not specified"}
-- Looking for: ${(currentUser.lookingFor || []).join(", ") || "not specified"}
-- What they bring: ${currentUser.bringToTable || "not specified"}
-- Currently exploring: ${(currentUser.currentlyExploring || []).join(", ") || "not specified"}
-- Looking for details: ${JSON.stringify(currentUser.lookingForDetails || {})}
+- Role: ${san(currentUser.role) || "not specified"}
+- Skills: ${sanArr(currentUser.skills).join(", ") || "not specified"}
+- Looking for: ${sanArr(currentUser.lookingFor).join(", ") || "not specified"}
+- What they bring: ${san(currentUser.bringToTable) || "not specified"}
+- Currently exploring: ${sanArr(currentUser.currentlyExploring).join(", ") || "not specified"}
 
-Target user profile (${targetUser.name}):
-- Role: ${targetUser.role || "not specified"}
-- Skills: ${(targetUser.skills || []).join(", ") || "not specified"}
-- Looking for: ${(targetUser.lookingFor || []).join(", ") || "not specified"}
-- What they bring: ${targetUser.bringToTable || "not specified"}
-- Currently exploring: ${(targetUser.currentlyExploring || []).join(", ") || "not specified"}
-- Looking for details: ${JSON.stringify(targetUser.lookingForDetails || {})}`;
+Target user profile (${san(targetUser.name, 100)}):
+- Role: ${san(targetUser.role) || "not specified"}
+- Skills: ${sanArr(targetUser.skills).join(", ") || "not specified"}
+- Looking for: ${sanArr(targetUser.lookingFor).join(", ") || "not specified"}
+- What they bring: ${san(targetUser.bringToTable) || "not specified"}
+- Currently exploring: ${sanArr(targetUser.currentlyExploring).join(", ") || "not specified"}`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

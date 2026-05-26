@@ -133,10 +133,10 @@ This section is the live project health snapshot. Update it after every fix or f
 | Bug 23 | MEDIUM | No rate limiting on `/api/match-explain` — superseded by C8 below | api/match-explain.js |
 | Bug 24 | LOW | Privacy Policy does not disclose Anthropic as data processor | PrivacyPolicy.js:22–23 |
 | Bug 25 | LOW | VAPID key hardcoded as fallback — remove fallback, make env var required | firebase.js:53 |
-| Bug 27 | LOW | `IntroScreen.js` uses local `ORANGE = "#F5A623"` instead of `COLORS.accent` | IntroScreen.js:4 |
+| Bug 27 | LOW | ~~`IntroScreen.js` uses local `ORANGE`~~ FIXED — no local colour constant found; uses `COLORS` from shared | IntroScreen.js:4 |
 | Bug 28 | MEDIUM | ~~Firestore chat rules don't check blocked status~~ FIXED — notBlocked() check on read and create | firestore.rules:53 |
-| Bug 29 | LOW | `handleDisconnect` does not delete chat message subcollection | App.js:359–371 |
-| Bug 30 | LOW | No in-app reactivation path — deactivation screen doesn't show support email | Settings.js:128 |
+| Bug 29 | LOW | ~~`handleDisconnect` does not delete chat message subcollection~~ FIXED — App.js already batch-deletes all messages on disconnect | App.js:404–409 |
+| Bug 30 | LOW | ~~No in-app reactivation path~~ FIXED — deactivation modal already shows "email info@link-ap.online to reactivate" | Settings.js:407–409 |
 
 ---
 
@@ -164,11 +164,11 @@ This section is the live project health snapshot. Update it after every fix or f
 
 | ID | Description |
 |----|-------------|
-| C5 | Add catch-all deny rule for `/chats/{chatId}` top-level document |
-| C16 | Sanitise and length-cap profile fields before including in Anthropic prompt |
-| C18/C19 | Field-mask `fcmTokens` from list/search queries |
-| C12 | Add `console.error` logging for iOS redirect auth failures (`AuthScreen.js:63`) |
-| C21 | Move `firebase-admin` from `dependencies` to `devDependencies` |
+| C5 | FIXED — `/chats/{chatId}` top-level already has `allow read, write: if false` |
+| C16 | FIXED 2026-05-26 — san/sanArr helpers in match-explain.js strip `<>`, trim, and cap all fields before Anthropic prompt |
+| C18/C19 | RESOLVED — `fcmTokens` moved to private subcollection; no longer present in list-queryable user docs |
+| C12 | FIXED 2026-05-26 — AuthScreen.js iOS redirect catch now calls `console.error` before `setError` |
+| C21 | SKIPPED — `firebase-admin` is used in production Vercel serverless functions; moving to devDependencies would break deployment |
 
 ---
 
