@@ -5,7 +5,7 @@ import { collection, doc, setDoc, getDocs, writeBatch } from "firebase/firestore
 import { COLORS, Avatar, LocationPin, LinkedInIcon, Input, TextArea, Select, SkillsInput, LOOKING_FOR_OPTIONS, LOOKING_FOR_QUESTIONS, OPEN_TO_OPTIONS, PRONOUN_OPTIONS, TITLE_OPTIONS, getBringToTablePrompt, normalizeUrl, validateLinkedIn, linkedinNameMatches } from "./shared";
 import { ShareModal } from "./Discover";
 
-export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
+export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSettings }) {
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (editTrigger) setEditing(true); }, [editTrigger]); // eslint-disable-line
   const [showShare, setShowShare] = useState(false);
@@ -280,7 +280,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
           <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>My Profile</h2>
           <p style={{ color: COLORS.textMuted, fontSize: 13 }}>How others see you</p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button onClick={() => setShowShare(true)} style={{
             padding: "8px 16px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
             background: "transparent", color: COLORS.accent, cursor: "pointer", fontSize: 13, fontWeight: 600,
@@ -289,6 +289,17 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
             padding: "8px 16px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
             background: "transparent", color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
           }}>Edit</button>
+          {onSettings && (
+            <button onClick={onSettings} style={{
+              background: "transparent", border: `1px solid ${COLORS.border}`,
+              borderRadius: 10, width: 36, height: 36, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <svg viewBox="0 0 24 24" fill={COLORS.textMuted} width="16" height="16">
+                <path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.11-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>

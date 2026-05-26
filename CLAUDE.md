@@ -19,7 +19,7 @@ git add . && git commit -m "description" && git push
 
 ## Architecture
 
-The app is split across several source files. There is no routing library — `MainApp` uses a `tab` state string (`"discover"`, `"matches"`, `"messages"`, `"profile"`) to switch between screens.
+The app is split across several source files. There is no routing library — `MainApp` uses a `tab` state string (`"discover"`, `"matches"`, `"messages"`, `"profile"`, `"pulse"`) to switch between screens.
 
 **Source file map**
 - `src/App.js` — `MainApp`, `SearchModal`, `SplashScreen`, `ErrorBoundary`, `App` root, and helpers (`playBeep`, `triggerVibrate`)
@@ -28,6 +28,7 @@ The app is split across several source files. There is no routing library — `M
 - `src/Messages.js` — `Messages` component and `formatRelativeTime`
 - `src/Profile.js` — `Profile` component
 - `src/Settings.js` — `Settings` component
+- `src/Pulse.js` — `Pulse` component (AI Pulse tab) and `TrendCard`, `SkeletonCard` sub-components
 - `src/AuthScreen.js` — `AuthScreen` component
 - `src/Onboarding.js` — `Onboarding` component
 - `src/shared.js` — shared constants (`COLORS`, `USER_COLORS`, option arrays), shared helpers (`normalizeUrl`, `validateLinkedIn`, `linkedinNameMatches`, `getBringToTablePrompt`, `formatRelativeTime`), and shared UI components (`Avatar`, `Tag`, `Input`, `TextArea`, `Select`, `SkillsInput`, `LocationPin`, `LinkedInIcon`, `TermsContent`)
@@ -59,6 +60,14 @@ The app is split across several source files. There is no routing library — `M
 **State inventory (key additions — 13 May 2026)**
 - `Matches` component: `disconnectTarget` — the match user object selected for removal; drives the in-component confirmation modal.
 - `PublicProfile` component: `showDisconnectConfirm` (bool), `isMutualMatch` (bool derived from `matches` prop) — controls the Remove Connection confirmation modal.
+
+**AI Pulse Tab feature (26 May 2026)**
+- `src/Pulse.js` — default export `Pulse` component; fetches from `/api/pulse` with Firebase ID token; renders `TrendCard` (expandable, with share) and `SkeletonCard` loading state.
+- `api/pulse.js` — Vercel serverless GET handler; Firestore cache (`aiTrends/latest`, 24-hour TTL); calls Anthropic `claude-sonnet-4-6` to generate 6 trend cards (fields: `category`, `headline`, `summary`, `howToUse`); serves stale cache on generation failure.
+- `vercel.json` — cron `0 6 * * *` hits `/api/pulse` daily to refresh cache before users wake up.
+- Bottom nav: **Settings removed from nav bar** — now accessed via gear icon (⚙) in Profile view header (`onSettings` prop). Pulse tab added in its place with an EKG-line icon.
+- `Profile` now accepts `onSettings` prop (optional); renders a gear icon button next to Share/Edit when prop is provided.
+- Firestore collection `aiTrends/latest` — single doc with `trends[]` array and `generatedAt` timestamp; Admin SDK only (client read/write blocked).
 
 **Smart Match Explanation feature (18 May 2026)**
 - `api/match-explain.js` — new Vercel serverless function; accepts `POST { currentUser, targetUser }`, calls Anthropic `claude-sonnet-4-6` (raw fetch, no SDK), returns `{ explanation: string | null }`. Requires `ANTHROPIC_API_KEY` Vercel env var. Never throws — always returns 200 with `{ explanation: null }` on any failure.
@@ -190,7 +199,7 @@ This section is the live project health snapshot. Update it after every fix or f
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| AI Pulse feed | ❌ Not built | Demo widget ready; implementation guide exists. Daily cron → Firestore cache → ~R7/month |
+| AI Pulse feed | ✅ Shipped (26 May 2026) | `src/Pulse.js` + `api/pulse.js`; daily Vercel cron at 06:00 UTC; 24h Firestore cache at `aiTrends/latest` |
 | AI Connection Note Assistant | ❌ Not built | — |
 | AI Profile Score / Optimiser | ❌ Not built | — |
 | Conversation Starter Chips | ❌ Not built | — |
@@ -223,3 +232,4 @@ This section is the live project health snapshot. Update it after every fix or f
 |------------|---------|--------|
 | `matchExplanations/{currentUid}_{targetUid}` | AI match explanation cache (7-day TTL) | Admin SDK only — client read/write blocked in firestore.rules |
 | `users/{uid}/private/rateLimits` | Per-user API rate limit counters | Admin SDK only |
+| `aiTrends/latest` | AI Pulse daily trend cards (24-hour TTL, single doc) | Admin SDK only — client read/write blocked in firestore.rules |

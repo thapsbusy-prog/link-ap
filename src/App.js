@@ -19,6 +19,7 @@ import Onboarding from "./Onboarding";
 import Settings from "./Settings";
 import { Matches } from "./Matches";
 import { Discover, PublicProfile } from "./Discover";
+import Pulse from "./Pulse";
 
 async function playBeep() {
   try {
@@ -53,7 +54,7 @@ function triggerVibrate() {
 function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [tab, setTab] = useState(() => {
     const urlTab = new URLSearchParams(window.location.search).get("tab");
-    return ["discover", "matches", "messages", "profile", "settings"].includes(urlTab) ? urlTab : "profile";
+    return ["discover", "matches", "messages", "profile", "pulse", "settings"].includes(urlTab) ? urlTab : "profile";
   });
   const [allUsers, setAllUsers] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -493,8 +494,9 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnectWithNote} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} blockedUids={blockedUids} blockedByUids={blockedByUids} onDisconnect={handleDisconnect} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} lastMessages={lastMessages} currentUserName={user?.name} />}
-        {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} />}
+        {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} onSettings={() => setTab("settings")} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} blocked={blocked} onUnblock={handleUnblock} />}
+        {tab === "pulse" && <Pulse firebaseUser={firebaseUser} />}
       </div>
 
       {tab === "messages" && activeChat && (
@@ -525,8 +527,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
             icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
           { id: "profile", label: "Profile", badge: (user.bio && user.skills?.length > 0 && user.lookingFor?.length > 0 && user.photoURL) ? 0 : -1,
             icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> },
-          { id: "settings", label: "Settings",
-            icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.07.63-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.11-.21.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg> },
+          { id: "pulse", label: "Pulse",
+            icon: c => <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
         ].map(item => {
           const color = tab === item.id ? COLORS.accent : COLORS.textMuted;
           return (

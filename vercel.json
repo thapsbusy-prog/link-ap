@@ -1,4 +1,7 @@
 {
+  "crons": [
+    { "path": "/api/pulse", "schedule": "0 6 * * *" }
+  ],
   "rewrites": [
     { "source": "/user/(.*)", "destination": "/index.html" }
   ],
