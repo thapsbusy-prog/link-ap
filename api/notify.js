@@ -57,11 +57,29 @@ module.exports = async function handler(req, res) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { recipientUid, title, body } = req.body;
+  const { recipientUid, type, senderName } = req.body;
 
-  if (!recipientUid || !title) {
-    return res.status(400).json({ error: "Missing recipientUid or title" });
+  if (!recipientUid || !type) {
+    return res.status(400).json({ error: "Missing recipientUid or type" });
   }
+
+  // Sanitise senderName — strip URLs, limit length
+  const safeName = ((senderName || "Someone")
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/www\.\S+/gi, "")
+    .trim()
+    .slice(0, 60)) || "Someone";
+
+  // Hard-coded templates — never use client-supplied body
+  const templates = {
+    connection_request: { title: "New Connection Request", body: `${safeName} wants to connect with you` },
+    connection_accepted: { title: "Connection Accepted", body: `${safeName} accepted your connection request` },
+    message: { title: "New message on Link-Ap", body: `New message from ${safeName}` },
+  };
+  const { title, body: notificationBody } = templates[type] || {
+    title: "Link-Ap",
+    body: "You have a new notification on Link-Ap",
+  };
 
   const [matchDoc, receivedDoc] = await Promise.all([
     admin.firestore()
@@ -100,10 +118,10 @@ module.exports = async function handler(req, res) {
 
     const message = {
       tokens,
-      notification: { title, body: body || "" },
+      notification: { title, body: notificationBody },
       data: {
         title,
-        body: body || "",
+        body: notificationBody,
         url: "/?tab=messages",
       },
       webpush: {

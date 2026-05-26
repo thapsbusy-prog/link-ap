@@ -3,7 +3,7 @@ import { db } from "./firebase";
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
 import { COLORS, Avatar, formatRelativeTime } from "./shared";
 
-export function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile, blockedUids = new Set(), blockedByUids = [], lastMessages = {} }) {
+export function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile, blockedUids = new Set(), blockedByUids = [], lastMessages = {}, currentUserName }) {
   const [input, setInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const bottomRef = useRef(null);
@@ -50,8 +50,8 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
         },
         body: JSON.stringify({
           recipientUid: activeChat,
-          title: "New message on Link-Ap",
-          body: input.trim().slice(0, 100),
+          type: "message",
+          senderName: currentUserName,
         }),
       });
     } catch (e) {
