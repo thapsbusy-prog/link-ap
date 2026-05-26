@@ -341,7 +341,13 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   };
 
   const handleAcceptRequest = async (senderUser) => {
+    console.log("[Accept] START — senderUid:", senderUser.uid, "senderName:", senderUser.name, "currentUid:", firebaseUser.uid);
     try {
+      console.log("[Accept] writing match for currentUser:", `users/${firebaseUser.uid}/matches/${senderUser.uid}`, "data.uid:", senderUser.uid);
+      console.log("[Accept] writing match for sender:", `users/${senderUser.uid}/matches/${firebaseUser.uid}`, "data.uid:", user.uid);
+      console.log("[Accept] deleting from received:", `users/${firebaseUser.uid}/received/${senderUser.uid}`);
+      console.log("[Accept] deleting from sender sent:", `users/${senderUser.uid}/sent/${firebaseUser.uid}`);
+      console.log("[Accept] batch commit starting");
       await Promise.all([
         setDoc(doc(db, "users", firebaseUser.uid, "matches", senderUser.uid), senderUser),
         setDoc(doc(db, "users", senderUser.uid, "matches", firebaseUser.uid), user),
@@ -350,6 +356,10 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         deleteDoc(doc(db, "users", firebaseUser.uid, "sent", senderUser.uid)),
         deleteDoc(doc(db, "users", senderUser.uid, "received", firebaseUser.uid)),
       ]);
+      console.log("[Accept] batch commit SUCCESS");
+      // Immediately update local state — don't wait for onSnapshot to prevent UI flicker/revert
+      setReceived(prev => prev.filter(r => r.uid !== senderUser.uid));
+      setMatches(prev => prev.find(m => m.uid === senderUser.uid) ? prev : [...prev, senderUser]);
       showNotif(`Connected with ${senderUser.name}! 🎉`);
       logEvent(analytics, "connection_accepted");
       try {
@@ -368,7 +378,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         });
       } catch (e) { console.warn("FCM notify error (accept request):", e); }
     } catch (err) {
-      console.error("[AcceptRequest] failed:", err);
+      console.error("[Accept] FAILED at step:", err.message, err.code, err);
+      showNotif("Failed to accept connection. Please try again.");
     }
   };
 
