@@ -24,8 +24,10 @@ service cloud.firestore {
       }
 
       match /sent/{targetId} {
-        allow read: if isAuth() && (isOwner(uid) || isOwner(targetId));
-        allow write: if isAuth() && isOwner(uid);
+        allow read: if isAuth() && isOwner(uid);
+        allow write: if isAuth()
+          && isOwner(uid)
+          && request.resource.data.uid == request.auth.uid;
       }
 
       match /received/{senderId} {
