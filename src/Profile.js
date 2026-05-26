@@ -5,12 +5,139 @@ import { collection, doc, setDoc, getDocs, writeBatch } from "firebase/firestore
 import { COLORS, Avatar, LocationPin, LinkedInIcon, Input, TextArea, Select, SkillsInput, LOOKING_FOR_OPTIONS, LOOKING_FOR_QUESTIONS, OPEN_TO_OPTIONS, PRONOUN_OPTIONS, TITLE_OPTIONS, getBringToTablePrompt, normalizeUrl, validateLinkedIn, linkedinNameMatches } from "./shared";
 import { ShareModal } from "./Discover";
 
+const SCORE_COLOR = (s) => s >= 80 ? "#22C55E" : s >= 55 ? COLORS.accent : "#EF4444";
+
+function ProfileScoreCard({ scoreData, scoreLoading, onRescore }) {
+  const handleShare = async () => {
+    const text = `My Link-Ap profile scored ${scoreData.total}/100 — see how yours compares 👇\nlink-ap.online`;
+    if (navigator.share) {
+      try { await navigator.share({ text }); } catch {}
+    } else {
+      try { await navigator.clipboard.writeText(text); } catch {}
+    }
+  };
+
+  if (scoreLoading) {
+    return (
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 16, padding: "18px 20px", marginBottom: 16,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <div style={{ width: 44, height: 44, borderRadius: "50%", background: COLORS.border }} />
+          <div>
+            <div style={{ width: 80, height: 14, background: COLORS.border, borderRadius: 4, marginBottom: 6 }} />
+            <div style={{ width: 50, height: 10, background: COLORS.border, borderRadius: 4 }} />
+          </div>
+        </div>
+        {[0,1,2].map(i => (
+          <div key={i} style={{ marginBottom: 10 }}>
+            <div style={{ width: `${70 - i * 10}%`, height: 10, background: COLORS.border, borderRadius: 4, marginBottom: 4 }} />
+            <div style={{ width: "100%", height: 6, background: COLORS.border, borderRadius: 3 }} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!scoreData) return null;
+
+  const { total, dimensions } = scoreData;
+  const color = SCORE_COLOR(total);
+  const tips = dimensions.filter(d => d.tip).sort((a, b) => a.score - b.score).slice(0, 2);
+
+  return (
+    <div style={{
+      background: COLORS.card, border: `1px solid ${COLORS.border}`,
+      borderRadius: 16, padding: "18px 20px", marginBottom: 16,
+    }}>
+      {/* Score header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: "50%",
+            border: `3px solid ${color}`,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ fontSize: 17, fontWeight: 800, color, lineHeight: 1 }}>{total}</span>
+            <span style={{ fontSize: 8, color: COLORS.textMuted, lineHeight: 1 }}>/100</span>
+          </div>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, margin: 0 }}>Profile Score</p>
+            <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "2px 0 0" }}>
+              {total >= 80 ? "Strong — you stand out" : total >= 55 ? "Good — a few tweaks will help" : "Needs work — let's fix this"}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleShare}
+          style={{
+            background: "transparent", border: `1px solid ${COLORS.border}`,
+            borderRadius: 8, padding: "6px 10px", color: COLORS.textMuted,
+            fontSize: 12, cursor: "pointer",
+          }}
+        >
+          Share ↗
+        </button>
+      </div>
+
+      {/* Dimension bars */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: tips.length ? 14 : 0 }}>
+        {dimensions.map(d => {
+          const pct = Math.round((d.score / 20) * 100);
+          const dc = SCORE_COLOR(pct);
+          return (
+            <div key={d.name}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                <span style={{ fontSize: 11, color: COLORS.textMuted }}>{d.name}</span>
+                <span style={{ fontSize: 11, color: dc, fontWeight: 600 }}>{d.score}/20</span>
+              </div>
+              <div style={{ height: 5, background: COLORS.border, borderRadius: 3, overflow: "hidden" }}>
+                <div style={{ width: `${pct}%`, height: "100%", background: dc, borderRadius: 3, transition: "width 0.6s ease" }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Tips */}
+      {tips.length > 0 && (
+        <div style={{
+          background: "#0A0A0F", borderRadius: 10, padding: "10px 12px",
+          border: `1px solid ${COLORS.border}`,
+        }}>
+          <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.7, color: COLORS.accent, margin: "0 0 6px" }}>
+            Quick wins
+          </p>
+          {tips.map((d, i) => (
+            <p key={i} style={{ fontSize: 12, color: COLORS.textMuted, margin: i < tips.length - 1 ? "0 0 4px" : 0, lineHeight: 1.5 }}>
+              · {d.tip}
+            </p>
+          ))}
+        </div>
+      )}
+
+      <button
+        onClick={onRescore}
+        style={{
+          marginTop: 10, background: "transparent", border: "none",
+          color: COLORS.textMuted, fontSize: 11, cursor: "pointer", padding: 0,
+        }}
+      >
+        Re-score my profile →
+      </button>
+    </div>
+  );
+}
+
 export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSettings }) {
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (editTrigger) setEditing(true); }, [editTrigger]); // eslint-disable-line
   const [showShare, setShowShare] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [scoreData, setScoreData] = useState(null);
+  const [scoreLoading, setScoreLoading] = useState(true);
   const [photoPreview, setPhotoPreview] = useState(user.photoURL || null);
   const [photoBlob, setPhotoBlob] = useState(null);
   const [form, setForm] = useState({
@@ -26,6 +153,25 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
     title: user.title || "",
     pronouns: user.pronouns || "",
   });
+
+  const fetchScore = async (forceRefresh = false) => {
+    setScoreLoading(true);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const url = forceRefresh ? "/api/profile-score?refresh=true" : "/api/profile-score";
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const data = await res.json();
+      setScoreData(data);
+    } catch (err) {
+      console.error("Profile score fetch error:", err);
+      setScoreData(null);
+    } finally {
+      setScoreLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchScore(); }, []); // eslint-disable-line
 
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleLF = (v) => setForm(f => ({
@@ -93,6 +239,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
       await setDoc(doc(db, "users", firebaseUser.uid), updated, { merge: true });
       onProfileUpdate(updated);
       setEditing(false);
+      fetchScore(true);
       try {
         const matchesSnap = await getDocs(collection(db, "users", firebaseUser.uid, "matches"));
         if (!matchesSnap.empty) {
@@ -302,6 +449,8 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
           )}
         </div>
       </div>
+      <ProfileScoreCard scoreData={scoreData} scoreLoading={scoreLoading} onRescore={() => fetchScore(true)} />
+
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>
         <style>{`@keyframes linkApPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
         <div style={{ height: 4, background: user.color }} />

@@ -61,6 +61,12 @@ The app is split across several source files. There is no routing library — `M
 - `Matches` component: `disconnectTarget` — the match user object selected for removal; drives the in-component confirmation modal.
 - `PublicProfile` component: `showDisconnectConfirm` (bool), `isMutualMatch` (bool derived from `matches` prop) — controls the Remove Connection confirmation modal.
 
+**AI Profile Score feature (26 May 2026)**
+- `api/profile-score.js` — serverless GET handler; verifies auth token; fetches profile from Firestore server-side; calls Anthropic `claude-sonnet-4-6` to score 5 dimensions (Identity, Story, Skills & Value, Intent, Trust) each out of 20; total score /100; cached in `users/{uid}/private/profileScore` with 7-day TTL; `?refresh=true` forces regeneration.
+- `src/Profile.js` — `ProfileScoreCard` component (score ring, dimension bars, quick-win tips, Share button); `SCORE_COLOR` helper; `scoreData`/`scoreLoading` state; `fetchScore(forceRefresh)` called on mount and after every successful profile save; score card rendered between page header and profile card in view mode.
+- Share button uses Web Share API (`navigator.share`) with fallback to clipboard; text format: `"My Link-Ap profile scored X/100 — see how yours compares"`.
+- Cache lives in `users/{uid}/private/profileScore` — already readable/writable by the owner per existing Firestore rules (no rule changes needed).
+
 **AI Pulse Tab feature (26 May 2026)**
 - `src/Pulse.js` — default export `Pulse` component; fetches from `/api/pulse` with Firebase ID token; renders `TrendCard` (expandable, with share) and `SkeletonCard` loading state.
 - `api/pulse.js` — Vercel serverless GET handler; Firestore cache (`aiTrends/latest`, 24-hour TTL); calls Anthropic `claude-sonnet-4-6` to generate 6 trend cards (fields: `category`, `headline`, `summary`, `howToUse`); serves stale cache on generation failure.
@@ -200,6 +206,7 @@ This section is the live project health snapshot. Update it after every fix or f
 | Feature | Status | Notes |
 |---------|--------|-------|
 | AI Pulse feed | ✅ Shipped (26 May 2026) | `src/Pulse.js` + `api/pulse.js`; daily Vercel cron at 06:00 UTC; 24h Firestore cache at `aiTrends/latest` |
+| AI Profile Score | ✅ Shipped (26 May 2026) | `src/Profile.js` + `api/profile-score.js`; 5 dimensions × 20pts; 7-day cache; refreshes on profile save |
 | AI Connection Note Assistant | ❌ Not built | — |
 | AI Profile Score / Optimiser | ❌ Not built | — |
 | Conversation Starter Chips | ❌ Not built | — |
