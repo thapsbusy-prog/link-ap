@@ -1,6 +1,28 @@
 import logoImg from "./link-ap-logo.png";
 import { COLORS } from "./shared";
 
+const AI_FEATURES = [
+  {
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="16" height="16"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+    title: "AI Pulse",
+    desc: "Daily AI trends explained for builders — shareable in one tap",
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill={COLORS.accent} width="16" height="16"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
+    title: "Profile Score",
+    desc: "AI scores your profile /100 and tells you exactly how to improve",
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill={COLORS.accent} width="16" height="16"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>,
+    title: "Note Assistant",
+    desc: "AI drafts a specific, personal connection note in one tap",
+  },
+  {
+    icon: <svg viewBox="0 0 24 24" fill={COLORS.accent} width="16" height="16"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>,
+    title: "Chat Starters",
+    desc: "3 profile-specific openers appear the moment you connect with someone",
+  },
+];
 
 export function IntroScreen({ onContinue }) {
   return (
@@ -11,7 +33,6 @@ export function IntroScreen({ onContinue }) {
     }}>
       <div style={{ width: "100%", maxWidth: 430, padding: "0 20px 40px", boxSizing: "border-box" }}>
 
-        {/* Status bar padding */}
         <div style={{ height: 48 }} />
 
         {/* Logo block */}
@@ -34,8 +55,10 @@ export function IntroScreen({ onContinue }) {
             color: COLORS.accent,
             fontSize: 12, fontWeight: 600,
             padding: "5px 14px", borderRadius: 99,
+            display: "flex", alignItems: "center", gap: 6,
           }}>
-            Professional Networking
+            <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="11" height="11"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            AI-Powered Professional Networking
           </span>
         </div>
 
@@ -44,7 +67,7 @@ export function IntroScreen({ onContinue }) {
           color: COLORS.text, fontSize: 20, fontWeight: 500,
           textAlign: "center", margin: "0 0 12px", lineHeight: 1.4,
         }}>
-          Meet the right people for where you're going
+          Meet the right people — with AI working for you
         </h1>
 
         {/* Subline */}
@@ -52,10 +75,43 @@ export function IntroScreen({ onContinue }) {
           color: COLORS.textMuted, fontSize: 12, textAlign: "center",
           margin: "0 0 24px", lineHeight: 1.7,
         }}>
-          Link-AP matches you with founders, investors, mentors, and
-          collaborators based on what you're actually building and who
-          you're looking for.
+          Link-Ap matches you with founders, investors, mentors, and
+          collaborators based on what you're actually building. AI helps
+          you show up sharp, connect meaningfully, and stay ahead of what's
+          happening in tech.
         </p>
+
+        {/* AI Features section */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
+            <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.textMuted }}>
+              What's inside
+            </span>
+            <div style={{ flex: 1, height: 1, background: COLORS.border }} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {AI_FEATURES.map(f => (
+              <div key={f.title} style={{
+                background: COLORS.card, border: `1px solid ${COLORS.border}`,
+                borderRadius: 12, padding: "12px 14px",
+                display: "flex", gap: 12, alignItems: "flex-start",
+              }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                  background: "rgba(245,166,35,0.12)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {f.icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, marginBottom: 2 }}>{f.title}</div>
+                  <div style={{ fontSize: 11, color: COLORS.textMuted, lineHeight: 1.5 }}>{f.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Founding member callout */}
         <div style={{
@@ -73,7 +129,7 @@ export function IntroScreen({ onContinue }) {
           </p>
         </div>
 
-        {/* 2×2 who-it's-for grid */}
+        {/* Who it's for grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
           {[
             { icon: <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>, title: "Founders", desc: "Find co-founders, clients & backers" },
@@ -101,8 +157,9 @@ export function IntroScreen({ onContinue }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {[
               { text: "Tell us what you're building and who you need to meet", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg> },
-              { text: "We match you by intent — no random scrolling, just relevant people", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-12c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg> },
-              { text: "Connect with a personal note — every request means something", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
+              { text: "AI explains exactly why each match makes sense for you right now", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-12c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg> },
+              { text: "AI drafts your connection note — personalised, not copy-pasted", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg> },
+              { text: "Chat starters break the ice — every new connection starts strong", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
             ].map((step, i) => (
               <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div style={{
@@ -133,7 +190,7 @@ export function IntroScreen({ onContinue }) {
           Join the network — it's free
         </button>
 
-        {/* Secondary sign-in text */}
+        {/* Secondary sign-in */}
         <p style={{ textAlign: "center", margin: 0, fontSize: 13, color: COLORS.textMuted }}>
           Already a member?{" "}
           <span
