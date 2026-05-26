@@ -231,92 +231,106 @@ function drawInvitePoster(canvas) {
   ctx.fillStyle = "#0A0A0F";
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle top radial glow
-  const glow = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, 400);
-  glow.addColorStop(0, "rgba(245,166,35,0.15)");
+  // Radial glow
+  const glow = ctx.createRadialGradient(W / 2, 0, 0, W / 2, 0, 420);
+  glow.addColorStop(0, "rgba(245,166,35,0.18)");
   glow.addColorStop(1, "rgba(245,166,35,0)");
   ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, 400);
+  ctx.fillRect(0, 0, W, 420);
 
   // Gold top bar
   ctx.fillStyle = "#F5A623";
   ctx.fillRect(0, 0, W, 3);
 
-  // "Link-Ap" wordmark at y=160
+  // "Link-Ap" wordmark
   ctx.textBaseline = "alphabetic";
   ctx.font = "bold 64px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   const lw = ctx.measureText("Link").width;
   const aw = ctx.measureText("-Ap").width;
   const tx = (W - lw - aw) / 2;
   ctx.textAlign = "left";
-  ctx.fillStyle = "#F0EEE8"; ctx.fillText("Link", tx, 160);
-  ctx.fillStyle = "#F5A623"; ctx.fillText("-Ap", tx + lw, 160);
+  ctx.fillStyle = "#F0EEE8"; ctx.fillText("Link", tx, 152);
+  ctx.fillStyle = "#F5A623"; ctx.fillText("-Ap", tx + lw, 152);
 
-  // Tagline at y=210
-  ctx.font = "18px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
-  ctx.textAlign = "center"; ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("Connect with the right people", W / 2, 210);
+  // "AI-Powered Networking" badge pill
+  ctx.font = "bold 13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  const badgeLabel = "AI-Powered Professional Networking";
+  const badgeW = ctx.measureText(badgeLabel).width + 30;
+  const badgeX = (W - badgeW) / 2;
+  roundRect(ctx, badgeX, 170, badgeW, 26, 13);
+  ctx.fillStyle = "rgba(245,166,35,0.14)"; ctx.fill();
+  ctx.strokeStyle = "rgba(245,166,35,0.35)"; ctx.lineWidth = 1; ctx.stroke();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillStyle = "#F5A623"; ctx.fillText(badgeLabel, W / 2, 183);
 
-  // Divider at y=260
+  // Divider
+  ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#2A2A3A";
-  ctx.fillRect(W * 0.2, 260, W * 0.6, 1);
+  ctx.fillRect(W * 0.18, 220, W * 0.64, 1);
 
-  // Section label at y=290
-  ctx.font = "bold 14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  // Section label
+  ctx.font = "bold 12px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.textAlign = "center"; ctx.fillStyle = "#F5A623";
-  ctx.fillText("WHY YOU SHOULD JOIN", W / 2, 290);
+  ctx.fillText("WHAT'S INSIDE", W / 2, 248);
 
-  // Bullet cards: cy=316, ch=56, gap=10 (period=66)
-  const bullets = [
-    "Discover co-founders, investors & freelance work",
-    "Connect with people building real things",
-    "Find exactly who you're looking for",
-    "Show what you bring to the table",
+  // AI feature cards (4 × 62px tall, 10px gap → period 72)
+  const features = [
+    { label: "AI Pulse", desc: "Daily AI trends explained for builders" },
+    { label: "Profile Score", desc: "Know exactly how to stand out" },
+    { label: "Note Assistant", desc: "AI drafts your connection note in one tap" },
+    { label: "Chat Starters", desc: "Break the ice with every new match" },
   ];
-  bullets.forEach((text, i) => {
-    const cy = 316 + i * 66, ch = 56, cx = W * 0.07, cw = W * 0.86;
+  const CH = 62, GAP = 10, PERIOD = CH + GAP;
+  features.forEach(({ label, desc }, i) => {
+    const cy = 266 + i * PERIOD, cx = W * 0.07, cw = W * 0.86;
     ctx.fillStyle = "#13131A";
-    roundRect(ctx, cx, cy, cw, ch, 12); ctx.fill();
-    ctx.fillStyle = "rgba(245,166,35,0.5)";
-    ctx.fillRect(cx, cy + 10, 3, ch - 20);
-    ctx.font = "16px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+    roundRect(ctx, cx, cy, cw, CH, 12); ctx.fill();
+    // Accent left bar
+    ctx.fillStyle = "#F5A623";
+    ctx.fillRect(cx, cy + 12, 3, CH - 24);
+    // Label (bold)
+    ctx.font = "bold 15px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
     ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillStyle = "#F0EEE8"; ctx.fillText(text, cx + 20, cy + ch / 2);
+    ctx.fillStyle = "#F5A623"; ctx.fillText(label, cx + 20, cy + CH / 2 - 9);
+    // Description
+    ctx.font = "14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+    ctx.fillStyle = "#C0BEB8"; ctx.fillText(desc, cx + 20, cy + CH / 2 + 11);
     ctx.textBaseline = "alphabetic";
   });
+  // Last card bottom: 266 + 3*72 + 62 = 266 + 216 + 62 = 544
 
-  // Italic statement at y=624
-  ctx.font = "italic 20px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  // Italic statement
+  ctx.font = "italic 19px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.textAlign = "center"; ctx.fillStyle = "#F0EEE8";
-  ctx.fillText("Where the right people find each other.", W / 2, 624);
+  ctx.fillText("Where smart people connect smarter.", W / 2, 592);
 
-  // Value lines centred between italic and divider
-  ctx.font = "15px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
+  // Role / value lines
+  ctx.font = "14px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("Co-founders · Investors · Collaborators · Advisory Roles", W / 2, 686);
-  ctx.fillText("Coffee Chats · Jobs · Clients", W / 2, 718);
+  ctx.fillText("Co-founders · Investors · Mentors · Collaborators", W / 2, 648);
+  ctx.fillText("AI-matched. Intent-first. Free to join.", W / 2, 678);
 
-  // Divider at y=780
+  // Divider
   ctx.fillStyle = "#2A2A3A";
-  ctx.fillRect(W * 0.2, 780, W * 0.6, 1);
+  ctx.fillRect(W * 0.18, 730, W * 0.64, 1);
 
-  // CTA text
+  // CTA
   ctx.font = "13px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.fillStyle = "#8A8A9A";
-  ctx.fillText("Join now at", W / 2, 820);
+  ctx.fillText("Join now at", W / 2, 772);
 
   ctx.font = "bold 38px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.fillStyle = "#F5A623";
-  ctx.fillText("link-ap.online", W / 2, 872);
+  ctx.fillText("link-ap.online", W / 2, 824);
 
   // Gold footer bar
   ctx.fillStyle = "#F5A623";
-  ctx.fillRect(0, 910, W, 50);
+  ctx.fillRect(0, 870, W, 90);
 
   ctx.font = "bold 20px -apple-system, BlinkMacSystemFont, Arial, sans-serif";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillStyle = "#000000";
-  ctx.fillText("Join Link-Ap  →", W / 2, 935);
+  ctx.fillText("Join Link-Ap  →", W / 2, 915);
 }
 
 export function ShareModal({ user, onClose }) {
