@@ -50,6 +50,7 @@ export async function getFCMToken() {
       '/firebase-messaging-sw.js'
     );
     const vapidKey = process.env.REACT_APP_VAPID_KEY;
+    console.log("[FCM] getToken called, vapidKey present:", !!vapidKey);
     if (!vapidKey) {
       console.warn("REACT_APP_VAPID_KEY is not set — FCM push notifications will not work");
     }

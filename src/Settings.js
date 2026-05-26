@@ -91,16 +91,17 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
   const toggleNotifications = async () => {
     if (notifLoading) return;
     if (notifEnabled) {
+      console.log("[Notifications] disable path triggered");
       setNotifLoading(true);
       try {
         await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: [] }, { merge: true });
         try {
           await updateDoc(doc(db, "users", firebaseUser.uid), { fcmToken: deleteField() });
         } catch {}
-        setNotifEnabled(false);
       } catch (e) {
-        console.warn("Notif disable error:", e);
+        console.error("[Notifications] disable failed:", e);
       }
+      setNotifEnabled(false);
       setNotifLoading(false);
     } else {
       setNotifLoading(true);

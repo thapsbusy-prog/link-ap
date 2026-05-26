@@ -100,6 +100,8 @@ module.exports = async function handler(req, res) {
     return res.status(403).json({ error: "Forbidden: no relationship with recipient" });
   }
 
+  console.log("[notify] recipientUid:", recipientUid);
+
   try {
     const userDoc = await admin.firestore()
       .collection("users")
@@ -112,7 +114,10 @@ module.exports = async function handler(req, res) {
     const tokens = userData?.fcmTokens ||
       (userData?.fcmToken ? [userData.fcmToken] : []);
 
+    console.log("[notify] tokens found:", tokens?.length ?? 0);
+
     if (!tokens.length) {
+      console.log("[notify] NO TOKENS — recipient has no registered device");
       return res.json({ success: false, reason: "no_token" });
     }
 
@@ -135,6 +140,7 @@ module.exports = async function handler(req, res) {
     };
 
     const response = await admin.messaging().sendEachForMulticast(message);
+    console.log("[notify] FCM result:", JSON.stringify({ sent: response.successCount, failed: response.failureCount }));
     return res.status(200).json({ success: true, sent: response.successCount, failed: response.failureCount });
   } catch (err) {
     console.error("FCM send error:", err);

@@ -22,7 +22,7 @@ import { Discover, PublicProfile } from "./Discover";
 
 async function playBeep() {
   try {
-    if (localStorage.getItem("linkap_sound") !== "true") return;
+    if (localStorage.getItem("linkap_sound") === "false") return;
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === "suspended") {
       await ctx.resume();
@@ -43,7 +43,7 @@ async function playBeep() {
 
 function triggerVibrate() {
   try {
-    if (localStorage.getItem("linkap_vibrate") !== "true") return;
+    if (localStorage.getItem("linkap_vibrate") === "false") return;
     if (!document.hasFocus()) return;
     navigator.vibrate([100, 50, 100, 50, 100, 50, 100, 50, 100]);
   } catch {}
@@ -129,6 +129,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   useEffect(() => {
     (async () => {
       try {
+        if (!firebaseUser?.uid) return;
         if (typeof Notification === "undefined") return;
         let token = null;
         if (Notification.permission === "granted") {
@@ -136,9 +137,14 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         } else if (Notification.permission === "default") {
           const permission = await Notification.requestPermission();
           if (permission === "granted") token = await getFCMToken();
+        } else {
+          console.log("[FCM] permission denied — cannot register token");
         }
+        console.log("[FCM] token obtained:", token ? "yes" : "no");
         if (token) {
+          console.log("[FCM] writing to private/push");
           await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: arrayUnion(token) }, { merge: true });
+          console.log("[FCM] token write complete");
         }
         // Migration: move legacy fcmToken/fcmTokens from top-level user doc to private subcollection
         try {
@@ -158,7 +164,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         console.warn("Auto notification setup error:", e);
       }
     })();
-  }, []); // eslint-disable-line
+  }, [firebaseUser?.uid]); // eslint-disable-line
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "matches"), snap => {
