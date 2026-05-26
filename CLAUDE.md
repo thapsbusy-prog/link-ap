@@ -130,9 +130,9 @@ This section is the live project health snapshot. Update it after every fix or f
 
 | ID | Severity | Description | Location |
 |----|----------|-------------|----------|
-| Bug 23 | MEDIUM | No rate limiting on `/api/match-explain` — superseded by C8 below | api/match-explain.js |
-| Bug 24 | LOW | Privacy Policy does not disclose Anthropic as data processor | PrivacyPolicy.js:22–23 |
-| Bug 25 | LOW | VAPID key hardcoded as fallback — remove fallback, make env var required | firebase.js:53 |
+| Bug 23 | MEDIUM | ~~No rate limiting on `/api/match-explain`~~ FIXED — superseded by C8 (two-layer rate limiting) | api/match-explain.js |
+| Bug 24 | LOW | ~~Privacy Policy does not disclose Anthropic~~ FIXED — section 5 names Anthropic | PrivacyPolicy.js:22–23 |
+| Bug 25 | LOW | ~~VAPID key hardcoded as fallback~~ NOT REPRODUCIBLE — firebase.js reads env var, warns if missing, no hardcoded value | firebase.js:52–56 |
 | Bug 27 | LOW | ~~`IntroScreen.js` uses local `ORANGE`~~ FIXED — no local colour constant found; uses `COLORS` from shared | IntroScreen.js:4 |
 | Bug 28 | MEDIUM | ~~Firestore chat rules don't check blocked status~~ FIXED — notBlocked() check on read and create | firestore.rules:53 |
 | Bug 29 | LOW | ~~`handleDisconnect` does not delete chat message subcollection~~ FIXED — App.js already batch-deletes all messages on disconnect | App.js:404–409 |
