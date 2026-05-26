@@ -4,7 +4,7 @@ import { db, auth, messaging, onMessage, getFCMToken, analytics, logEvent } from
 import {
   collection, onSnapshot, query, writeBatch,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
-  getDocs, startAfter, limit, where, arrayUnion,
+  getDocs, startAfter, limit, where, arrayUnion, updateDoc, deleteField,
 } from "firebase/firestore";
 import {
   onAuthStateChanged,
@@ -130,19 +130,29 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     (async () => {
       try {
         if (typeof Notification === "undefined") return;
+        let token = null;
         if (Notification.permission === "granted") {
-          const token = await getFCMToken();
-          if (token) {
-            await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: arrayUnion(token) }, { merge: true });
-          }
+          token = await getFCMToken();
         } else if (Notification.permission === "default") {
           const permission = await Notification.requestPermission();
-          if (permission === "granted") {
-            const token = await getFCMToken();
-            if (token) {
-              await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: arrayUnion(token) }, { merge: true });
-            }
+          if (permission === "granted") token = await getFCMToken();
+        }
+        if (token) {
+          await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: arrayUnion(token) }, { merge: true });
+        }
+        // Migration: move legacy fcmToken/fcmTokens from top-level user doc to private subcollection
+        try {
+          const userSnap = await getDoc(doc(db, "users", firebaseUser.uid));
+          const userData = userSnap.data() || {};
+          const legacyTokens = [];
+          if (typeof userData.fcmToken === "string" && userData.fcmToken) legacyTokens.push(userData.fcmToken);
+          if (Array.isArray(userData.fcmTokens)) legacyTokens.push(...userData.fcmTokens);
+          if (legacyTokens.length > 0) {
+            await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: arrayUnion(...legacyTokens) }, { merge: true });
+            await updateDoc(doc(db, "users", firebaseUser.uid), { fcmToken: deleteField(), fcmTokens: deleteField() });
           }
+        } catch (e) {
+          console.warn("FCM migration warning:", e);
         }
       } catch (e) {
         console.warn("Auto notification setup error:", e);

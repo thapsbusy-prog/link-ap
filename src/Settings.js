@@ -42,49 +42,70 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
     localStorage.setItem("linkap_vibrate", String(next));
   };
 
-  const [notifEnabled, setNotifEnabled] = useState(false);
-  useEffect(() => {
-    getDoc(doc(db, "users", firebaseUser.uid, "private", "push")).then(snap => {
-      const d = snap.data();
-      setNotifEnabled(!!(d?.fcmTokens?.length > 0));
-    }).catch(() => {});
-  }, [firebaseUser.uid]);
+  const [notifEnabled, setNotifEnabled] = useState(true);
   const [notifBlocked, setNotifBlocked] = useState(
     typeof Notification !== "undefined" && Notification.permission === "denied"
   );
-  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(true);
+
+  const doEnableNotifications = async () => {
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission === "denied") {
+      setNotifBlocked(true);
+      setNotifEnabled(false);
+      return;
+    }
+    let perm = Notification.permission;
+    if (perm === "default") perm = await Notification.requestPermission();
+    if (perm === "granted") {
+      const token = await getFCMToken();
+      if (token) {
+        await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: arrayUnion(token) }, { merge: true });
+        setNotifEnabled(true);
+        setNotifBlocked(false);
+      }
+    } else {
+      setNotifBlocked(true);
+      setNotifEnabled(false);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, "users", firebaseUser.uid, "private", "push"));
+        const d = snap.data();
+        if (d?.fcmTokens?.length > 0) {
+          setNotifEnabled(true);
+        } else {
+          await doEnableNotifications();
+        }
+      } catch {
+        await doEnableNotifications();
+      } finally {
+        setNotifLoading(false);
+      }
+    })();
+  }, [firebaseUser.uid]); // eslint-disable-line
 
   const toggleNotifications = async () => {
     if (notifLoading) return;
     if (notifEnabled) {
       setNotifLoading(true);
       try {
-        await updateDoc(doc(db, "users", firebaseUser.uid, "private", "push"), {
-          fcmToken: deleteField(),
-          fcmTokens: [],
-        });
+        await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: [] }, { merge: true });
+        try {
+          await updateDoc(doc(db, "users", firebaseUser.uid), { fcmToken: deleteField() });
+        } catch {}
         setNotifEnabled(false);
       } catch (e) {
         console.warn("Notif disable error:", e);
       }
       setNotifLoading(false);
     } else {
-      if (typeof Notification === "undefined") return;
-      if (Notification.permission === "denied") { setNotifBlocked(true); return; }
       setNotifLoading(true);
       try {
-        let perm = Notification.permission;
-        if (perm === "default") perm = await Notification.requestPermission();
-        if (perm === "granted") {
-          const token = await getFCMToken();
-          if (token) {
-            await updateDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: arrayUnion(token) });
-            setNotifEnabled(true);
-            setNotifBlocked(false);
-          }
-        } else {
-          setNotifBlocked(true);
-        }
+        await doEnableNotifications();
       } catch (e) {
         console.warn("Notif enable error:", e);
       }
@@ -252,13 +273,13 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
       <div style={{ marginBottom: 24 }}>
         {sectionLabel("Notifications")}
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
-          <div onClick={toggleNotifications} style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${COLORS.border}`, cursor: notifLoading ? "default" : "pointer" }}>
+          <div onClick={toggleNotifications} style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${COLORS.border}`, cursor: notifLoading ? "default" : "pointer", opacity: notifLoading ? 0.6 : 1 }}>
             <span style={{ fontSize: 14, color: COLORS.text }}>Notifications</span>
-            {toggle(notifEnabled)}
+            {notifLoading ? <span style={{ fontSize: 12, color: COLORS.textMuted }}>…</span> : toggle(notifEnabled)}
           </div>
           {notifBlocked && (
             <div style={{ padding: "8px 16px", fontSize: 12, color: COLORS.textMuted, borderBottom: `1px solid ${COLORS.border}` }}>
-              Notifications blocked in browser settings
+              Notifications are blocked in your browser. Go to browser Settings &gt; Site Settings to allow them.
             </div>
           )}
           <div onClick={toggleSound} style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${COLORS.border}`, cursor: "pointer" }}>

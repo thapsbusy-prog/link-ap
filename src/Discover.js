@@ -443,12 +443,12 @@ export function ShareModal({ user, onClose }) {
         {view === "profile" && (
           <>
             <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0, lineHeight: 1.6 }}>
-              Share your profile link or let someone scan your QR code to connect with you directly.
+              Share your profile link or invite someone to join Link-Ap and connect with you.
             </p>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, background: COLORS.bg, borderRadius: 14, padding: 20 }}>
               <canvas ref={qrCanvasRef} style={{ borderRadius: 8, display: "block" }} />
               <div style={{ fontSize: 12, color: COLORS.textMuted, textAlign: "center" }}>
-                Scan to view {user.name.split(" ")[0]}'s profile on Link-Ap
+                Scan to discover Link-Ap and connect with {user.name.split(" ")[0]}
               </div>
             </div>
             <div style={{
@@ -475,7 +475,7 @@ export function ShareModal({ user, onClose }) {
                 flex: 2, padding: "12px 8px", borderRadius: 12, border: "none",
                 background: COLORS.accent, color: "#000", cursor: "pointer",
                 fontSize: 13, fontWeight: 700,
-              }}>Share Profile Link</button>
+              }}>Share Link-Ap</button>
             </div>
           </>
         )}
