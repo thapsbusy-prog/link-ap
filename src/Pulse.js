@@ -28,7 +28,7 @@ function TrendCard({ card }) {
 
   const handleShare = async (e) => {
     e.stopPropagation();
-    const text = `${card.headline}\n\n${card.summary}\n\nHow to use: ${card.howToUse}\n\nvia Link-Ap`;
+    const text = `${card.headline}\n\n${card.summary}\n\nHow to use: ${card.howToUse}\n\nvia link-ap.online`;
     if (navigator.share) {
       try { await navigator.share({ text }); } catch {}
     } else {
