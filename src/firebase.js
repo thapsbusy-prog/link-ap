@@ -49,8 +49,12 @@ export async function getFCMToken() {
     const registration = await navigator.serviceWorker.register(
       '/firebase-messaging-sw.js'
     );
+    const vapidKey = process.env.REACT_APP_VAPID_KEY;
+    if (!vapidKey) {
+      console.warn("REACT_APP_VAPID_KEY is not set — FCM push notifications will not work");
+    }
     const token = await getToken(messaging, {
-      vapidKey: process.env.REACT_APP_VAPID_KEY || "BEIVCbXbvIz1ECF-6luz3TtsfihwFv_Of1XHnlOp87HQqOUNaWBW2apdO1w1sZi0IRFNypesgC-O0pwFmWh117g",
+      vapidKey,
       serviceWorkerRegistration: registration,
     });
     return token || null;

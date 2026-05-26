@@ -384,7 +384,8 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
           <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 16, width: "100%", maxWidth: 380, padding: 24 }}>
             <div style={{ fontWeight: 800, color: COLORS.text, fontSize: 17, marginBottom: 10 }}>Deactivate Account?</div>
             <p style={{ color: COLORS.textMuted, fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>
-              Your profile will be hidden from Discover and Search. Your data stays in our system. You can reactivate by contacting support.
+              Your account will be hidden from all users. Your data is kept. To reactivate, email{" "}
+              <a href="mailto:info@link-ap.online" style={{ color: COLORS.accent, textDecoration: "none" }}>info@link-ap.online</a>
             </p>
             {accountError && <div style={{ color: COLORS.red, fontSize: 13, marginBottom: 12 }}>{accountError}</div>}
             <div style={{ display: "flex", gap: 10 }}>

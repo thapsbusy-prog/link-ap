@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, Component } from "react";
 import logoImg from "./link-ap-logo.png";
 import { db, auth, messaging, onMessage, getFCMToken, analytics, logEvent } from "./firebase";
 import {
-  collection, onSnapshot, query,
+  collection, onSnapshot, query, writeBatch,
   orderBy, serverTimestamp, doc, setDoc, getDoc, deleteDoc,
   getDocs, startAfter, limit, where, arrayUnion,
 } from "firebase/firestore";
@@ -365,6 +365,12 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       deleteDoc(doc(db, "users", firebaseUser.uid, "received", targetUid)),
       deleteDoc(doc(db, "users", targetUid, "received", firebaseUser.uid)),
     ]);
+    const chatId = [firebaseUser.uid, targetUid].sort().join("_");
+    const messagesRef = collection(db, "chats", chatId, "messages");
+    const msgSnap = await getDocs(messagesRef);
+    const msgBatch = writeBatch(db);
+    msgSnap.docs.forEach(d => msgBatch.delete(d.ref));
+    if (msgSnap.docs.length > 0) await msgBatch.commit();
     setMatches(prev => prev.filter(m => m.uid !== targetUid));
     if (activeChat === targetUid) setActiveChat(null);
     showNotif("Connection removed");

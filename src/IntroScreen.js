@@ -1,7 +1,6 @@
 import logoImg from "./link-ap-logo.png";
 import { COLORS } from "./shared";
 
-const ORANGE = "#F5A623";
 
 export function IntroScreen({ onContinue }) {
   return (
@@ -32,7 +31,7 @@ export function IntroScreen({ onContinue }) {
           <span style={{
             background: "rgba(245,166,35,0.15)",
             border: "1px solid rgba(245,166,35,0.3)",
-            color: ORANGE,
+            color: COLORS.accent,
             fontSize: 12, fontWeight: 600,
             padding: "5px 14px", borderRadius: 99,
           }}>
@@ -65,8 +64,8 @@ export function IntroScreen({ onContinue }) {
           borderRadius: 14, padding: "14px 16px", marginBottom: 24,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill={ORANGE} style={{ flexShrink: 0 }}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <span style={{ color: ORANGE, fontSize: 13, fontWeight: 700 }}>Founding member opportunity</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={COLORS.accent} style={{ flexShrink: 0 }}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <span style={{ color: COLORS.accent, fontSize: 13, fontWeight: 700 }}>Founding member opportunity</span>
           </div>
           <p style={{ color: COLORS.textMuted, fontSize: 12, margin: 0, lineHeight: 1.6 }}>
             We're just getting started. Join now and shape the network from day
@@ -101,9 +100,9 @@ export function IntroScreen({ onContinue }) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {[
-              { text: "Tell us what you're building and who you need to meet", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={ORANGE}><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg> },
-              { text: "We match you by intent — no random scrolling, just relevant people", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={ORANGE}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-12c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg> },
-              { text: "Connect with a personal note — every request means something", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={ORANGE}><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
+              { text: "Tell us what you're building and who you need to meet", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg> },
+              { text: "We match you by intent — no random scrolling, just relevant people", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-12c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg> },
+              { text: "Connect with a personal note — every request means something", icon: <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.accent}><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
             ].map((step, i) => (
               <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div style={{
@@ -126,7 +125,7 @@ export function IntroScreen({ onContinue }) {
           style={{
             width: "100%", padding: "14px",
             borderRadius: 14, border: "none",
-            background: ORANGE, color: "#fff",
+            background: COLORS.accent, color: "#fff",
             fontSize: 15, fontWeight: 700,
             cursor: "pointer", marginBottom: 14,
           }}
@@ -139,7 +138,7 @@ export function IntroScreen({ onContinue }) {
           Already a member?{" "}
           <span
             onClick={onContinue}
-            style={{ color: ORANGE, cursor: "pointer", fontWeight: 600 }}
+            style={{ color: COLORS.accent, cursor: "pointer", fontWeight: 600 }}
           >
             Sign in
           </span>

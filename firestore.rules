@@ -60,15 +60,25 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    match /chats/{chatId}/messages/{msgId} {
-      function participants() {
-        return chatId.split('_');
+    match /chats/{chatId} {
+      allow read, write: if false;
+
+      match /messages/{msgId} {
+        function participants() {
+          return chatId.split('_');
+        }
+        function isParticipant() {
+          return request.auth.uid == participants()[0] || request.auth.uid == participants()[1];
+        }
+        function notBlocked() {
+          let uid1 = participants()[0];
+          let uid2 = participants()[1];
+          return !exists(/databases/$(database)/documents/users/$(uid1)/blocked/$(uid2))
+            && !exists(/databases/$(database)/documents/users/$(uid2)/blocked/$(uid1));
+        }
+        allow read: if isAuth() && isParticipant() && notBlocked();
+        allow create: if isAuth() && isParticipant() && notBlocked() && request.resource.data.from == request.auth.uid;
       }
-      function isParticipant() {
-        return request.auth.uid == participants()[0] || request.auth.uid == participants()[1];
-      }
-      allow read: if isAuth() && isParticipant();
-      allow create: if isAuth() && isParticipant() && request.resource.data.from == request.auth.uid;
     }
   }
 }
