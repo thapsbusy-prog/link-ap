@@ -336,7 +336,7 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
           {settingsRow("Terms of Service", chevron, () => setShowTerms(true), rowDivider)}
           <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 14, color: COLORS.text }}>App Version</span>
-            <span style={{ fontSize: 13, color: COLORS.textMuted }}>1.0.0 Beta</span>
+            <span style={{ fontSize: 13, color: COLORS.textMuted }}>1.1.0 Beta</span>
           </div>
         </div>
       </div>
