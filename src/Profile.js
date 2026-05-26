@@ -98,6 +98,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger }) {
         if (!matchesSnap.empty) {
           const batch = writeBatch(db);
           const propagated = {
+            uid: firebaseUser.uid,
             name: updated.name,
             role: updated.role,
             location: updated.location,

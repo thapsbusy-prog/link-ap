@@ -134,7 +134,7 @@ This section is the live project health snapshot. Update it after every fix or f
 | Bug 24 | LOW | Privacy Policy does not disclose Anthropic as data processor | PrivacyPolicy.js:22–23 |
 | Bug 25 | LOW | VAPID key hardcoded as fallback — remove fallback, make env var required | firebase.js:53 |
 | Bug 27 | LOW | `IntroScreen.js` uses local `ORANGE = "#F5A623"` instead of `COLORS.accent` | IntroScreen.js:4 |
-| Bug 28 | MEDIUM | Firestore chat rules don't check blocked status — blocked users retain chat read access | firestore.rules:53 |
+| Bug 28 | MEDIUM | ~~Firestore chat rules don't check blocked status~~ FIXED — notBlocked() check on read and create | firestore.rules:53 |
 | Bug 29 | LOW | `handleDisconnect` does not delete chat message subcollection | App.js:359–371 |
 | Bug 30 | LOW | No in-app reactivation path — deactivation screen doesn't show support email | Settings.js:128 |
 
@@ -149,16 +149,16 @@ This section is the live project health snapshot. Update it after every fix or f
 | C2 | HIGH | `fcmTokens` readable by any authenticated user — enables push spoofing to any device | FIXED 2026-05-26 — App.js writes to `private/push`; notify.js reads from `private/push`; migration cleans up legacy top-level tokens on every app open |
 | C8 | HIGH | No rate limiting on `/api/match-explain` — unbounded Anthropic API cost exposure | FIXED 2026-05-26 — two-layer protection: Firestore cache (7-day TTL at `matchExplanations/{currentUid}_{targetUid}`) + per-user rate limit (100 calls/60 min at `users/{uid}/private/rateLimits`) |
 | C3 | HIGH | `received`/`sent` subcollection writes lack document-data validation — request spoofing | FIXED 2026-05-26 — `received` validates `request.resource.data.uid == request.auth.uid`; `sent` now validates `request.resource.data.uid == targetId` |
-| C9/Bug 24 | MEDIUM | Target user profile data sent to Anthropic without GDPR/POPIA disclosure | Update Privacy Policy to name Anthropic; add DPA |
+| C9/Bug 24 | MEDIUM | Target user profile data sent to Anthropic without GDPR/POPIA disclosure | FIXED — PrivacyPolicy.js section 5 already names Anthropic as data processor |
 
 #### P1 — Fix before 100 users
 
 | ID | Severity | Description | Fix |
 |----|----------|-------------|-----|
-| C7 | MEDIUM | Client-supplied push notification `body` not validated server-side — phishing risk | Hard-code notification templates in `api/notify.js`; never use client-supplied body |
-| C6/Bug 28 | MEDIUM | Firestore chat rules don't check blocked status | Add blocked-user check to `firestore.rules:53` or use opaque chat IDs |
-| C17 | MEDIUM | Match propagation writes are client-side — attacker can spoof name/role in partner's match list | Add Firestore rule: written `uid` field must match `request.auth.uid` |
-| C1 | MEDIUM | Users collection open to full enumeration by authenticated users — `fcmTokens` scraping risk | Move `fcmTokens` to private subcollection (same fix as C2) |
+| C7 | MEDIUM | Client-supplied push notification `body` not validated server-side — phishing risk | FIXED — api/notify.js uses hard-coded templates; senderName is sanitised and length-capped |
+| C6/Bug 28 | MEDIUM | Firestore chat rules don't check blocked status | FIXED — firestore.rules notBlocked() function checks both directions on read and create |
+| C17 | MEDIUM | Match propagation writes are client-side — attacker can spoof name/role in partner's match list | FIXED 2026-05-26 — matches rule requires request.resource.data.uid == matchedUid; Profile.js propagated object now includes uid field |
+| C1 | MEDIUM | Users collection open to full enumeration by authenticated users — `fcmTokens` scraping risk | FIXED — fcmTokens moved to private subcollection (same fix as C2) |
 
 #### P2 — Quality / compliance
 

@@ -45,8 +45,9 @@ service cloud.firestore {
       match /matches/{matchedUid} {
         allow read: if request.auth != null &&
           (request.auth.uid == uid || request.auth.uid == matchedUid);
-        allow write: if request.auth != null &&
-          (request.auth.uid == uid || request.auth.uid == matchedUid);
+        allow create, update: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == matchedUid) &&
+          request.resource.data.uid == matchedUid;
         allow delete: if request.auth != null &&
           (request.auth.uid == uid || request.auth.uid == matchedUid);
       }
