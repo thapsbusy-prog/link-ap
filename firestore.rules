@@ -11,48 +11,55 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow get: if isAuth() && (isOwner(uid) || resource.data.deactivated != true);
-      allow list: if isAuth();
-      allow create, update: if isAuth() && isOwner(uid);
-      allow delete: if isAuth() && isOwner(uid);
+      allow get: if request.auth != null &&
+        (request.auth.uid == uid || resource.data.deactivated != true);
+      allow list: if request.auth != null;
+      allow create, update: if request.auth != null &&
+        request.auth.uid == uid;
+      allow delete: if request.auth != null &&
+        request.auth.uid == uid;
 
-      match /matches/{matchedUid} {
-        allow read: if isAuth() && (isOwner(uid) || isOwner(matchedUid));
-        allow write: if isAuth()
-          && (isOwner(uid) || isOwner(matchedUid))
-          && request.resource.data.uid == matchedUid;
+      match /private/{document} {
+        allow read, write: if request.auth != null &&
+          request.auth.uid == uid;
       }
 
       match /sent/{targetId} {
-        allow read: if isAuth() && isOwner(uid);
-        allow write: if isAuth()
-          && isOwner(uid)
-          && request.resource.data.uid == request.auth.uid;
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == targetId) &&
+          request.resource.data.uid == request.auth.uid;
       }
 
       match /received/{senderId} {
-        allow read: if isAuth() && isOwner(uid);
-        allow write: if isAuth()
-          && isOwner(senderId)
-          && request.resource.data.uid == request.auth.uid;
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if request.auth != null &&
+          request.auth.uid == senderId &&
+          request.resource.data.uid == request.auth.uid;
+      }
+
+      match /matches/{matchedUid} {
+        allow read: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == matchedUid);
+        allow write: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == matchedUid) &&
+          request.resource.data.uid == request.auth.uid;
       }
 
       match /passed/{passedUid} {
-        allow read, write: if isAuth() && isOwner(uid);
+        allow read, write: if request.auth != null &&
+          request.auth.uid == uid;
       }
 
       match /blocked/{blockedUid} {
-        allow read: if isAuth() && isOwner(uid);
-        allow write: if isAuth() && isOwner(uid);
+        allow read, write: if request.auth != null &&
+          request.auth.uid == uid;
       }
 
       match /blockedBy/{blockerId} {
-        allow read: if isAuth() && isOwner(uid);
-        allow write: if isAuth() && (isOwner(uid) || isOwner(blockerId));
-      }
-
-      match /private/{doc} {
-        allow read, write: if isOwner(uid);
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if request.auth != null &&
+          (request.auth.uid == uid || request.auth.uid == blockerId);
       }
     }
 
