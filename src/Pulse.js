@@ -7,7 +7,7 @@ const CATEGORY_COLORS = {
   Business:     "#F5A623",
   Design:       "#EC4899",
   Marketing:    "#10B981",
-  Research:     "#6366F1",
+  Upskill:      "#6366F1",
   Coding:       "#14B8A6",
   Strategy:     "#F59E0B",
 };

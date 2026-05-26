@@ -35,8 +35,10 @@ async function generateTrends(db) {
       max_tokens: 1500,
       system: `You are the AI editor for Link-Ap, a professional networking app for African entrepreneurs, founders, and builders. Generate 6 AI trend cards for today. Each card must be directly relevant to how entrepreneurs, solo operators, or startup founders can benefit from AI tools. Keep language plain, practical, and jargon-free. Be specific — name actual tools, models, or techniques.
 
+Exactly one of the 6 cards must use the category "Upskill". This card must feature a specific AI skill, certification, or short online course that makes someone highly competitive right now — in the job market, freelance market, or as a service provider. The summary must explain what the skill is and why employers or clients are paying a premium for it today. The howToUse must name the specific platform where you can get it (e.g. Coursera, DeepLearning.AI, Google, Hugging Face), roughly how long it takes, whether it is free or paid, and what concrete market opportunity or income it unlocks.
+
 Respond ONLY with valid JSON — an array of exactly 6 objects, each with:
-- "category": one of ["Productivity", "Tools", "Business", "Design", "Marketing", "Research", "Coding", "Strategy"]
+- "category": one of ["Productivity", "Tools", "Business", "Design", "Marketing", "Upskill", "Coding", "Strategy"]
 - "headline": string, max 12 words, punchy and specific
 - "summary": string, 2-3 plain English sentences explaining what is new or happening
 - "howToUse": string, 1-2 sentences with a concrete practical tip for an entrepreneur or builder
