@@ -61,6 +61,10 @@ The app is split across several source files. There is no routing library — `M
 - `Matches` component: `disconnectTarget` — the match user object selected for removal; drives the in-component confirmation modal.
 - `PublicProfile` component: `showDisconnectConfirm` (bool), `isMutualMatch` (bool derived from `matches` prop) — controls the Remove Connection confirmation modal.
 
+**AI Connection Note Assistant feature (26 May 2026)**
+- `api/note-assist.js` — serverless POST `{ targetUid }`; verifies auth token; fetches both profiles from Firestore server-side; calls Anthropic `claude-sonnet-4-6` to generate a 80–200 char first-person note draft (specific, human-sounding, never generic); returns `{ note: string | null }`; no caching — always fresh.
+- `src/Discover.js` `ConnectNoteModal` — added `drafting` + `draftError` state; "✦ AI draft" button in the label row (uses `auth.currentUser.getIdToken()` — no prop changes to Discover); on success pre-fills textarea (user can edit); on failure shows inline fallback message; button shows "Drafting…" during generation.
+
 **Conversation Starter Chips feature (26 May 2026)**
 - `api/chat-starters.js` — serverless GET `?partnerUid={uid}`; verifies auth token; fetches both profiles from Firestore server-side; calls Anthropic `claude-sonnet-4-6` to generate 3 specific openers (under 12 words each, profile-specific, never generic); cached permanently in `chatStarters/{chatId}` — generated once per pair, never regenerated.
 - `src/Messages.js` — `starters` state (`null` = loading, `[]` = dismissed/hidden, `string[]` = available); fetch triggered on `chatId` change; chip strip renders above the input bar only when `chatMessages.length === 0 && starters?.length > 0`; tapping a chip pre-fills the input and focuses it; `×` dismisses the strip; chips auto-hide once the first message is sent.
@@ -214,7 +218,7 @@ This section is the live project health snapshot. Update it after every fix or f
 |---------|--------|-------|
 | AI Pulse feed | ✅ Shipped (26 May 2026) | `src/Pulse.js` + `api/pulse.js`; daily Vercel cron at 06:00 UTC; 24h Firestore cache at `aiTrends/latest` |
 | AI Profile Score | ✅ Shipped (26 May 2026) | `src/Profile.js` + `api/profile-score.js`; 5 dimensions × 20pts; 7-day cache; refreshes on profile save |
-| AI Connection Note Assistant | ❌ Not built | — |
+| AI Connection Note Assistant | ✅ Shipped (26 May 2026) | `ConnectNoteModal` in `Discover.js` + `api/note-assist.js`; "✦ AI draft" button pre-fills textarea |
 | AI Profile Score / Optimiser | ❌ Not built | — |
 | Conversation Starter Chips | ✅ Shipped (26 May 2026) | `src/Messages.js` + `api/chat-starters.js`; permanent cache in `chatStarters/{chatId}`; chips shown above input bar on empty chats |
 

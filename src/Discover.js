@@ -488,6 +488,8 @@ function ConnectNoteModal({ target, onSend, onCancel }) {
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
   const [sentOk, setSentOk] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const [draftError, setDraftError] = useState(false);
   const MAX = 300;
   const MIN = 10;
 
@@ -497,6 +499,30 @@ function ConnectNoteModal({ target, onSend, onCancel }) {
     await onSend(note.trim());
     setSending(false);
     setSentOk(true);
+  };
+
+  const handleDraftWithAI = async () => {
+    if (drafting) return;
+    setDrafting(true);
+    setDraftError(false);
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const res = await fetch("/api/note-assist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ targetUid: target.uid }),
+      });
+      const data = await res.json();
+      if (data.note) {
+        setNote(data.note.slice(0, MAX));
+      } else {
+        setDraftError(true);
+      }
+    } catch {
+      setDraftError(true);
+    } finally {
+      setDrafting(false);
+    }
   };
 
   return (
@@ -530,9 +556,29 @@ function ConnectNoteModal({ target, onSend, onCancel }) {
         </div>
 
         <div>
-          <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>
-            Why do you want to connect with {target.name.split(" ")[0]}? <span style={{ color: COLORS.red }}>*</span>
-          </label>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <label style={{ fontSize: 12, color: COLORS.textMuted }}>
+              Why do you want to connect with {target.name.split(" ")[0]}? <span style={{ color: COLORS.red }}>*</span>
+            </label>
+            <button
+              onClick={handleDraftWithAI}
+              disabled={drafting || sentOk}
+              style={{
+                background: "transparent", border: `1px solid ${COLORS.accent}66`,
+                borderRadius: 8, padding: "3px 10px",
+                color: drafting ? COLORS.textMuted : COLORS.accent,
+                fontSize: 11, fontWeight: 600, cursor: drafting ? "default" : "pointer",
+                flexShrink: 0,
+              }}
+            >
+              {drafting ? "Drafting…" : "✦ AI draft"}
+            </button>
+          </div>
+          {draftError && (
+            <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "0 0 6px" }}>
+              Couldn't generate a draft — write your own below.
+            </p>
+          )}
           <textarea
             value={note}
             onChange={e => setNote(e.target.value.slice(0, MAX))}
