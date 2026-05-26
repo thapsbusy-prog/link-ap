@@ -88,29 +88,28 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
     })();
   }, [firebaseUser.uid]); // eslint-disable-line
 
-  const toggleNotifications = async () => {
+  const doDisableNotifications = async () => {
+    await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: [] }, { merge: true });
+    try {
+      await updateDoc(doc(db, "users", firebaseUser.uid), { fcmToken: deleteField() });
+    } catch {}
+  };
+
+  const toggleNotifications = () => {
     if (notifLoading) return;
-    if (notifEnabled) {
-      console.log("[Notifications] disable path triggered");
-      setNotifLoading(true);
-      try {
-        await setDoc(doc(db, "users", firebaseUser.uid, "private", "push"), { fcmTokens: [] }, { merge: true });
-        try {
-          await updateDoc(doc(db, "users", firebaseUser.uid), { fcmToken: deleteField() });
-        } catch {}
-      } catch (e) {
-        console.error("[Notifications] disable failed:", e);
-      }
-      setNotifEnabled(false);
-      setNotifLoading(false);
+    const newValue = !notifEnabled;
+    setNotifEnabled(newValue); // update visual immediately — same as Sound and Vibrate
+
+    if (newValue) {
+      doEnableNotifications().catch(err => {
+        console.error("[Notifications] enable failed:", err);
+      });
     } else {
-      setNotifLoading(true);
-      try {
-        await doEnableNotifications();
-      } catch (e) {
-        console.warn("Notif enable error:", e);
-      }
-      setNotifLoading(false);
+      console.log("[Notifications] disable path triggered");
+      doDisableNotifications().catch(err => {
+        console.error("[Notifications] disable failed:", err);
+        setNotifEnabled(true); // revert on actual failure
+      });
     }
   };
 
@@ -274,9 +273,9 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
       <div style={{ marginBottom: 24 }}>
         {sectionLabel("Notifications")}
         <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
-          <div onClick={toggleNotifications} style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${COLORS.border}`, cursor: notifLoading ? "default" : "pointer", opacity: notifLoading ? 0.6 : 1 }}>
+          <div onClick={toggleNotifications} style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${COLORS.border}`, cursor: notifLoading ? "default" : "pointer" }}>
             <span style={{ fontSize: 14, color: COLORS.text }}>Notifications</span>
-            {notifLoading ? <span style={{ fontSize: 12, color: COLORS.textMuted }}>…</span> : toggle(notifEnabled)}
+            {toggle(notifEnabled)}
           </div>
           {notifBlocked && (
             <div style={{ padding: "8px 16px", fontSize: 12, color: COLORS.textMuted, borderBottom: `1px solid ${COLORS.border}` }}>

@@ -117,3 +117,109 @@ After completing any feature addition or fix, update CLAUDE.md to reflect new st
 | `COLORS.accent` | `#F5A623` |
 | `COLORS.text` | `#F0EEE8` |
 | `COLORS.textMuted` | `#8A8A9A` |
+
+---
+
+## Current State (as of v1.0 audit — 2026-05-26)
+
+This section is the live project health snapshot. Update it after every fix or feature addition.
+
+---
+
+### Open Bugs
+
+| ID | Severity | Description | Location |
+|----|----------|-------------|----------|
+| Bug 23 | MEDIUM | No rate limiting on `/api/match-explain` — superseded by C8 below | api/match-explain.js |
+| Bug 24 | LOW | Privacy Policy does not disclose Anthropic as data processor | PrivacyPolicy.js:22–23 |
+| Bug 25 | LOW | VAPID key hardcoded as fallback — remove fallback, make env var required | firebase.js:53 |
+| Bug 27 | LOW | `IntroScreen.js` uses local `ORANGE = "#F5A623"` instead of `COLORS.accent` | IntroScreen.js:4 |
+| Bug 28 | MEDIUM | Firestore chat rules don't check blocked status — blocked users retain chat read access | firestore.rules:53 |
+| Bug 29 | LOW | `handleDisconnect` does not delete chat message subcollection | App.js:359–371 |
+| Bug 30 | LOW | No in-app reactivation path — deactivation screen doesn't show support email | Settings.js:128 |
+
+---
+
+### Open Security Vulnerabilities
+
+#### P0 — Launch Blockers (fix before any public traffic)
+
+| ID | Severity | Description | Fix |
+|----|----------|-------------|-----|
+| C2 | HIGH | `fcmTokens` readable by any authenticated user — enables push spoofing to any device | Move `fcmTokens` to `users/{uid}/private/push`; update `notify.js` read path and `App.js` write path |
+| C8 | HIGH | No rate limiting on `/api/match-explain` — unbounded Anthropic API cost exposure | FIXED 2026-05-26 — two-layer protection: Firestore cache (7-day TTL at `matchExplanations/{currentUid}_{targetUid}`) + per-user rate limit (100 calls/60 min at `users/{uid}/private/rateLimits`) |
+| C3 | HIGH | `received`/`sent` subcollection writes lack document-data validation — request spoofing | Add `request.resource.data.uid == request.auth.uid` to Firestore rules |
+| C9/Bug 24 | MEDIUM | Target user profile data sent to Anthropic without GDPR/POPIA disclosure | Update Privacy Policy to name Anthropic; add DPA |
+
+#### P1 — Fix before 100 users
+
+| ID | Severity | Description | Fix |
+|----|----------|-------------|-----|
+| C7 | MEDIUM | Client-supplied push notification `body` not validated server-side — phishing risk | Hard-code notification templates in `api/notify.js`; never use client-supplied body |
+| C6/Bug 28 | MEDIUM | Firestore chat rules don't check blocked status | Add blocked-user check to `firestore.rules:53` or use opaque chat IDs |
+| C17 | MEDIUM | Match propagation writes are client-side — attacker can spoof name/role in partner's match list | Add Firestore rule: written `uid` field must match `request.auth.uid` |
+| C1 | MEDIUM | Users collection open to full enumeration by authenticated users — `fcmTokens` scraping risk | Move `fcmTokens` to private subcollection (same fix as C2) |
+
+#### P2 — Quality / compliance
+
+| ID | Description |
+|----|-------------|
+| C5 | Add catch-all deny rule for `/chats/{chatId}` top-level document |
+| C16 | Sanitise and length-cap profile fields before including in Anthropic prompt |
+| C18/C19 | Field-mask `fcmTokens` from list/search queries |
+| C12 | Add `console.error` logging for iOS redirect auth failures (`AuthScreen.js:63`) |
+| C21 | Move `firebase-admin` from `dependencies` to `devDependencies` |
+
+---
+
+### Vercel Environment Variables
+
+| Variable | Status | Used by |
+|----------|--------|---------|
+| `ANTHROPIC_API_KEY` | ⚠️ Pending activation | api/match-explain.js |
+| `FIREBASE_PROJECT_ID` | ⚠️ Verify live | api/notify.js |
+| `FIREBASE_CLIENT_EMAIL` | ⚠️ Verify live | api/notify.js |
+| `FIREBASE_PRIVATE_KEY` | ⚠️ Verify live | api/notify.js |
+| `REACT_APP_VAPID_KEY` | ⚠️ Has hardcoded fallback (Bug 25) | firebase.js |
+
+---
+
+### Feature Roadmap
+
+#### Missing AI features
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| AI Pulse feed | ❌ Not built | Demo widget ready; implementation guide exists. Daily cron → Firestore cache → ~R7/month |
+| AI Connection Note Assistant | ❌ Not built | — |
+| AI Profile Score / Optimiser | ❌ Not built | — |
+| Conversation Starter Chips | ❌ Not built | — |
+
+#### Revenue features (ideated, not built)
+
+| Feature | Status |
+|---------|--------|
+| Back a Builder | ❌ Not built |
+| Reputation Bonds | ❌ Not built |
+| The Growth Bet | ❌ Not built |
+
+#### General P2/P3 gaps
+
+| ID | Gap |
+|----|-----|
+| P2-10 | Character counter in SearchModal note field |
+| P2-11 | Self-serve account reactivation flow |
+| P2-12 | Report / flag user feature |
+| P2-13 | Read receipts |
+| P3-4 | Notification preferences persisted in Firestore (cross-device sync) |
+| P3-5 | Prefetch next Discover card's AI explanation while current card is shown |
+| P3-6 | Automated test suite |
+
+---
+
+### New Firestore Collections (v1.0)
+
+| Collection | Purpose | Access |
+|------------|---------|--------|
+| `matchExplanations/{currentUid}_{targetUid}` | AI match explanation cache (7-day TTL) | Admin SDK only — client read/write blocked in firestore.rules |
+| `users/{uid}/private/rateLimits` | Per-user API rate limit counters | Admin SDK only |
