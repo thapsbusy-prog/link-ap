@@ -146,9 +146,9 @@ This section is the live project health snapshot. Update it after every fix or f
 
 | ID | Severity | Description | Fix |
 |----|----------|-------------|-----|
-| C2 | HIGH | `fcmTokens` readable by any authenticated user — enables push spoofing to any device | Move `fcmTokens` to `users/{uid}/private/push`; update `notify.js` read path and `App.js` write path |
+| C2 | HIGH | `fcmTokens` readable by any authenticated user — enables push spoofing to any device | FIXED 2026-05-26 — App.js writes to `private/push`; notify.js reads from `private/push`; migration cleans up legacy top-level tokens on every app open |
 | C8 | HIGH | No rate limiting on `/api/match-explain` — unbounded Anthropic API cost exposure | FIXED 2026-05-26 — two-layer protection: Firestore cache (7-day TTL at `matchExplanations/{currentUid}_{targetUid}`) + per-user rate limit (100 calls/60 min at `users/{uid}/private/rateLimits`) |
-| C3 | HIGH | `received`/`sent` subcollection writes lack document-data validation — request spoofing | Add `request.resource.data.uid == request.auth.uid` to Firestore rules |
+| C3 | HIGH | `received`/`sent` subcollection writes lack document-data validation — request spoofing | FIXED 2026-05-26 — `received` validates `request.resource.data.uid == request.auth.uid`; `sent` now validates `request.resource.data.uid == targetId` |
 | C9/Bug 24 | MEDIUM | Target user profile data sent to Anthropic without GDPR/POPIA disclosure | Update Privacy Policy to name Anthropic; add DPA |
 
 #### P1 — Fix before 100 users

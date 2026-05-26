@@ -27,7 +27,8 @@ service cloud.firestore {
       match /sent/{targetId} {
         allow read: if request.auth != null && request.auth.uid == uid;
         allow create, update: if request.auth != null &&
-          request.auth.uid == uid;
+          request.auth.uid == uid &&
+          request.resource.data.uid == targetId;
         allow delete: if request.auth != null &&
           (request.auth.uid == uid || request.auth.uid == targetId);
       }
