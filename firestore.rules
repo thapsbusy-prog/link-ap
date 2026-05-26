@@ -17,15 +17,22 @@ service cloud.firestore {
       allow delete: if isAuth() && isOwner(uid);
 
       match /matches/{matchedUid} {
-        allow read, write: if isAuth() && (isOwner(uid) || isOwner(matchedUid));
+        allow read: if isAuth() && (isOwner(uid) || isOwner(matchedUid));
+        allow write: if isAuth()
+          && (isOwner(uid) || isOwner(matchedUid))
+          && request.resource.data.uid == matchedUid;
       }
 
       match /sent/{targetId} {
-        allow read, write: if isAuth() && (isOwner(uid) || isOwner(targetId));
+        allow read: if isAuth() && (isOwner(uid) || isOwner(targetId));
+        allow write: if isAuth() && isOwner(uid);
       }
 
       match /received/{senderId} {
-        allow read, write: if isAuth() && (isOwner(uid) || isOwner(senderId));
+        allow read: if isAuth() && isOwner(uid);
+        allow write: if isAuth()
+          && isOwner(senderId)
+          && request.resource.data.uid == request.auth.uid;
       }
 
       match /passed/{passedUid} {
