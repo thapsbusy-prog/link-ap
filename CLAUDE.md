@@ -65,6 +65,11 @@ The app is split across several source files. There is no routing library — `M
 - `Discover` component: `explanation` (string|null), `loadingExplanation` (bool) — drive the "✦ Why connect" block rendered between the card header and bio. `explanationCache` ref (plain object keyed by uid) prevents re-fetching the same card.
 - Fetch fires on card mount via `useEffect([currentUid])`. `currentUid` is derived from `users.find(u => !seenUids.has(u.uid))?.uid` before early returns, so the effect dep tracks card changes correctly.
 - If the API returns null, nothing renders — no error state shown to the user.
+- **Rate limiting (26 May 2026):** Two-layer protection added:
+  - Layer 1 — Firestore cache: results stored in `matchExplanations/{currentUid}_{targetUid}` with a 7-day TTL; cache hit returns immediately without calling Anthropic.
+  - Layer 2 — Per-user rate limit: `users/{uid}/private/rateLimits` doc tracks `matchExplainCount` + `matchExplainWindowStart`; enforces 100 calls per 60-minute rolling window, returns HTTP 429 on breach.
+  - Execution order: token verify → rate limit check/increment → cache check → Anthropic call → cache write.
+  - `matchExplanations` collection is Admin SDK only; `firestore.rules` blocks all client reads and writes.
 
 **Disconnect / Remove Connection feature (13 May 2026)**
 - `handleDisconnect(targetUid)` lives in `MainApp`. It deletes both sides of the match, plus any stale sent/received docs, updates local `matches` state immediately, clears `activeChat` if the disconnected user was active, and shows a "Connection removed" toast.

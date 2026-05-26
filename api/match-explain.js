@@ -23,14 +23,16 @@ module.exports = async function handler(req, res) {
   }
 
   const idToken = (req.headers.authorization || "").replace("Bearer ", "");
+  let uid;
   try {
-    await admin.auth().verifyIdToken(idToken);
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    uid = decoded.uid;
   } catch {
     return res.status(200).json({ explanation: null });
   }
 
   const { currentUser, targetUser } = req.body || {};
-  if (!currentUser || !targetUser) {
+  if (!currentUser || !targetUser || !targetUser.uid) {
     return res.status(400).json({ explanation: null });
   }
 
@@ -38,6 +40,65 @@ module.exports = async function handler(req, res) {
   if (!apiKey) {
     console.error("ANTHROPIC_API_KEY not set");
     return res.status(200).json({ explanation: null });
+  }
+
+  const db = admin.firestore();
+  const FieldValue = admin.firestore.FieldValue;
+
+  // LAYER 2: Per-user rate limit — 100 calls per 60-minute window
+  try {
+    const rateLimitsRef = db.doc(`users/${uid}/private/rateLimits`);
+    const snap = await rateLimitsRef.get();
+    const now = Date.now();
+    const windowMs = 60 * 60 * 1000;
+
+    if (!snap.exists) {
+      await rateLimitsRef.set({
+        matchExplainCount: 1,
+        matchExplainWindowStart: FieldValue.serverTimestamp(),
+      });
+    } else {
+      const data = snap.data();
+      const windowStart = data.matchExplainWindowStart?.toDate?.()?.getTime() || 0;
+      const count = data.matchExplainCount || 0;
+
+      if (now - windowStart > windowMs) {
+        await rateLimitsRef.update({
+          matchExplainCount: 1,
+          matchExplainWindowStart: FieldValue.serverTimestamp(),
+        });
+      } else if (count >= 100) {
+        return res.status(429).json({ error: "Rate limit exceeded. Try again later." });
+      } else {
+        await rateLimitsRef.update({
+          matchExplainCount: FieldValue.increment(1),
+        });
+      }
+    }
+  } catch (err) {
+    console.error("Rate limit check error:", err);
+    // Fail open — Firestore error shouldn't block the feature
+  }
+
+  // LAYER 1: Server-side Firestore cache — 7-day TTL per user-pair
+  const currentUid = uid;
+  const targetUid = targetUser.uid;
+  const cacheKey = `${currentUid}_${targetUid}`;
+  const cacheRef = db.doc(`matchExplanations/${cacheKey}`);
+
+  try {
+    const cacheSnap = await cacheRef.get();
+    if (cacheSnap.exists) {
+      const cached = cacheSnap.data();
+      const createdAt = cached.createdAt?.toDate?.();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      if (createdAt && Date.now() - createdAt.getTime() < sevenDaysMs) {
+        return res.status(200).json({ explanation: cached.explanation });
+      }
+    }
+  } catch (err) {
+    console.error("Cache read error:", err);
+    // Proceed to Anthropic on cache read failure
   }
 
   try {
@@ -79,6 +140,21 @@ Target user profile (${targetUser.name}):
 
     const data = await response.json();
     const explanation = data.content?.[0]?.text?.trim() || null;
+
+    // Write to cache after a successful Anthropic response
+    if (explanation) {
+      try {
+        await cacheRef.set({
+          explanation,
+          createdAt: FieldValue.serverTimestamp(),
+          currentUid,
+          targetUid,
+        });
+      } catch (err) {
+        console.error("Cache write error:", err);
+      }
+    }
+
     return res.status(200).json({ explanation });
   } catch (err) {
     console.error("match-explain error:", err);

@@ -47,6 +47,12 @@ service cloud.firestore {
       }
     }
 
+    // Server-side Admin SDK writes bypass these rules; this blocks all client access
+    match /matchExplanations/{docId} {
+      allow read: if false;
+      allow write: if false;
+    }
+
     match /chats/{chatId}/messages/{msgId} {
       function participants() {
         return chatId.split('_');
