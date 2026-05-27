@@ -671,7 +671,7 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
           headers: { "Content-Type": "application/json", ...(idToken ? { "Authorization": `Bearer ${idToken}` } : {}) },
           body: JSON.stringify({
             currentUser: { lookingFor: user.lookingFor, bringToTable: user.bringToTable, lookingForDetails: user.lookingForDetails, currentlyExploring: user.currentlyExploring, skills: user.skills, role: user.role },
-            targetUser: { lookingFor: targetUser.lookingFor, bringToTable: targetUser.bringToTable, lookingForDetails: targetUser.lookingForDetails, currentlyExploring: targetUser.currentlyExploring, skills: targetUser.skills, role: targetUser.role, name: targetUser.name },
+            targetUser: { uid: targetUser.uid, lookingFor: targetUser.lookingFor, bringToTable: targetUser.bringToTable, lookingForDetails: targetUser.lookingForDetails, currentlyExploring: targetUser.currentlyExploring, skills: targetUser.skills, role: targetUser.role, name: targetUser.name },
           }),
         });
         const data = await r.json();
