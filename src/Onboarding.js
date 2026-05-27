@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { db, auth } from "./firebase";
-import { serverTimestamp, doc, setDoc } from "firebase/firestore";
+import { serverTimestamp, doc, setDoc, collection, getCountFromServer } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import {
   COLORS, USER_COLORS, Input, TextArea, Select, SkillsInput,
@@ -61,6 +61,8 @@ export default function Onboarding({ firebaseUser, onComplete }) {
         createdAt: serverTimestamp(),
         termsAcceptedAt: serverTimestamp(),
       };
+      const countSnap = await getCountFromServer(collection(db, "users"));
+      profile.earlyAdopter = countSnap.data().count < 100;
       await setDoc(doc(db, "users", firebaseUser.uid), profile);
       onComplete(profile);
     } catch (e) {
