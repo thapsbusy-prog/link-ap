@@ -3,7 +3,7 @@ import { db, auth, getFCMToken } from "./firebase";
 import { doc, setDoc, collection, getDocs, deleteDoc, updateDoc, deleteField, arrayUnion, getDoc } from "firebase/firestore";
 import { signOut, sendPasswordResetEmail } from "firebase/auth";
 import { COLORS, Avatar, TermsContent } from "./shared";
-import QuoteGenerator from "../LinkApQuoteGenerator";
+import QuoteGenerator from "./LinkApQuoteGenerator";
 
 // Props:
 //   user          — Firestore profile object ({ name, ... })
