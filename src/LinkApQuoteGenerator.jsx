@@ -205,11 +205,42 @@ export default function QuoteGenerator() {
     ctx.textBaseline = "middle";
     ctx.fillText("Connect with purpose", 72, divY + 54);
 
-    // Footer right: "link-ap.online" in amber
-    ctx.font      = `700 26px ${FONT_SYS}`;
-    ctx.fillStyle = ACCENT;
-    ctx.textAlign = "right";
-    ctx.fillText("link-ap.online", W - 72, divY + 54);
+    // Footer right: Google Play icon badge + URL
+    const footerY = divY + 54;
+    const iconSz  = 28;
+    const gpGap   = 10;
+    ctx.font = `700 26px ${FONT_SYS}`;
+    const urlW  = ctx.measureText("link-ap.online").width;
+    const iconX = (W - 72) - urlW - gpGap - iconSz;
+    const iconY = footerY - iconSz / 2;
+
+    // Rounded-square badge — Google Play app icon style (black + white triangle)
+    rrect(ctx, iconX, iconY, iconSz, iconSz, iconSz * 0.25);
+    ctx.fillStyle   = "#000";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+
+    // White play triangle
+    const triCx = iconX + iconSz * 0.54;
+    const triCy = iconY + iconSz * 0.50;
+    const triH  = iconSz * 0.34;
+    const triW  = iconSz * 0.32;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.moveTo(triCx - triW * 0.38, triCy - triH);
+    ctx.lineTo(triCx + triW,        triCy);
+    ctx.lineTo(triCx - triW * 0.38, triCy + triH);
+    ctx.closePath();
+    ctx.fill();
+
+    // URL
+    ctx.font         = `700 26px ${FONT_SYS}`;
+    ctx.fillStyle    = ACCENT;
+    ctx.textAlign    = "right";
+    ctx.textBaseline = "middle";
+    ctx.fillText("link-ap.online", W - 72, footerY);
 
     // ── Amber bottom bar ─────────────────────────────────────────────────────
     ctx.fillStyle = ACCENT;
