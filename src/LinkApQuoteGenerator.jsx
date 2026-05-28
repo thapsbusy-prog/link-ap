@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 
 // Exact values from COLORS in shared.js
 const BG       = "#0A0A0F";
-const CARD     = "#13131A";
 const BORDER   = "#2A2A3A";
 const ACCENT   = "#F5A623";
 const TEXT     = "#F0EEE8";
@@ -215,9 +214,11 @@ export default function QuoteGenerator() {
     // ── Amber bottom bar ─────────────────────────────────────────────────────
     ctx.fillStyle = ACCENT;
     ctx.fillRect(0, H - 4, W, 4);
-  }, [quote, attribution, category, ready]);
+  }, [quote, attribution, category]);
 
   useEffect(() => { drawCard(); }, [drawCard]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { drawCard(); }, [ready]);
 
   // ── Generate via serverless endpoint ───────────────────────────────────────
   const generate = async () => {
