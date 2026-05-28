@@ -3,6 +3,7 @@ import { db, auth, getFCMToken } from "./firebase";
 import { doc, setDoc, collection, getDocs, deleteDoc, updateDoc, deleteField, arrayUnion, getDoc } from "firebase/firestore";
 import { signOut, sendPasswordResetEmail } from "firebase/auth";
 import { COLORS, Avatar, TermsContent } from "./shared";
+import QuoteGenerator from "../LinkApQuoteGenerator";
 
 // Props:
 //   user          — Firestore profile object ({ name, ... })
@@ -14,6 +15,8 @@ import { COLORS, Avatar, TermsContent } from "./shared";
 export default function Settings({ user, firebaseUser, onEditProfile, blocked, onUnblock }) {
   const [showTerms, setShowTerms] = useState(false);
   const [showBlockList, setShowBlockList] = useState(false);
+  const [showContentStudio, setShowContentStudio] = useState(false);
+  const isAdmin = firebaseUser.email === "thaps.busy@gmail.com";
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [accountLoading, setAccountLoading] = useState(null);
@@ -229,6 +232,25 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
     }
   }
 
+  if (showContentStudio) {
+    return (
+      <div style={{ background: COLORS.bg, minHeight: "100%" }}>
+        <div style={{
+          position: "sticky", top: 0, background: COLORS.bg, zIndex: 10,
+          padding: "16px 20px", borderBottom: `1px solid ${COLORS.border}`,
+          display: "flex", alignItems: "center", gap: 12,
+        }}>
+          <button
+            onClick={() => setShowContentStudio(false)}
+            style={{ background: "none", border: "none", color: COLORS.text, cursor: "pointer", padding: 0, fontSize: 22, lineHeight: 1 }}
+          >‹</button>
+          <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16 }}>Content Studio</div>
+        </div>
+        <QuoteGenerator />
+      </div>
+    );
+  }
+
   if (showBlockList) {
     return (
       <div style={{ padding: "24px 16px" }}>
@@ -340,6 +362,26 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
           </div>
         </div>
       </div>
+
+      {/* Creator Tools — admin only */}
+      {isAdmin && (
+        <div style={{ marginBottom: 24 }}>
+          {sectionLabel("Creator Tools")}
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 12, overflow: "hidden" }}>
+            <button
+              onClick={() => setShowContentStudio(true)}
+              style={{
+                width: "100%", background: "none", border: "none", cursor: "pointer",
+                padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
+              }}
+            >
+              <span style={{ fontSize: 18, lineHeight: 1 }}>✦</span>
+              <span style={{ flex: 1, fontSize: 14, color: COLORS.text, textAlign: "left" }}>Quote Card Generator</span>
+              <span style={{ color: COLORS.textMuted, fontSize: 16 }}>›</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Account Actions */}
       <div style={{ marginBottom: 24 }}>
