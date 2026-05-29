@@ -51,8 +51,15 @@ The app is split across several source files. There is no routing library — `M
 **Tools Tab (as of 29 May 2026)**
 - `src/Tools.js` — 6th tab (after Pulse); subtabs: Founders Hub, Freelancer Kit, Growth Lab. Accepts `user` prop.
 - Bottom nav wrench icon (inline SVG), label "Tools", tab id `"tools"`.
+- **Founders Hub** and **Freelancer Kit** now use a tool picker pattern: a list of cards (emoji + name + desc) where tapping opens the selected tool with a "← Back" link. Growth Lab remains a direct single-tool view.
+- **Founders Hub tools** (3): AI Invoice Generator, Pitch Deck Outline Generator, Break-Even Calculator.
+- **Freelancer Kit tools** (2): AI Proposal Generator, Day Rate Calculator.
 - **Founders Hub — AI Invoice Generator**: form view collects from/client details, currency (ZAR/USD/GBP/EUR), due date, line items (add/remove rows, running subtotal with ZAR VAT preview). Calls `POST /api/tools/invoice-generate`. Preview view shows styled invoice card with Download PDF (jsPDF A4), Share (Web Share API), and Start Over.
+- **Founders Hub — Pitch Deck Outline Generator**: form collects businessName (pre-filled from user.name), oneLiner, problem, solution, targetMarket (required), revenueModel, traction, askAmount, currency (optional). Calls `POST /api/tools/pitch-deck`. Preview shows 10 slides (numbered amber circle + title, key message italic, bullet list, speaker note box). Download PDF (jsPDF multi-page with checkPage), Share, Start Over.
+- **Founders Hub — Break-Even Calculator**: pure client-side, no API. Form: fixedCosts, variableUnitCost, sellingPrice, currency. Results: breakEvenUnits, breakEvenRevenue, contributionMargin, contributionMarginPct, visual stacked bar (amber=fixed, muted=variable), plain-English explanation. Formulas: CM = price - varCost; units = ceil(fixed / CM); revenue = units × price.
+- **Freelancer Kit — Day Rate Calculator**: pure client-side, no API. Form: annualIncome, billableDays (default 220), annualExpenses, profitBuffer % (default 20), currency. Results: dayRate (rounded to nearest 50), halfDayRate, hourlyRate, project rate guidance (3/10/20 days), plain-English explanation. Formula: base = (income + expenses) / days; dayRate = round50(base × (1 + buffer/100)).
 - `api/tools/invoice-generate.js` — POST; verifies auth; gates via `getUserPlan` (403 for free users); sanitizes all inputs; computes subtotal/VAT/total server-side (overrides Claude's arithmetic); prompts Claude for `invoiceNumber`, `notes`, `paymentTerms` only.
+- `api/tools/pitch-deck.js` — POST; verifies auth; gates via `getUserPlan`; sanitizes all inputs; prompts Claude to return 10-slide JSON (`deckTitle`, `generatedDate`, `businessName`, `slides[]`, `pitchTips[]`); overrides identity fields server-side.
 - `api/lib/getUserPlan.js` — shared Admin SDK plan-gate utility for all tool routes.
 
 **Onboarding design (as of 29 May 2026)**
@@ -257,11 +264,14 @@ This section is the live project health snapshot. Update it after every fix or f
 
 #### Tools Tab (as of 29 May 2026)
 
-| Subtab | Status | Notes |
-|--------|--------|-------|
-| Founders Hub | ✅ AI Invoice Generator | Form → Preview flow; jsPDF download; Web Share API; plan-gated |
-| Freelancer Kit | ✅ AI Proposal Generator | Form → Preview flow; 7-section AI proposal; jsPDF multi-page download; Web Share API; plan-gated |
-| Growth Lab | ✅ AI Content Calendar Generator | Form → Preview flow; 2 or 4 weeks; 3 posts/week/platform; jsPDF multi-page download; Web Share API; plan-gated |
+| Tool | Subtab | Status | Notes |
+|------|--------|--------|-------|
+| AI Invoice Generator | Founders Hub | ✅ Shipped | Form → Preview; jsPDF download; Web Share API; plan-gated |
+| Pitch Deck Outline Generator | Founders Hub | ✅ Shipped | 10-slide AI outline; speaker notes per slide; jsPDF multi-page; Web Share API; plan-gated |
+| Break-Even Calculator | Founders Hub | ✅ Shipped | Client-side only; no API; visual stacked bar; instant results |
+| AI Proposal Generator | Freelancer Kit | ✅ Shipped | Form → Preview; 7-section AI proposal; jsPDF multi-page; Web Share API; plan-gated |
+| Day Rate Calculator | Freelancer Kit | ✅ Shipped | Client-side only; no API; rounds to nearest 50; project rate guidance |
+| AI Content Calendar Generator | Growth Lab | ✅ Shipped | Form → Preview; 2 or 4 weeks; 3 posts/week/platform; jsPDF multi-page; plan-gated |
 
 #### Revenue features (ideated, not built)
 

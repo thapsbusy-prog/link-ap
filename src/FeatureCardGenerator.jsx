@@ -164,6 +164,33 @@ const FEATURE_CARDS = {
       example: "You've been doing social media content for a friend-of-a-friend at a low rate. A new lead asks for a formal proposal. You generate one in two minutes with a real scope and a proper budget range. They don't negotiate — they just say yes.",
     },
   ],
+
+  "Pitch Deck Outline": [
+    {
+      pill: "PITCH DECK",
+      what: "AI Pitch Deck Outline Generator",
+      whatDesc: "Describe your business and Link-Ap generates a full 10-slide investor pitch outline — problem, solution, market, model, traction, ask, and speaker notes for every slide.",
+      forWhom: "First-Time Founders",
+      forDesc: "You've never pitched to an investor before. Now you walk in with a structured narrative, slide-by-slide bullet points, and speaker notes that tell you exactly what to say.",
+      example: "You have a pitch meeting in three days and a blank deck. You fill in your business details, hit Generate, and get a 10-slide outline with a speaker note for every slide. You spend your time practising — not writing.",
+    },
+    {
+      pill: "PITCH DECK",
+      what: "AI Pitch Deck Outline Generator",
+      whatDesc: "Describe your business and Link-Ap generates a full 10-slide investor pitch outline — problem, solution, market, model, traction, ask, and speaker notes for every slide.",
+      forWhom: "Founders Refining Their Story",
+      forDesc: "You've pitched before but the narrative hasn't quite landed. Use the AI outline to pressure-test your story structure and find the gaps before the next room.",
+      example: "Your last pitch stalled on the market size slide. You run the deck generator, and the AI reframes your market opportunity with a bottom-up approach that your previous version missed. You walk into the next pitch with a sharper slide and a cleaner number.",
+    },
+    {
+      pill: "PITCH DECK",
+      what: "AI Pitch Deck Outline Generator",
+      whatDesc: "Describe your business and Link-Ap generates a full 10-slide investor pitch outline — problem, solution, market, model, traction, ask, and speaker notes for every slide.",
+      forWhom: "Operators Raising Internal Buy-In",
+      forDesc: "Not all pitches are for investors. Use the outline to structure a compelling case for your leadership team, board, or corporate sponsor.",
+      example: "You need budget approval for a new product line. You generate the deck outline as a framework for your internal presentation. The structured narrative lands, the budget is approved, and you have a head start on the external pitch when the time comes.",
+    },
+  ],
 };
 
 const FEATURES = Object.keys(FEATURE_CARDS);

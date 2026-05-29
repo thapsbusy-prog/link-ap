@@ -1795,6 +1795,1177 @@ function ContentCalendarForm({ user }) {
   );
 }
 
+// ─── Pitch Deck Preview ───────────────────────────────────────────────────────
+
+function PitchDeckPreview({ deck, onStartOver, onDownload }) {
+  const canShare = typeof navigator !== "undefined" && !!navigator.share;
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: deck.deckTitle,
+        text: `${deck.businessName} investor pitch deck — generated on Link-Ap`,
+      });
+    } catch {}
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+        <button
+          onClick={onStartOver}
+          style={{
+            flex: 1, padding: "10px 14px", borderRadius: 10,
+            border: `1px solid ${COLORS.border}`, background: "transparent",
+            color: COLORS.textMuted, cursor: "pointer", fontSize: 13,
+          }}
+        >Start Over</button>
+        {canShare && (
+          <button
+            onClick={handleShare}
+            style={{
+              flex: 1, padding: "10px 14px", borderRadius: 10,
+              border: `1px solid ${COLORS.border}`, background: "transparent",
+              color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
+            }}
+          >Share</button>
+        )}
+        <button
+          onClick={onDownload}
+          style={{
+            flex: 2, padding: "10px 18px", borderRadius: 10,
+            border: "none", background: COLORS.accent,
+            color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 700,
+          }}
+        >Download PDF</button>
+      </div>
+
+      <div style={{
+        background: COLORS.card,
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 16,
+        overflow: "hidden",
+      }}>
+        <div style={{ background: COLORS.accent, padding: "16px 20px" }}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#000" }}>Link-Ap</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#00000099", marginTop: 2 }}>
+            {deck.deckTitle}
+          </div>
+          <div style={{ fontSize: 11, color: "#00000066", marginTop: 2 }}>{deck.generatedDate}</div>
+        </div>
+
+        <div style={{ padding: "20px 20px 24px" }}>
+          {(deck.slides || []).map((slide, idx) => (
+            <div
+              key={slide.slideNumber}
+              style={{
+                marginBottom: 20,
+                paddingBottom: 20,
+                borderBottom: idx < (deck.slides.length - 1) ? `1px solid ${COLORS.border}` : "none",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <div style={{
+                  width: 26, height: 26, borderRadius: "50%",
+                  background: COLORS.accent, display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 800, color: "#000", flexShrink: 0,
+                }}>
+                  {slide.slideNumber}
+                </div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: COLORS.text }}>{slide.title}</div>
+              </div>
+              <p style={{
+                fontStyle: "italic", color: COLORS.textMuted,
+                fontSize: 13, margin: "0 0 10px", lineHeight: 1.5,
+              }}>
+                {slide.keyMessage}
+              </p>
+              <ul style={{ margin: "0 0 10px", paddingLeft: 18 }}>
+                {(slide.bulletPoints || []).map((b, i) => (
+                  <li key={i} style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7 }}>{b}</li>
+                ))}
+              </ul>
+              <div style={{
+                padding: "10px 14px", borderRadius: 10,
+                background: COLORS.bg, borderLeft: `3px solid ${COLORS.accent}`,
+              }}>
+                <div style={{ fontSize: 10, color: COLORS.accent, fontWeight: 600, marginBottom: 4 }}>
+                  SPEAKER NOTE
+                </div>
+                <p style={{ fontSize: 12, color: COLORS.textMuted, margin: 0, lineHeight: 1.6 }}>
+                  {slide.speakerNote}
+                </p>
+              </div>
+            </div>
+          ))}
+
+          {(deck.pitchTips || []).length > 0 && (
+            <div style={{
+              padding: "14px 16px", borderRadius: 12,
+              background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+            }}>
+              <div style={{
+                fontSize: 11, color: COLORS.accent, fontWeight: 700,
+                marginBottom: 10, letterSpacing: 0.5,
+              }}>
+                PITCH TIPS
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {deck.pitchTips.map((tip, i) => (
+                  <li key={i} style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7 }}>{tip}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div style={{
+            marginTop: 20, paddingTop: 14,
+            borderTop: `1px solid ${COLORS.border}`, textAlign: "center",
+          }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: COLORS.accent }}>Link</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted }}>-Ap</span>
+            <span style={{ fontSize: 11, color: COLORS.textMuted }}> · link-ap.online</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Pitch Deck Form ──────────────────────────────────────────────────────────
+
+function PitchDeckForm({ user }) {
+  const [view, setView] = useState("form");
+  const [form, setForm] = useState({
+    businessName: user?.name || "",
+    oneLiner: "",
+    problem: "",
+    solution: "",
+    targetMarket: "",
+    revenueModel: "",
+    traction: "",
+    askAmount: "",
+    currency: "ZAR",
+  });
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState("");
+  const [deck, setDeck] = useState(null);
+
+  const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const canSubmit =
+    form.businessName.trim() &&
+    form.oneLiner.trim() &&
+    form.problem.trim() &&
+    form.solution.trim() &&
+    form.targetMarket.trim();
+
+  const generate = async () => {
+    if (!canSubmit || generating) return;
+    setGenerating(true);
+    setGenError("");
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const res = await fetch("/api/tools/pitch-deck", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          businessName: form.businessName.trim(),
+          oneLiner: form.oneLiner.trim(),
+          problem: form.problem.trim(),
+          solution: form.solution.trim(),
+          targetMarket: form.targetMarket.trim(),
+          revenueModel: form.revenueModel.trim(),
+          traction: form.traction.trim(),
+          askAmount: form.askAmount.trim(),
+          currency: form.currency,
+        }),
+      });
+      if (res.status === 403) {
+        setGenError("Pro feature — upgrade to access AI tools.");
+        return;
+      }
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setDeck(data);
+      setView("preview");
+    } catch {
+      setGenError("Something went wrong. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const downloadPDF = () => {
+    if (!deck) return;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const W = 210;
+    const M = 20;
+    const CW = W - 2 * M;
+    let y = 0;
+
+    const checkPage = (needed = 10) => {
+      if (y + needed > 272) { doc.addPage(); y = 20; }
+    };
+
+    // Amber header
+    doc.setFillColor(245, 166, 35);
+    doc.rect(0, 0, W, 20, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text("INVESTOR PITCH DECK", M, 8);
+    doc.setFontSize(13);
+    doc.text("Link-Ap", M, 15);
+    doc.setFontSize(9);
+    doc.text(deck.businessName, W - M, 8, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(deck.generatedDate, W - M, 15, { align: "right" });
+    y = 30;
+
+    for (const slide of (deck.slides || [])) {
+      checkPage(22);
+
+      doc.setFillColor(245, 166, 35);
+      doc.rect(M, y - 4, CW, 9, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`SLIDE ${slide.slideNumber} — ${(slide.title || "").toUpperCase()}`, M + 2, y);
+      y += 10;
+
+      // Key message
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 100, 100);
+      const keyLines = doc.splitTextToSize(slide.keyMessage || "", CW);
+      for (const line of keyLines) {
+        checkPage(6);
+        doc.text(line, M, y);
+        y += 5;
+      }
+      y += 3;
+
+      // Bullet points
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(40, 40, 40);
+      for (const bullet of (slide.bulletPoints || [])) {
+        const lines = doc.splitTextToSize(`• ${bullet}`, CW - 4);
+        checkPage(lines.length * 5 + 2);
+        doc.text(lines, M + 2, y);
+        y += lines.length * 5 + 1;
+      }
+      y += 3;
+
+      // Speaker note
+      if (slide.speakerNote) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        const noteLines = doc.splitTextToSize(slide.speakerNote, CW - 8);
+        const noteBoxH = noteLines.length * 5 + 10;
+        checkPage(noteBoxH + 4);
+        doc.setFillColor(248, 248, 248);
+        doc.rect(M, y - 3, CW, noteBoxH, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7.5);
+        doc.setTextColor(245, 166, 35);
+        doc.text("SPEAKER NOTE", M + 3, y + 2);
+        y += 8;
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8);
+        doc.setTextColor(90, 90, 90);
+        doc.text(noteLines, M + 3, y);
+        y += noteLines.length * 5 + 4;
+      }
+      y += 6;
+    }
+
+    // Pitch tips
+    if ((deck.pitchTips || []).length > 0) {
+      checkPage(14);
+      doc.setFillColor(245, 166, 35);
+      doc.rect(M, y - 4, CW, 7, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(0, 0, 0);
+      doc.text("PITCH TIPS", M + 2, y);
+      y += 8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(40, 40, 40);
+      for (const tip of deck.pitchTips) {
+        const lines = doc.splitTextToSize(`• ${tip}`, CW - 4);
+        checkPage(lines.length * 5 + 3);
+        doc.text(lines, M + 2, y);
+        y += lines.length * 5 + 2;
+      }
+    }
+
+    // Footer
+    doc.setFillColor(19, 19, 26);
+    doc.rect(0, 284, W, 13, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(245, 166, 35);
+    doc.text("Link-Ap", W / 2 - 8, 291);
+    doc.setTextColor(138, 138, 154);
+    doc.setFont("helvetica", "normal");
+    doc.text(" · link-ap.online", W / 2 - 1, 291);
+
+    doc.save(`PitchDeck-${(deck.businessName || "Business").replace(/\s+/g, "-")}.pdf`);
+  };
+
+  const startOver = () => {
+    setView("form");
+    setDeck(null);
+    setGenError("");
+  };
+
+  if (view === "preview" && deck) {
+    return (
+      <PitchDeckPreview
+        deck={deck}
+        onStartOver={startOver}
+        onDownload={downloadPDF}
+      />
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0 }}>
+        Fill in the details below and let AI generate a ready-to-present 10-slide pitch deck outline.
+      </p>
+
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 14, padding: 18,
+      }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>
+          BUSINESS OVERVIEW
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Business Name</label>
+            <input
+              style={inputStyle}
+              value={form.businessName}
+              onChange={e => upd("businessName", e.target.value)}
+              placeholder="e.g. Thapelo Designs"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>One-Liner</label>
+            <input
+              style={inputStyle}
+              value={form.oneLiner}
+              onChange={e => upd("oneLiner", e.target.value)}
+              placeholder="What does your business do in one sentence?"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>The Problem</label>
+            <textarea
+              style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+              rows={3}
+              value={form.problem}
+              onChange={e => upd("problem", e.target.value)}
+              placeholder="What problem are you solving and who suffers from it?"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Your Solution</label>
+            <textarea
+              style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+              rows={3}
+              value={form.solution}
+              onChange={e => upd("solution", e.target.value)}
+              placeholder="How does your business solve that problem?"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Target Market</label>
+            <input
+              style={inputStyle}
+              value={form.targetMarket}
+              onChange={e => upd("targetMarket", e.target.value)}
+              placeholder="Who is your customer?"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 14, padding: 18,
+      }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>
+          BUSINESS MODEL & TRACTION
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Revenue Model</label>
+            <input
+              style={inputStyle}
+              value={form.revenueModel}
+              onChange={e => upd("revenueModel", e.target.value)}
+              placeholder="e.g. Subscription, commission, once-off"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Traction (optional)</label>
+            <input
+              style={inputStyle}
+              value={form.traction}
+              onChange={e => upd("traction", e.target.value)}
+              placeholder="e.g. 50 paying customers, R200k ARR — leave blank if pre-revenue"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ flex: 2 }}>
+          <label style={labelStyle}>Funding Ask (optional)</label>
+          <input
+            style={inputStyle}
+            value={form.askAmount}
+            onChange={e => upd("askAmount", e.target.value)}
+            placeholder="e.g. R2,000,000"
+          />
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>Currency</label>
+          <select
+            value={form.currency}
+            onChange={e => upd("currency", e.target.value)}
+            style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none" }}
+          >
+            {CURRENCY_OPTIONS.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {genError && (
+        <div style={{
+          padding: "10px 14px", borderRadius: 10,
+          background: `${COLORS.red}18`, color: COLORS.red, fontSize: 13,
+        }}>
+          {genError}
+        </div>
+      )}
+
+      <button
+        onClick={generate}
+        disabled={!canSubmit || generating}
+        style={{
+          padding: "14px", borderRadius: 12, border: "none",
+          background: canSubmit && !generating ? COLORS.accent : COLORS.border,
+          color: canSubmit && !generating ? "#000" : COLORS.textMuted,
+          cursor: canSubmit && !generating ? "pointer" : "not-allowed",
+          fontSize: 15, fontWeight: 700,
+        }}
+      >
+        {generating ? "Generating…" : "✦ Generate Pitch Deck"}
+      </button>
+    </div>
+  );
+}
+
+// ─── Break-Even Calculator ────────────────────────────────────────────────────
+
+function buildBreakEvenExplanation(units, revenue, sym, marginPct) {
+  const plural = units === 1 ? "unit" : "units";
+  const fmtRevenue = revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const marginNote =
+    marginPct < 30
+      ? `Your ${marginPct.toFixed(1)}% contribution margin is lean — consider raising your price or reducing variable costs to give yourself more room.`
+      : marginPct >= 50
+      ? `Your healthy ${marginPct.toFixed(1)}% contribution margin means you keep more than half of each sale after variable costs.`
+      : `Your ${marginPct.toFixed(1)}% contribution margin is solid — every unit beyond break-even adds directly to profit.`;
+  return `To cover your fixed costs you need to sell ${units.toLocaleString()} ${plural} per month, generating ${sym}${fmtRevenue} in revenue. Beyond that point, every additional unit sold is pure profit. ${marginNote}`;
+}
+
+function BreakEvenCalculator() {
+  const [form, setForm] = useState({
+    fixedCosts: "",
+    variableUnitCost: "",
+    sellingPrice: "",
+    currency: "ZAR",
+  });
+  const [results, setResults] = useState(null);
+  const [calcError, setCalcError] = useState("");
+
+  const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const sym = CURRENCY_SYMBOLS[form.currency] || "";
+
+  const canCalculate =
+    form.fixedCosts !== "" &&
+    form.variableUnitCost !== "" &&
+    form.sellingPrice !== "";
+
+  const calculate = () => {
+    setCalcError("");
+    const fixed = parseFloat(form.fixedCosts) || 0;
+    const varCost = parseFloat(form.variableUnitCost) || 0;
+    const price = parseFloat(form.sellingPrice) || 0;
+
+    const contributionMargin = price - varCost;
+    if (contributionMargin <= 0) {
+      setCalcError("Selling price must be greater than variable cost per unit.");
+      setResults(null);
+      return;
+    }
+    if (fixed < 0 || price <= 0) {
+      setCalcError("Please enter valid positive numbers.");
+      setResults(null);
+      return;
+    }
+
+    const breakEvenUnits = Math.ceil(fixed / contributionMargin);
+    const breakEvenRevenue = breakEvenUnits * price;
+    const contributionMarginPct = (contributionMargin / price) * 100;
+    const fixedPct = breakEvenRevenue > 0 ? (fixed / breakEvenRevenue) * 100 : 50;
+    const varPct = 100 - fixedPct;
+
+    setResults({
+      breakEvenUnits,
+      breakEvenRevenue,
+      contributionMargin,
+      contributionMarginPct,
+      fixedPct,
+      varPct,
+      explanation: buildBreakEvenExplanation(breakEvenUnits, breakEvenRevenue, sym, contributionMarginPct),
+    });
+  };
+
+  const startOver = () => {
+    setResults(null);
+    setCalcError("");
+    setForm({ fixedCosts: "", variableUnitCost: "", sellingPrice: "", currency: "ZAR" });
+  };
+
+  if (results) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{
+          background: COLORS.card, border: `1px solid ${COLORS.border}`,
+          borderRadius: 16, overflow: "hidden",
+        }}>
+          <div style={{ background: COLORS.accent, padding: "14px 20px" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#00000088", letterSpacing: 0.5 }}>
+              BREAK-EVEN ANALYSIS
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#000" }}>Link-Ap</div>
+          </div>
+          <div style={{ padding: "20px 20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{
+                padding: "14px 16px", borderRadius: 12,
+                background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              }}>
+                <div style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 600, marginBottom: 6 }}>
+                  BREAK-EVEN UNITS / MONTH
+                </div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: COLORS.accent }}>
+                  {results.breakEvenUnits.toLocaleString()}
+                </div>
+              </div>
+              <div style={{
+                padding: "14px 16px", borderRadius: 12,
+                background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              }}>
+                <div style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 600, marginBottom: 6 }}>
+                  BREAK-EVEN REVENUE / MONTH
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.accent }}>
+                  {sym}{results.breakEvenRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div style={{
+                padding: "14px 16px", borderRadius: 12,
+                background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              }}>
+                <div style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 600, marginBottom: 6 }}>
+                  CONTRIBUTION MARGIN / UNIT
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.text }}>
+                  {sym}{results.contributionMargin.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+              <div style={{
+                padding: "14px 16px", borderRadius: 12,
+                background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              }}>
+                <div style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 600, marginBottom: 6 }}>
+                  CONTRIBUTION MARGIN %
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.text }}>
+                  {results.contributionMarginPct.toFixed(1)}%
+                </div>
+              </div>
+            </div>
+
+            {/* Visual cost breakdown bar */}
+            <div>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 600, marginBottom: 8 }}>
+                COST BREAKDOWN AT BREAK-EVEN
+              </div>
+              <div style={{
+                borderRadius: 8, overflow: "hidden",
+                height: 28, display: "flex", border: `1px solid ${COLORS.border}`,
+              }}>
+                <div style={{
+                  width: `${results.fixedPct}%`,
+                  background: COLORS.accent,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, fontWeight: 700, color: "#000",
+                }}>
+                  {results.fixedPct.toFixed(0)}%
+                </div>
+                <div style={{
+                  width: `${results.varPct}%`,
+                  background: COLORS.border,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, fontWeight: 600, color: COLORS.textMuted,
+                }}>
+                  {results.varPct.toFixed(0)}%
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: COLORS.accent }} />
+                  <span style={{ fontSize: 11, color: COLORS.textMuted }}>Fixed Costs</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: COLORS.border }} />
+                  <span style={{ fontSize: 11, color: COLORS.textMuted }}>Variable Costs</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{
+              padding: "12px 16px", borderRadius: 12,
+              background: COLORS.bg, borderLeft: `3px solid ${COLORS.accent}`,
+            }}>
+              <div style={{ fontSize: 10, color: COLORS.accent, fontWeight: 600, marginBottom: 6 }}>
+                WHAT THIS MEANS
+              </div>
+              <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0, lineHeight: 1.7 }}>
+                {results.explanation}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={startOver}
+          style={{
+            padding: "12px", borderRadius: 12,
+            border: `1px solid ${COLORS.border}`, background: "transparent",
+            color: COLORS.textMuted, cursor: "pointer", fontSize: 14, fontWeight: 600,
+          }}
+        >Start Over</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0 }}>
+        Find exactly how many units you need to sell each month to cover your costs.
+      </p>
+
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 14, padding: 18,
+      }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>
+          COSTS & PRICING
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Fixed Costs per Month</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="0"
+              value={form.fixedCosts}
+              onChange={e => upd("fixedCosts", e.target.value)}
+              placeholder="e.g. rent, salaries, software"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Variable Cost per Unit</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.variableUnitCost}
+              onChange={e => upd("variableUnitCost", e.target.value)}
+              placeholder="Cost to deliver one product / service"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Selling Price per Unit</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.sellingPrice}
+              onChange={e => upd("sellingPrice", e.target.value)}
+              placeholder="What you charge per unit"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Currency</label>
+            <select
+              value={form.currency}
+              onChange={e => upd("currency", e.target.value)}
+              style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none" }}
+            >
+              {CURRENCY_OPTIONS.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {calcError && (
+        <div style={{
+          padding: "10px 14px", borderRadius: 10,
+          background: `${COLORS.red}18`, color: COLORS.red, fontSize: 13,
+        }}>
+          {calcError}
+        </div>
+      )}
+
+      <button
+        onClick={calculate}
+        disabled={!canCalculate}
+        style={{
+          padding: "14px", borderRadius: 12, border: "none",
+          background: canCalculate ? COLORS.accent : COLORS.border,
+          color: canCalculate ? "#000" : COLORS.textMuted,
+          cursor: canCalculate ? "pointer" : "not-allowed",
+          fontSize: 15, fontWeight: 700,
+        }}
+      >Calculate</button>
+    </div>
+  );
+}
+
+// ─── Day Rate Calculator ──────────────────────────────────────────────────────
+
+function DayRateCalculator() {
+  const [form, setForm] = useState({
+    annualIncome: "",
+    billableDays: "220",
+    annualExpenses: "",
+    profitBuffer: "20",
+    currency: "ZAR",
+  });
+  const [results, setResults] = useState(null);
+
+  const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const sym = CURRENCY_SYMBOLS[form.currency] || "";
+
+  const canCalculate = form.annualIncome !== "" && form.billableDays !== "";
+
+  const roundTo50 = (n) => Math.round(n / 50) * 50;
+
+  const calculate = () => {
+    const income = parseFloat(form.annualIncome) || 0;
+    const days = Math.max(1, parseInt(form.billableDays, 10) || 220);
+    const expenses = parseFloat(form.annualExpenses) || 0;
+    const buffer = parseFloat(form.profitBuffer) || 20;
+
+    const base = (income + expenses) / days;
+    const dayRate = roundTo50(base * (1 + buffer / 100));
+    const halfDayRate = roundTo50(dayRate * 0.5);
+    const hourlyRate = roundTo50(dayRate / 8);
+    const annualAtRate = dayRate * days;
+
+    const explanation = `At ${sym}${dayRate.toLocaleString()} per day over ${days} billable days, you would generate ${sym}${annualAtRate.toLocaleString()} per year — enough to cover your income target and expenses with a ${buffer}% buffer built in. Treat this as your baseline floor and adjust upward for specialist work, tight timelines, or high-value clients.`;
+
+    setResults({
+      dayRate,
+      halfDayRate,
+      hourlyRate,
+      small: dayRate * 3,
+      medium: dayRate * 10,
+      large: dayRate * 20,
+      explanation,
+    });
+  };
+
+  const startOver = () => {
+    setResults(null);
+    setForm({ annualIncome: "", billableDays: "220", annualExpenses: "", profitBuffer: "20", currency: "ZAR" });
+  };
+
+  const fmt = (n) => `${sym}${n.toLocaleString()}`;
+
+  if (results) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{
+          background: COLORS.card, border: `1px solid ${COLORS.border}`,
+          borderRadius: 16, overflow: "hidden",
+        }}>
+          <div style={{ background: COLORS.accent, padding: "14px 20px" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#00000088", letterSpacing: 0.5 }}>
+              DAY RATE CALCULATOR
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#000" }}>Link-Ap</div>
+          </div>
+          <div style={{ padding: "20px 20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Primary rate */}
+            <div style={{
+              textAlign: "center", padding: "20px 16px",
+              background: COLORS.bg, borderRadius: 14, border: `1px solid ${COLORS.border}`,
+            }}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, fontWeight: 600, marginBottom: 8 }}>
+                RECOMMENDED DAY RATE
+              </div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: COLORS.accent }}>
+                {fmt(results.dayRate)}
+              </div>
+              <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 4 }}>per day</div>
+            </div>
+
+            {/* Half-day + hourly */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{
+                padding: "14px 16px", borderRadius: 12,
+                background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              }}>
+                <div style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 600, marginBottom: 6 }}>
+                  HALF-DAY RATE
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.text }}>
+                  {fmt(results.halfDayRate)}
+                </div>
+              </div>
+              <div style={{
+                padding: "14px 16px", borderRadius: 12,
+                background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              }}>
+                <div style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 600, marginBottom: 6 }}>
+                  HOURLY RATE
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: COLORS.text }}>
+                  {fmt(results.hourlyRate)}
+                </div>
+              </div>
+            </div>
+
+            {/* Project rate guidance */}
+            <div style={{
+              padding: "14px 16px", borderRadius: 12,
+              background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+            }}>
+              <div style={{
+                fontSize: 11, color: COLORS.accent, fontWeight: 700,
+                marginBottom: 12, letterSpacing: 0.5,
+              }}>
+                PROJECT RATE GUIDANCE
+              </div>
+              {[
+                { label: "Small project (3 days)", value: results.small },
+                { label: "Medium project (10 days)", value: results.medium },
+                { label: "Large project (20 days)", value: results.large },
+              ].map(({ label, value }, i, arr) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    paddingBottom: i < arr.length - 1 ? 10 : 0,
+                    marginBottom: i < arr.length - 1 ? 10 : 0,
+                    borderBottom: i < arr.length - 1 ? `1px solid ${COLORS.border}` : "none",
+                  }}
+                >
+                  <span style={{ fontSize: 13, color: COLORS.textMuted }}>{label}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{fmt(value)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              padding: "12px 16px", borderRadius: 12,
+              background: COLORS.bg, borderLeft: `3px solid ${COLORS.accent}`,
+            }}>
+              <div style={{ fontSize: 10, color: COLORS.accent, fontWeight: 600, marginBottom: 6 }}>
+                WHAT THIS MEANS
+              </div>
+              <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0, lineHeight: 1.7 }}>
+                {results.explanation}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={startOver}
+          style={{
+            padding: "12px", borderRadius: 12,
+            border: `1px solid ${COLORS.border}`, background: "transparent",
+            color: COLORS.textMuted, cursor: "pointer", fontSize: 14, fontWeight: 600,
+          }}
+        >Start Over</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0 }}>
+        Calculate your ideal day rate based on your income goals and business costs.
+      </p>
+
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 14, padding: 18,
+      }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>
+          YOUR NUMBERS
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Desired Annual Income</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="0"
+              value={form.annualIncome}
+              onChange={e => upd("annualIncome", e.target.value)}
+              placeholder="How much do you want to take home?"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Billable Days per Year</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="1"
+              max="365"
+              value={form.billableDays}
+              onChange={e => upd("billableDays", e.target.value)}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Business Expenses per Year</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="0"
+              value={form.annualExpenses}
+              onChange={e => upd("annualExpenses", e.target.value)}
+              placeholder="Software, equipment, etc. (optional)"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Profit Buffer %</label>
+            <input
+              style={inputStyle}
+              type="number"
+              min="0"
+              max="100"
+              value={form.profitBuffer}
+              onChange={e => upd("profitBuffer", e.target.value)}
+              placeholder="To cover gaps, growth, taxes"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Currency</label>
+            <select
+              value={form.currency}
+              onChange={e => upd("currency", e.target.value)}
+              style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none" }}
+            >
+              {CURRENCY_OPTIONS.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={calculate}
+        disabled={!canCalculate}
+        style={{
+          padding: "14px", borderRadius: 12, border: "none",
+          background: canCalculate ? COLORS.accent : COLORS.border,
+          color: canCalculate ? "#000" : COLORS.textMuted,
+          cursor: canCalculate ? "pointer" : "not-allowed",
+          fontSize: 15, fontWeight: 700,
+        }}
+      >Calculate My Rate</button>
+    </div>
+  );
+}
+
+// ─── Tool Hub helpers ─────────────────────────────────────────────────────────
+
+const toolCardStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  padding: "16px 18px",
+  borderRadius: 14,
+  border: `1px solid ${COLORS.border}`,
+  background: COLORS.card,
+  cursor: "pointer",
+  textAlign: "left",
+  width: "100%",
+};
+
+const backBtnStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  background: "none",
+  border: "none",
+  color: COLORS.textMuted,
+  cursor: "pointer",
+  fontSize: 13,
+  padding: "0 0 16px 0",
+  fontWeight: 500,
+};
+
+// ─── Founders Hub ─────────────────────────────────────────────────────────────
+
+function FoundersHub({ user }) {
+  const [activeTool, setActiveTool] = useState(null);
+
+  const TOOLS = [
+    {
+      id: "invoice",
+      emoji: "🧾",
+      name: "AI Invoice Generator",
+      desc: "Generate professional invoices in seconds",
+    },
+    {
+      id: "pitch-deck",
+      emoji: "📊",
+      name: "Pitch Deck Outline",
+      desc: "10-slide AI-powered investor pitch outline",
+    },
+    {
+      id: "break-even",
+      emoji: "⚖️",
+      name: "Break-Even Calculator",
+      desc: "Find your profitability threshold instantly",
+    },
+  ];
+
+  if (activeTool) {
+    return (
+      <div>
+        <button onClick={() => setActiveTool(null)} style={backBtnStyle}>
+          ← Back to Founders Hub
+        </button>
+        {activeTool === "invoice" && <InvoiceForm user={user} />}
+        {activeTool === "pitch-deck" && <PitchDeckForm user={user} />}
+        {activeTool === "break-even" && <BreakEvenCalculator />}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: "0 0 4px" }}>
+        Tools built for founders — from fundraising to financial clarity.
+      </p>
+      {TOOLS.map(tool => (
+        <button
+          key={tool.id}
+          onClick={() => setActiveTool(tool.id)}
+          style={toolCardStyle}
+        >
+          <span style={{ fontSize: 28, flexShrink: 0 }}>{tool.emoji}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 2 }}>
+              {tool.name}
+            </div>
+            <div style={{ fontSize: 12, color: COLORS.textMuted }}>{tool.desc}</div>
+          </div>
+          <span style={{ color: COLORS.textMuted, fontSize: 18 }}>›</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Freelancer Kit ───────────────────────────────────────────────────────────
+
+function FreelancerKit({ user }) {
+  const [activeTool, setActiveTool] = useState(null);
+
+  const TOOLS = [
+    {
+      id: "proposal",
+      emoji: "📋",
+      name: "AI Proposal Generator",
+      desc: "Professional client proposals written by AI",
+    },
+    {
+      id: "day-rate",
+      emoji: "💰",
+      name: "Day Rate Calculator",
+      desc: "Calculate your ideal freelance pricing",
+    },
+  ];
+
+  if (activeTool) {
+    return (
+      <div>
+        <button onClick={() => setActiveTool(null)} style={backBtnStyle}>
+          ← Back to Freelancer Kit
+        </button>
+        {activeTool === "proposal" && <ProposalForm user={user} />}
+        {activeTool === "day-rate" && <DayRateCalculator />}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: "0 0 4px" }}>
+        Tools built for freelancers — win clients and price your work confidently.
+      </p>
+      {TOOLS.map(tool => (
+        <button
+          key={tool.id}
+          onClick={() => setActiveTool(tool.id)}
+          style={toolCardStyle}
+        >
+          <span style={{ fontSize: 28, flexShrink: 0 }}>{tool.emoji}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 2 }}>
+              {tool.name}
+            </div>
+            <div style={{ fontSize: 12, color: COLORS.textMuted }}>{tool.desc}</div>
+          </div>
+          <span style={{ color: COLORS.textMuted, fontSize: 18 }}>›</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Tools (main export) ──────────────────────────────────────────────────────
 
 export default function Tools({ user }) {
@@ -1824,9 +2995,8 @@ export default function Tools({ user }) {
         ))}
       </div>
 
-      {subtab === "founders" && <InvoiceForm user={user} />}
-      {subtab === "freelancer" && <ProposalForm user={user} />}
-
+      {subtab === "founders" && <FoundersHub user={user} />}
+      {subtab === "freelancer" && <FreelancerKit user={user} />}
       {subtab === "growth" && <ContentCalendarForm user={user} />}
     </div>
   );
