@@ -657,6 +657,46 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
   const [loadingExplanation, setLoadingExplanation] = useState(false);
   const explanationCache = useRef({});
 
+  const DAILY_LIMIT = 3;
+  const getToday = () => new Date().toISOString().slice(0, 10);
+
+  const [dailyActedCount, setDailyActedCount] = useState(() => {
+    if (!user?.uid) return 0;
+    try {
+      const stored = JSON.parse(localStorage.getItem(`dailyDiscover_${user.uid}`) || "null");
+      if (stored?.date === getToday()) return stored.actedUids?.length || 0;
+    } catch {}
+    return 0;
+  });
+
+  // Restore today's acted UIDs into seenUids on mount so they don't reappear after refresh
+  useEffect(() => {
+    if (!user?.uid) return;
+    try {
+      const stored = JSON.parse(localStorage.getItem(`dailyDiscover_${user.uid}`) || "null");
+      if (stored?.date === getToday() && stored.actedUids?.length > 0) {
+        setSeenUids(prev => {
+          const next = new Set(prev);
+          stored.actedUids.forEach(uid => next.add(uid));
+          return next;
+        });
+      }
+    } catch {}
+  }, []); // eslint-disable-line
+
+  const recordDailyAct = (uid) => {
+    if (!user?.uid) return;
+    const today = getToday();
+    const key = `dailyDiscover_${user.uid}`;
+    try {
+      const stored = JSON.parse(localStorage.getItem(key) || "null");
+      const prev = stored?.date === today ? (stored.actedUids || []).filter(u => u !== uid) : [];
+      const actedUids = [...prev, uid];
+      localStorage.setItem(key, JSON.stringify({ date: today, actedUids }));
+      setDailyActedCount(actedUids.length);
+    } catch {}
+  };
+
   const firstUnseen = users ? users.find(u => !seenUids.has(u.uid)) : null;
   const currentUid = firstUnseen?.uid ?? null;
 
@@ -718,6 +758,7 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
   const advance = (targetUser) => {
     const next = new Set([...seenUids, targetUser.uid]);
     setSeenUids(next);
+    recordDailyAct(targetUser.uid);
     if (users.filter(u => !next.has(u.uid)).length < 5 && hasMore && !loadingMore) onLoadMore();
   };
 
@@ -725,6 +766,16 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
     if (action === "pass") onPass(current);
     advance(current);
   };
+
+  if (dailyActedCount >= DAILY_LIMIT) return (
+    <div style={{ padding: 24, textAlign: "center", paddingTop: 80, color: COLORS.textMuted }}>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>🌙</div>
+      <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>That's your 3 for today.</h3>
+      <p style={{ fontSize: 14, marginBottom: 6, lineHeight: 1.6 }}>On the free plan you get 3 new connections to explore each day.</p>
+      <p style={{ fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>Come back tomorrow for 3 more — quality over quantity.</p>
+      <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 20, border: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.textMuted, backgroundColor: COLORS.card }}>Resets at midnight</div>
+    </div>
+  );
 
   if (!current) return (
     <div style={{ padding: 24, textAlign: "center", paddingTop: 80, color: COLORS.textMuted }}>
@@ -748,7 +799,7 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
     <div style={{ padding: "16px 20px" }}>
       <div style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text }}>Discover People</h2>
-        <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{remaining.length} people to explore</p>
+        <p style={{ color: COLORS.textMuted, fontSize: 13 }}>{DAILY_LIMIT - dailyActedCount} of {DAILY_LIMIT} left today</p>
       </div>
 
       <button
