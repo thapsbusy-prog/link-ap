@@ -138,6 +138,32 @@ const FEATURE_CARDS = {
       example: "Before your product launch, you run your profile score. It flags your bio as generic. You sharpen it to one sentence about the exact problem you solve. Your next investor match reaches out first — without you having to pitch.",
     },
   ],
+  "Proposal Generator": [
+    {
+      pill: "PROPOSAL GENERATOR",
+      what: "AI Proposal Generator",
+      whatDesc: "Describe your project and client, and Link-Ap writes a full professional proposal in seconds — introduction, scope, deliverables, timeline, investment, terms, and a confident close.",
+      forWhom: "Freelancers Chasing New Clients",
+      forDesc: "Stop losing work to clients who go with whoever sent the most polished proposal. Now you send that proposal every time — in minutes, not hours.",
+      example: "A potential client asks for a proposal by end of day. You fill in the scope summary, click Generate, and send a seven-section PDF with your name on it before lunch. The client signs the same afternoon.",
+    },
+    {
+      pill: "PROPOSAL GENERATOR",
+      what: "AI Proposal Generator",
+      whatDesc: "Describe your project and client, and Link-Ap writes a full professional proposal in seconds — introduction, scope, deliverables, timeline, investment, terms, and a confident close.",
+      forWhom: "Consultants Pitching Corporates",
+      forDesc: "Corporate clients expect polished, structured proposals. Now you look the part from day one — without a full-time proposal writer on staff.",
+      example: "You're pitching a brand identity project to a corporate procurement team. The AI generates a formal proposal with deliverables and payment terms. You download the PDF, add your signature block, and submit it before the deadline.",
+    },
+    {
+      pill: "PROPOSAL GENERATOR",
+      what: "AI Proposal Generator",
+      whatDesc: "Describe your project and client, and Link-Ap writes a full professional proposal in seconds — introduction, scope, deliverables, timeline, investment, terms, and a confident close.",
+      forWhom: "Side-Hustlers Turning Pro",
+      forDesc: "You've been doing great work informally. Now you want to charge what you're worth. A proper proposal signals professionalism and justifies your rate before the conversation starts.",
+      example: "You've been doing social media content for a friend-of-a-friend at a low rate. A new lead asks for a formal proposal. You generate one in two minutes with a real scope and a proper budget range. They don't negotiate — they just say yes.",
+    },
+  ],
 };
 
 const FEATURES = Object.keys(FEATURE_CARDS);

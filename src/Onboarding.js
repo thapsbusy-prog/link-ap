@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { db, auth } from "./firebase";
-import { serverTimestamp, doc, setDoc, collection, getCountFromServer } from "firebase/firestore";
+import { serverTimestamp, doc, setDoc, runTransaction } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { COLORS, USER_COLORS, Input, Select, TITLE_OPTIONS } from "./shared";
 
@@ -22,6 +22,7 @@ export default function Onboarding({ firebaseUser, onComplete }) {
       const fullName = [form.firstName.trim(), form.lastName.trim()].filter(Boolean).join(" ");
       const profile = {
         uid: firebaseUser.uid,
+        email: firebaseUser.email || "",
         title: form.title,
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
@@ -47,8 +48,17 @@ export default function Onboarding({ firebaseUser, onComplete }) {
         createdAt: serverTimestamp(),
         termsAcceptedAt: serverTimestamp(),
       };
-      const countSnap = await getCountFromServer(collection(db, "users"));
-      profile.earlyAdopter = countSnap.data().count < 100;
+      let signupIndex;
+      await runTransaction(db, async (tx) => {
+        const statsRef = doc(db, "meta", "stats");
+        const statsSnap = await tx.get(statsRef);
+        const current = statsSnap.exists() ? (statsSnap.data().totalUsers || 0) : 0;
+        signupIndex = current + 1;
+        tx.set(statsRef, { totalUsers: signupIndex }, { merge: true });
+      });
+      profile.signupIndex = signupIndex;
+      profile.plan = signupIndex <= 100 ? "founding_member" : "free";
+      profile.planAssignedAt = serverTimestamp();
       await setDoc(doc(db, "users", firebaseUser.uid), profile);
       onComplete(profile);
     } catch (e) {

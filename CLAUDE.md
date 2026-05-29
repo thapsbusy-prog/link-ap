@@ -19,7 +19,7 @@ git add . && git commit -m "description" && git push
 
 ## Architecture
 
-The app is split across several source files. There is no routing library — `MainApp` uses a `tab` state string (`"discover"`, `"matches"`, `"messages"`, `"profile"`, `"pulse"`) to switch between screens.
+The app is split across several source files. There is no routing library — `MainApp` uses a `tab` state string (`"discover"`, `"matches"`, `"messages"`, `"profile"`, `"pulse"`, `"tools"`) to switch between screens.
 
 **Source file map**
 - `src/App.js` — `MainApp`, `SearchModal`, `SplashScreen`, `ErrorBoundary`, `App` root, and helpers (`playBeep`, `triggerVibrate`)
@@ -28,6 +28,7 @@ The app is split across several source files. There is no routing library — `M
 - `src/Messages.js` — `Messages` component and `formatRelativeTime`
 - `src/Profile.js` — `Profile` component
 - `src/Settings.js` — `Settings` component
+- `src/Tools.js` — `Tools` component (6th tab); three subtab pills: Founders Hub, Freelancer Kit, Growth Lab; shell only — placeholder cards
 - `src/Pulse.js` — `Pulse` component (AI Pulse tab) and `TrendCard`, `SkeletonCard` sub-components
 - `src/AuthScreen.js` — `AuthScreen` component
 - `src/Onboarding.js` — `Onboarding` component
@@ -38,6 +39,22 @@ The app is split across several source files. There is no routing library — `M
 - `onAuthStateChanged` is the single source of truth for auth state. It always resets `profile` to `null` and sets `loading = true` before fetching the user's Firestore doc, preventing stale profiles from a previous session.
 - Screen decision: loading → `<AuthScreen>` → `<Onboarding>` → `<MainApp>`
 
+**Membership model (as of 29 May 2026)**
+- Two plans: `"founding_member"` (signup index ≤ 100) and `"free"` (index > 100). `"premium"` reserved for future paid tier.
+- Plan is assigned at registration via a Firestore transaction on `meta/stats` (`totalUsers` counter). The transaction atomically increments and returns the user's `signupIndex` (1-based). No retroactive changes — existing docs keep whatever they have.
+- New fields on `users/{uid}`: `signupIndex` (number), `plan` (string), `planAssignedAt` (timestamp).
+- Founding Member copy: "You're a Founding Member. As one of Link-Ap's first 100 members, you have free access to all features — including AI-powered tools — for as long as Link-Ap offers a free tier. Fair use applies (50 AI calls/month)."
+- Free plan copy: "Free plan — static templates included. Upgrade to Pro for AI-powered tools."
+- Founding Member badge in Profile view: `⭐ Founding Member #[signupIndex]` in amber (`#F5A623`), shown only when `plan === "founding_member"`.
+- API gate utility: `api/lib/getUserPlan.js` — fetches `plan` from Firestore via Admin SDK. All new AI tool routes must call this and return 403 if `plan !== "founding_member" && plan !== "premium"`. Existing AI features (Why Connect, Pulse, Profile Score, Starters) are NOT gated.
+
+**Tools Tab (as of 29 May 2026)**
+- `src/Tools.js` — 6th tab (after Pulse); subtabs: Founders Hub, Freelancer Kit, Growth Lab. Accepts `user` prop.
+- Bottom nav wrench icon (inline SVG), label "Tools", tab id `"tools"`.
+- **Founders Hub — AI Invoice Generator**: form view collects from/client details, currency (ZAR/USD/GBP/EUR), due date, line items (add/remove rows, running subtotal with ZAR VAT preview). Calls `POST /api/tools/invoice-generate`. Preview view shows styled invoice card with Download PDF (jsPDF A4), Share (Web Share API), and Start Over.
+- `api/tools/invoice-generate.js` — POST; verifies auth; gates via `getUserPlan` (403 for free users); sanitizes all inputs; computes subtotal/VAT/total server-side (overrides Claude's arithmetic); prompts Claude for `invoiceNumber`, `notes`, `paymentTerms` only.
+- `api/lib/getUserPlan.js` — shared Admin SDK plan-gate utility for all tool routes.
+
 **Onboarding design (as of 29 May 2026)**
 - `Onboarding` is intentionally minimal: collects only First Name, Last Name, Role, and Location (plus optional Title). All other profile fields default to empty/`[]`.
 - On completion a full Firestore profile doc is created with empty `bio`, `skills`, `lookingFor`, `bringToTable`, etc., so the rest of the app works immediately.
@@ -45,9 +62,10 @@ The app is split across several source files. There is no routing library — `M
 - `ProfileCompletePrompt` (in `Profile.js`) shows in view mode whenever any of the four key sections are empty (bio, skills, lookingFor, bringToTable). It displays a percentage ring and a checklist, and opens edit mode on tap. It auto-hides once all four are filled.
 
 **Firestore data model**
-- `users/{uid}` — user profile document (fields: `uid`, `name`, `role`, `location`, `bio`, `skills[]`, `lookingFor[]`, `achievements[]`, `linkedin`, `avatar`, `color`, `createdAt`, `pronouns`, `title`, `photoURL`)
+- `users/{uid}` — user profile document (fields: `uid`, `name`, `role`, `location`, `bio`, `skills[]`, `lookingFor[]`, `achievements[]`, `linkedin`, `avatar`, `color`, `createdAt`, `pronouns`, `title`, `photoURL`, `signupIndex`, `plan`, `planAssignedAt`)
 - `users/{uid}/matches/{targetUid}` — a copy of the matched user's profile document; updated on every profile save via `writeBatch` (fields synced: `name`, `role`, `location`, `bio`, `skills`, `photoURL`, `avatar`, `color`, `lookingFor`, `pronouns`, `title`)
 - `chats/{chatId}/messages/{msgId}` — real-time chat messages; `chatId` is the two UIDs sorted and joined with `_`
+- `meta/stats` — global counters; field `totalUsers` (number) incremented atomically via `runTransaction` on each new registration
 
 **Firebase Storage**
 - `firebase.js` exports `storage` (via `getStorage`); `App.js` imports it alongside `ref`, `uploadBytes`, and `getDownloadURL` from `firebase/storage`.
@@ -237,6 +255,14 @@ This section is the live project health snapshot. Update it after every fix or f
 | AI Profile Score / Optimiser | ❌ Not built | — |
 | Conversation Starter Chips | ✅ Shipped (26 May 2026) | `src/Messages.js` + `api/chat-starters.js`; permanent cache in `chatStarters/{chatId}`; chips shown above input bar on empty chats |
 
+#### Tools Tab (as of 29 May 2026)
+
+| Subtab | Status | Notes |
+|--------|--------|-------|
+| Founders Hub | ✅ AI Invoice Generator | Form → Preview flow; jsPDF download; Web Share API; plan-gated |
+| Freelancer Kit | ✅ AI Proposal Generator | Form → Preview flow; 7-section AI proposal; jsPDF multi-page download; Web Share API; plan-gated |
+| Growth Lab | 🔧 Shell only | Placeholder card; first tool TBD |
+
 #### Revenue features (ideated, not built)
 
 | Feature | Status |
@@ -266,3 +292,4 @@ This section is the live project health snapshot. Update it after every fix or f
 | `matchExplanations/{currentUid}_{targetUid}` | AI match explanation cache (7-day TTL) | Admin SDK only — client read/write blocked in firestore.rules |
 | `users/{uid}/private/rateLimits` | Per-user API rate limit counters | Admin SDK only |
 | `aiTrends/latest` | AI Pulse daily trend cards (24-hour TTL, single doc) | Admin SDK only — client read/write blocked in firestore.rules |
+| `meta/stats` | Global counters; `totalUsers` field drives `signupIndex` at registration | Admin SDK write (via `runTransaction` in Onboarding); no client read needed |

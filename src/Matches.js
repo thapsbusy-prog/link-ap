@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { COLORS, Avatar, Tag, LocationPin } from "./shared";
 
-export function Matches({ matches, sent, received, firebaseUser, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onDiscover, blockedUids = new Set(), blockedByUids = [], onDisconnect }) {
+export function Matches({ matches, sent, received, firebaseUser, user, onChat, onViewProfile, onAcceptRequest, onDeclineRequest, onDiscover, blockedUids = new Set(), blockedByUids = [], onDisconnect }) {
   const [disconnectTarget, setDisconnectTarget] = useState(null);
   const hasActivity = matches.length > 0 || sent.length > 0 || received.length > 0;
 
@@ -25,7 +25,9 @@ export function Matches({ matches, sent, received, firebaseUser, onChat, onViewP
             No connections yet
           </h3>
           <p style={{ fontSize: 14, color: COLORS.textMuted, lineHeight: 1.7, margin: "0 0 6px" }}>
-            You're one of the first 100 people on Link-Ap — which means free access, forever.
+            {user?.plan === "founding_member"
+              ? "Founding Member — permanent free access."
+              : "Free plan — static templates included. Upgrade to Pro for AI-powered tools."}
           </p>
           <p style={{ fontSize: 14, color: COLORS.textMuted, lineHeight: 1.7, margin: "0 0 28px" }}>
             Your next connection is one Discover away.

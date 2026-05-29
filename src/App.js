@@ -20,6 +20,7 @@ import Settings from "./Settings";
 import { Matches } from "./Matches";
 import { Discover, PublicProfile } from "./Discover";
 import Pulse from "./Pulse";
+import Tools from "./Tools";
 
 async function playBeep() {
   try {
@@ -54,7 +55,7 @@ function triggerVibrate() {
 function MainApp({ user, firebaseUser, onProfileUpdate }) {
   const [tab, setTab] = useState(() => {
     const urlTab = new URLSearchParams(window.location.search).get("tab");
-    return ["discover", "matches", "messages", "profile", "pulse", "settings"].includes(urlTab) ? urlTab : "discover";
+    return ["discover", "matches", "messages", "profile", "pulse", "settings", "tools"].includes(urlTab) ? urlTab : "discover";
   });
   const [allUsers, setAllUsers] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -515,11 +516,12 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           </div>
         )}
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnectWithNote} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
-        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} blockedUids={blockedUids} blockedByUids={blockedByUids} onDisconnect={handleDisconnect} />}
+        {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} user={user} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} blockedUids={blockedUids} blockedByUids={blockedByUids} onDisconnect={handleDisconnect} />}
         {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} lastMessages={lastMessages} currentUserName={user?.name} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} onSettings={() => setTab("settings")} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} blocked={blocked} onUnblock={handleUnblock} />}
         {tab === "pulse" && <Pulse firebaseUser={firebaseUser} />}
+        {tab === "tools" && <Tools user={user} />}
       </div>
 
       {tab === "messages" && activeChat && (
@@ -550,6 +552,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
             icon: c => <svg viewBox="0 0 24 24" fill={c} width="22" height="22"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg> },
           { id: "pulse", label: "Pulse",
             icon: c => <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
+          { id: "tools", label: "Tools",
+            icon: c => <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="22" height="22"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> },
         ].map(item => {
           const color = tab === item.id ? COLORS.accent : COLORS.textMuted;
           return (
@@ -872,6 +876,9 @@ export default function App() {
         const snap = await getDoc(doc(db, "users", user.uid));
         if (snap.exists()) {
           const data = snap.data();
+          if (!data.email && user.email) {
+            updateDoc(doc(db, "users", user.uid), { email: user.email }).catch(() => {});
+          }
           if ((!data.nameLower || !data.lastNameLower) && data.name) {
             const nameLower = data.name.toLowerCase();
             const lastNameLower = data.name.trim().split(/\s+/).pop()?.toLowerCase() || "";

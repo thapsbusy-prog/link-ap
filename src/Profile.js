@@ -811,6 +811,11 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
                       )}
                     </div>
                     <div style={{ color: user.color, fontSize: 13, marginTop: 2 }}>{user.role}</div>
+                    {user?.plan === "founding_member" && (
+                      <div style={{ fontSize: 11, color: "#F5A623", fontWeight: 600, marginTop: 3 }}>
+                        ⭐ Founding Member #{user.signupIndex}
+                      </div>
+                    )}
                   </div>
                   {user.lookingFor?.includes("Investor") && (
                     <div style={{ display: "flex", alignItems: "center", gap: 5, background: "#0A2015", border: "1px solid #15532E", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>

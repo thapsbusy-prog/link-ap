@@ -784,8 +784,11 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
     <div style={{ padding: 24, textAlign: "center", paddingTop: 80, color: COLORS.textMuted }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>🌙</div>
       <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>That's your 3 for today.</h3>
-      <p style={{ fontSize: 14, marginBottom: 6, lineHeight: 1.6 }}>On the free plan you get 3 new connections to explore each day.</p>
-      <p style={{ fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>Come back tomorrow for 3 more — quality over quantity.</p>
+      {user?.plan === "founding_member"
+        ? <p style={{ fontSize: 14, marginBottom: 6, lineHeight: 1.6 }}>Founding Member — permanent free access. You get 3 curated connections per day — quality over quantity.</p>
+        : <p style={{ fontSize: 14, marginBottom: 6, lineHeight: 1.6 }}>Free plan — static templates included. Upgrade to Pro for AI-powered tools.</p>
+      }
+      <p style={{ fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>Come back tomorrow for more.</p>
       <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 20, border: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.textMuted, backgroundColor: COLORS.card }}>Resets at midnight</div>
     </div>
   );
@@ -794,16 +797,23 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
     <div style={{ padding: 24, textAlign: "center", paddingTop: 80, color: COLORS.textMuted }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>🐦</div>
       <h3 style={{ fontSize: 20, marginBottom: 8, color: COLORS.text }}>You're one of the first.</h3>
-      <p style={{ fontSize: 14, marginBottom: 6 }}>You're among the first 100 people on Link-Ap — which means you get access to everything, free forever.</p>
+      {user?.plan === "founding_member"
+        ? <p style={{ fontSize: 14, marginBottom: 6 }}>You're a Founding Member. As one of Link-Ap's first 100 members, you have free access to all features — including AI-powered tools — for as long as Link-Ap offers a free tier. Fair use applies (50 AI calls/month).</p>
+        : <p style={{ fontSize: 14, marginBottom: 6 }}>Free plan — static templates included. Upgrade to Pro for AI-powered tools.</p>
+      }
       <p style={{ fontSize: 14, marginBottom: 16 }}>We'll notify you the moment someone worth connecting with joins. Sit tight.</p>
-      <p style={{ fontSize: 14, marginBottom: 16 }}>Share Link-Ap with someone and they'll also qualify for free access — forever.</p>
+      {user?.plan === "founding_member" && (
+        <p style={{ fontSize: 14, marginBottom: 16 }}>Share Link-Ap with someone and help them discover who's building something worth joining.</p>
+      )}
       <button onClick={() => setShowShare(true)} style={{
         display: "block", margin: "0 auto 20px", padding: "10px 24px",
         borderRadius: 12, border: `1px solid ${COLORS.border}`,
         background: "transparent", color: COLORS.text, cursor: "pointer",
         fontSize: 14, fontWeight: 500,
       }}>Share with someone</button>
-      <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 20, border: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.textMuted, backgroundColor: COLORS.card }}>🎟 Founding Member</div>
+      <div style={{ display: "inline-block", padding: "6px 14px", borderRadius: 20, border: `1px solid ${COLORS.border}`, fontSize: 13, color: COLORS.textMuted, backgroundColor: COLORS.card }}>
+        {user?.plan === "founding_member" ? "⭐ Founding Member" : "Free plan"}
+      </div>
       {showShare && user && <ShareModal user={user} onClose={() => setShowShare(false)} />}
     </div>
   );
