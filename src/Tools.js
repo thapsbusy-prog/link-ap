@@ -301,11 +301,11 @@ function InvoiceForm({ user }) {
             })),
         }),
       });
-      if (res.status === 403) {
-        setGenError("Pro feature — upgrade to access AI tools.");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setGenError(errData.error || "Something went wrong. Please try again.");
         return;
       }
-      if (!res.ok) throw new Error("Generation failed");
       const data = await res.json();
       setInvoice(data);
       setView("preview");
@@ -891,11 +891,11 @@ function ProposalForm({ user }) {
           startDate: form.startDate,
         }),
       });
-      if (res.status === 403) {
-        setGenError("Pro feature — upgrade to access AI tools.");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setGenError(errData.error || "Something went wrong. Please try again.");
         return;
       }
-      if (!res.ok) throw new Error("Generation failed");
       const data = await res.json();
       setProposal(data);
       setView("preview");
@@ -1486,11 +1486,11 @@ function ContentCalendarForm({ user }) {
           weekCount: form.weekCount,
         }),
       });
-      if (res.status === 403) {
-        setGenError("Pro feature — upgrade to access AI tools.");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setGenError(errData.error || "Something went wrong. Please try again.");
         return;
       }
-      if (!res.ok) throw new Error("Generation failed");
       const data = await res.json();
       setCalendar(data);
       setView("preview");
@@ -1985,11 +1985,11 @@ function PitchDeckForm({ user }) {
           currency: form.currency,
         }),
       });
-      if (res.status === 403) {
-        setGenError("Pro feature — upgrade to access AI tools.");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setGenError(errData.error || "Something went wrong. Please try again.");
         return;
       }
-      if (!res.ok) throw new Error("Generation failed");
       const data = await res.json();
       setDeck(data);
       setView("preview");
@@ -2817,6 +2817,415 @@ function DayRateCalculator() {
   );
 }
 
+// ─── Static Invoice Template ─────────────────────────────────────────────────
+
+function StaticInvoiceTemplate({ user }) {
+  const [form, setForm] = useState({
+    invoiceNumber: "INV-001",
+    fromName: user?.name || "",
+    fromEmail: "",
+    clientName: "",
+    clientEmail: "",
+    currency: "ZAR",
+    dueDate: "",
+    notes: "",
+    paymentTerms: "Due within 30 days of invoice date.",
+  });
+  const [lineItems, setLineItems] = useState([newItem()]);
+  const [downloaded, setDownloaded] = useState(false);
+
+  const upd = (k, v) => { setForm(f => ({ ...f, [k]: v })); setDownloaded(false); };
+  const updItem = (id, k, v) =>
+    setLineItems(items => items.map(i => i.id === id ? { ...i, [k]: v } : i));
+  const addItem = () => setLineItems(prev => [...prev, newItem()]);
+  const removeItem = id =>
+    setLineItems(prev => prev.length > 1 ? prev.filter(i => i.id !== id) : prev);
+
+  const sym = CURRENCY_SYMBOLS[form.currency] || "";
+  const validItems = lineItems.filter(
+    i => i.description.trim() && parseFloat(i.unitPrice) > 0
+  );
+  const subtotal =
+    Math.round(
+      validItems.reduce((s, i) => s + (parseFloat(i.qty) || 1) * (parseFloat(i.unitPrice) || 0), 0) * 100
+    ) / 100;
+  const tax = form.currency === "ZAR" ? Math.round(subtotal * 0.15 * 100) / 100 : 0;
+  const total = Math.round((subtotal + tax) * 100) / 100;
+  const canDownload = form.fromName.trim() && form.clientName.trim() && validItems.length > 0;
+
+  const fmt = d =>
+    d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const today = new Date();
+  const todayStr = fmt(today);
+  const dueDateStr = form.dueDate ? fmt(new Date(form.dueDate)) : todayStr;
+
+  const downloadPDF = () => {
+    const inv = {
+      invoiceNumber: form.invoiceNumber || "INV-001",
+      invoiceDate: todayStr,
+      dueDate: dueDateStr,
+      fromName: form.fromName,
+      fromEmail: form.fromEmail,
+      clientName: form.clientName,
+      clientEmail: form.clientEmail,
+      currencySymbol: sym,
+      lineItems: validItems.map(i => ({
+        description: i.description.trim(),
+        qty: parseFloat(i.qty) || 1,
+        unitPrice: parseFloat(i.unitPrice) || 0,
+        total: Math.round((parseFloat(i.qty) || 1) * (parseFloat(i.unitPrice) || 0) * 100) / 100,
+      })),
+      subtotal, tax, total,
+      notes: form.notes,
+      paymentTerms: form.paymentTerms,
+    };
+
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const W = 210, M = 20, CW = W - 2 * M;
+    const s = sym;
+    let y = 0;
+
+    doc.setFillColor(245, 166, 35);
+    doc.rect(0, 0, W, 16, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(0, 0, 0);
+    doc.text("INVOICE", M, 10);
+    doc.setFontSize(10);
+    doc.text(inv.invoiceNumber, W - M, 10, { align: "right" });
+    y = 30;
+
+    doc.setFontSize(8); doc.setTextColor(138, 138, 154);
+    doc.text("FROM", M, y); doc.text("TO", W / 2 + 4, y); y += 5;
+    doc.setFontSize(10); doc.setTextColor(26, 26, 26); doc.setFont("helvetica", "bold");
+    doc.text(inv.fromName, M, y); doc.text(inv.clientName, W / 2 + 4, y); y += 5;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(80, 80, 80);
+    if (inv.fromEmail) doc.text(inv.fromEmail, M, y);
+    if (inv.clientEmail) doc.text(inv.clientEmail, W / 2 + 4, y);
+    y += 12;
+
+    doc.setFontSize(8.5); doc.setTextColor(100, 100, 100);
+    doc.text(`Date: ${inv.invoiceDate}`, M, y);
+    doc.text(`Due: ${inv.dueDate}`, W - M, y, { align: "right" }); y += 12;
+
+    doc.setFillColor(245, 166, 35); doc.rect(M, y - 4, CW, 7, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(0, 0, 0);
+    doc.text("Description", M + 2, y);
+    doc.text("Qty", M + CW * 0.65, y, { align: "center" });
+    doc.text("Unit Price", M + CW * 0.80, y, { align: "right" });
+    doc.text("Total", M + CW, y, { align: "right" }); y += 7;
+
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    inv.lineItems.forEach((item, idx) => {
+      if (idx % 2 === 1) {
+        doc.setFillColor(248, 248, 248); doc.rect(M, y - 4, CW, 7, "F");
+      }
+      doc.setTextColor(26, 26, 26);
+      doc.text((item.description || "").slice(0, 55), M + 2, y);
+      doc.text(String(item.qty), M + CW * 0.65, y, { align: "center" });
+      doc.text(`${s}${item.unitPrice.toFixed(2)}`, M + CW * 0.80, y, { align: "right" });
+      doc.text(`${s}${item.total.toFixed(2)}`, M + CW, y, { align: "right" }); y += 7;
+    });
+    y += 6;
+
+    const TX = M + CW * 0.58;
+    const addRow = (label, value, bold = false) => {
+      doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(9);
+      doc.setTextColor(bold ? 26 : 80, bold ? 26 : 80, bold ? 26 : 80);
+      doc.text(label, TX, y); doc.text(value, M + CW, y, { align: "right" }); y += 6;
+    };
+    addRow("Subtotal", `${s}${subtotal.toFixed(2)}`);
+    if (tax > 0) addRow("VAT (15%)", `${s}${tax.toFixed(2)}`);
+    doc.setDrawColor(200, 200, 200); doc.line(TX, y - 2, M + CW, y - 2);
+    addRow("Total", `${s}${total.toFixed(2)}`, true); y += 4;
+
+    if (inv.notes) {
+      doc.setFont("helvetica", "italic"); doc.setFontSize(8.5); doc.setTextColor(90, 90, 90);
+      const nl = doc.splitTextToSize(inv.notes, CW);
+      doc.text(nl, M, y); y += nl.length * 5 + 4;
+    }
+    if (inv.paymentTerms) {
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(110, 110, 110);
+      doc.text(inv.paymentTerms, M, y);
+    }
+
+    doc.setFillColor(19, 19, 26); doc.rect(0, 284, W, 13, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(245, 166, 35);
+    doc.text("Link-Ap", W / 2 - 8, 291);
+    doc.setTextColor(138, 138, 154); doc.setFont("helvetica", "normal");
+    doc.text(" · link-ap.online", W / 2 - 1, 291);
+
+    doc.save(`Invoice-${inv.invoiceNumber}.pdf`);
+    setDownloaded(true);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0 }}>
+        Fill in all the details yourself and download a professional PDF invoice — no AI, no monthly limits.
+      </p>
+
+      <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 18 }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>INVOICE DETAILS</div>
+        <div>
+          <label style={labelStyle}>Invoice Number</label>
+          <input style={inputStyle} value={form.invoiceNumber} onChange={e => upd("invoiceNumber", e.target.value)} placeholder="INV-001" />
+        </div>
+      </div>
+
+      <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 18 }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>YOUR DETAILS</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Your Name</label>
+            <input style={inputStyle} value={form.fromName} onChange={e => upd("fromName", e.target.value)} placeholder="e.g. Thapelo Mokoena" />
+          </div>
+          <div>
+            <label style={labelStyle}>Your Email</label>
+            <input style={inputStyle} type="email" value={form.fromEmail} onChange={e => upd("fromEmail", e.target.value)} placeholder="you@example.com" />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 18 }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>CLIENT DETAILS</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Client Name</label>
+            <input style={inputStyle} value={form.clientName} onChange={e => upd("clientName", e.target.value)} placeholder="e.g. Acme Corp" />
+          </div>
+          <div>
+            <label style={labelStyle}>Client Email</label>
+            <input style={inputStyle} type="email" value={form.clientEmail} onChange={e => upd("clientEmail", e.target.value)} placeholder="billing@acme.com" />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>Currency</label>
+          <select value={form.currency} onChange={e => upd("currency", e.target.value)} style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none" }}>
+            {CURRENCY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>Due Date</label>
+          <input style={{ ...inputStyle, colorScheme: "dark" }} type="date" value={form.dueDate} onChange={e => upd("dueDate", e.target.value)} />
+        </div>
+      </div>
+
+      <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 18 }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>LINE ITEMS</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {lineItems.map((item, idx) => (
+            <div key={item.id} style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+              <div style={{ flex: "1 1 44%" }}>
+                {idx === 0 && <label style={{ ...labelStyle, marginBottom: 4 }}>Description</label>}
+                <input style={{ ...inputStyle, padding: "9px 12px" }} value={item.description} onChange={e => updItem(item.id, "description", e.target.value)} placeholder="e.g. Web design" />
+              </div>
+              <div style={{ flex: "0 0 50px" }}>
+                {idx === 0 && <label style={{ ...labelStyle, marginBottom: 4 }}>Qty</label>}
+                <input style={{ ...inputStyle, padding: "9px 8px", textAlign: "center" }} type="number" min="0.01" step="1" value={item.qty} onChange={e => updItem(item.id, "qty", e.target.value)} />
+              </div>
+              <div style={{ flex: "1 1 28%" }}>
+                {idx === 0 && <label style={{ ...labelStyle, marginBottom: 4 }}>Unit Price ({sym})</label>}
+                <input style={{ ...inputStyle, padding: "9px 12px" }} type="number" min="0" step="0.01" value={item.unitPrice} onChange={e => updItem(item.id, "unitPrice", e.target.value)} placeholder="0.00" />
+              </div>
+              <button
+                onClick={() => removeItem(item.id)}
+                style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 18, padding: "0 4px", lineHeight: 1, flexShrink: 0, marginBottom: 2 }}
+              >×</button>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={addItem}
+          style={{ marginTop: 12, padding: "8px 14px", borderRadius: 8, border: `1px dashed ${COLORS.border}`, background: "transparent", color: COLORS.textMuted, cursor: "pointer", fontSize: 13, width: "100%" }}
+        >+ Add Item</button>
+        {validItems.length > 0 && (
+          <div style={{ marginTop: 14, borderTop: `1px solid ${COLORS.border}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
+            <span style={{ fontSize: 12, color: COLORS.textMuted }}>Subtotal: {sym}{subtotal.toFixed(2)}</span>
+            {tax > 0 && <span style={{ fontSize: 12, color: COLORS.textMuted }}>VAT (15%): {sym}{tax.toFixed(2)}</span>}
+            <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.accent }}>Total: {sym}{total.toFixed(2)}</span>
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 18 }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>NOTES & TERMS</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Notes (optional)</label>
+            <textarea style={{ ...inputStyle, minHeight: 60, resize: "vertical" }} value={form.notes} onChange={e => upd("notes", e.target.value)} placeholder="e.g. Thank you for your business." />
+          </div>
+          <div>
+            <label style={labelStyle}>Payment Terms</label>
+            <input style={inputStyle} value={form.paymentTerms} onChange={e => upd("paymentTerms", e.target.value)} placeholder="e.g. Due within 30 days" />
+          </div>
+        </div>
+      </div>
+
+      {downloaded && (
+        <p style={{ textAlign: "center", color: "#4CAF50", fontSize: 13, margin: 0 }}>✓ Invoice downloaded!</p>
+      )}
+      <button
+        onClick={downloadPDF}
+        disabled={!canDownload}
+        style={{ padding: "14px", borderRadius: 12, border: "none", background: canDownload ? COLORS.accent : COLORS.border, color: canDownload ? "#000" : COLORS.textMuted, cursor: canDownload ? "pointer" : "not-allowed", fontSize: 15, fontWeight: 700 }}
+      >Download Invoice PDF</button>
+    </div>
+  );
+}
+
+// ─── Static Rate Card ─────────────────────────────────────────────────────────
+
+const newService = () => ({ id: `${Date.now()}-${Math.random()}`, name: "", description: "", rate: "" });
+
+function StaticRateCard() {
+  const [name, setName] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [currency, setCurrency] = useState("ZAR");
+  const [services, setServices] = useState([newService(), newService()]);
+  const [downloaded, setDownloaded] = useState(false);
+
+  const sym = CURRENCY_SYMBOLS[currency] || "";
+  const updService = (id, k, v) =>
+    setServices(prev => prev.map(s => s.id === id ? { ...s, [k]: v } : s));
+  const addService = () => setServices(prev => [...prev, newService()]);
+  const removeService = id =>
+    setServices(prev => prev.length > 1 ? prev.filter(s => s.id !== id) : prev);
+
+  const validServices = services.filter(s => s.name.trim() && s.rate.trim());
+  const canDownload = name.trim() && validServices.length > 0;
+
+  const download = () => {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const W = 210, M = 20, CW = W - 2 * M;
+    let y = 0;
+
+    doc.setFillColor(245, 166, 35); doc.rect(0, 0, W, 28, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(18); doc.setTextColor(0, 0, 0);
+    doc.text(name, M, 14);
+    if (tagline) {
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text(tagline, M, 22);
+    }
+    y = 42;
+
+    if (email || phone) {
+      doc.setFontSize(8.5); doc.setTextColor(100, 100, 100);
+      doc.text([email, phone].filter(Boolean).join("  ·  "), M, y); y += 10;
+    }
+
+    doc.setFillColor(245, 166, 35); doc.rect(M, y, CW, 8, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(0, 0, 0);
+    doc.text("Service", M + 3, y + 5.5);
+    doc.text("Description", M + CW * 0.42, y + 5.5);
+    doc.text("Rate", M + CW, y + 5.5, { align: "right" }); y += 12;
+
+    validServices.forEach((svc, idx) => {
+      if (idx % 2 === 1) {
+        doc.setFillColor(248, 248, 248); doc.rect(M, y - 4, CW, 9, "F");
+      }
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(26, 26, 26);
+      doc.text(svc.name.slice(0, 28), M + 3, y + 1.5);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(80, 80, 80);
+      if (svc.description) doc.text(svc.description.slice(0, 40), M + CW * 0.42, y + 1.5);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(26, 26, 26);
+      doc.text(`${sym}${svc.rate}`, M + CW, y + 1.5, { align: "right" }); y += 9;
+    });
+
+    y += 12;
+    doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(140, 140, 140);
+    doc.text("Rates are subject to change. All prices exclude applicable taxes unless stated.", M, y);
+
+    doc.setFillColor(19, 19, 26); doc.rect(0, 284, W, 13, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(245, 166, 35);
+    doc.text("Link-Ap", W / 2 - 8, 291);
+    doc.setTextColor(138, 138, 154); doc.setFont("helvetica", "normal");
+    doc.text(" · link-ap.online", W / 2 - 1, 291);
+
+    doc.save(`Rate-Card-${name.replace(/\s+/g, "-")}.pdf`);
+    setDownloaded(true);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0 }}>
+        List your services and rates and download a professional PDF rate card to share with clients.
+      </p>
+
+      <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 18 }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>YOUR DETAILS</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Your Name / Business Name</label>
+            <input style={inputStyle} value={name} onChange={e => { setName(e.target.value); setDownloaded(false); }} placeholder="e.g. Thapelo Mokoena" />
+          </div>
+          <div>
+            <label style={labelStyle}>Tagline (optional)</label>
+            <input style={inputStyle} value={tagline} onChange={e => setTagline(e.target.value)} placeholder="e.g. Freelance Brand Designer" />
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Email</label>
+              <input style={inputStyle} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Phone (optional)</label>
+              <input style={inputStyle} type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+27 ..." />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Currency</label>
+            <select value={currency} onChange={e => setCurrency(e.target.value)} style={{ ...inputStyle, appearance: "none", WebkitAppearance: "none" }}>
+              {CURRENCY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 18 }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>SERVICES & RATES</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {services.map((svc, idx) => (
+            <div key={svc.id} style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+              <div style={{ flex: "1 1 28%" }}>
+                {idx === 0 && <label style={{ ...labelStyle, marginBottom: 4 }}>Service</label>}
+                <input style={{ ...inputStyle, padding: "9px 12px" }} value={svc.name} onChange={e => updService(svc.id, "name", e.target.value)} placeholder="e.g. Logo Design" />
+              </div>
+              <div style={{ flex: "1 1 42%" }}>
+                {idx === 0 && <label style={{ ...labelStyle, marginBottom: 4 }}>Description</label>}
+                <input style={{ ...inputStyle, padding: "9px 12px" }} value={svc.description} onChange={e => updService(svc.id, "description", e.target.value)} placeholder="e.g. per project" />
+              </div>
+              <div style={{ flex: "0 0 90px" }}>
+                {idx === 0 && <label style={{ ...labelStyle, marginBottom: 4 }}>Rate ({sym})</label>}
+                <input style={{ ...inputStyle, padding: "9px 12px" }} value={svc.rate} onChange={e => updService(svc.id, "rate", e.target.value)} placeholder="5,000" />
+              </div>
+              <button
+                onClick={() => removeService(svc.id)}
+                style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 18, padding: "0 4px", lineHeight: 1, flexShrink: 0, marginBottom: 2 }}
+              >×</button>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={addService}
+          style={{ marginTop: 12, padding: "8px 14px", borderRadius: 8, border: `1px dashed ${COLORS.border}`, background: "transparent", color: COLORS.textMuted, cursor: "pointer", fontSize: 13, width: "100%" }}
+        >+ Add Service</button>
+      </div>
+
+      {downloaded && (
+        <p style={{ textAlign: "center", color: "#4CAF50", fontSize: 13, margin: 0 }}>✓ Rate card downloaded!</p>
+      )}
+      <button
+        onClick={download}
+        disabled={!canDownload}
+        style={{ padding: "14px", borderRadius: 12, border: "none", background: canDownload ? COLORS.accent : COLORS.border, color: canDownload ? "#000" : COLORS.textMuted, cursor: canDownload ? "pointer" : "not-allowed", fontSize: 15, fontWeight: 700 }}
+      >Download Rate Card PDF</button>
+    </div>
+  );
+}
+
 // ─── Tool Hub helpers ─────────────────────────────────────────────────────────
 
 const toolCardStyle = {
@@ -2849,26 +3258,13 @@ const backBtnStyle = {
 
 function FoundersHub({ user }) {
   const [activeTool, setActiveTool] = useState(null);
+  const isPro = user?.plan === "founding_member" || user?.plan === "premium";
 
   const TOOLS = [
-    {
-      id: "invoice",
-      emoji: "🧾",
-      name: "AI Invoice Generator",
-      desc: "Generate professional invoices in seconds",
-    },
-    {
-      id: "pitch-deck",
-      emoji: "📊",
-      name: "Pitch Deck Outline",
-      desc: "10-slide AI-powered investor pitch outline",
-    },
-    {
-      id: "break-even",
-      emoji: "⚖️",
-      name: "Break-Even Calculator",
-      desc: "Find your profitability threshold instantly",
-    },
+    { id: "invoice", emoji: "🧾", name: "AI Invoice Generator", desc: "AI drafts a professional invoice in seconds", ai: true },
+    { id: "pitch-deck", emoji: "📊", name: "Pitch Deck Outline", desc: "10-slide AI-powered investor pitch outline", ai: true },
+    { id: "break-even", emoji: "⚖️", name: "Break-Even Calculator", desc: "Find your profitability threshold instantly", ai: false },
+    { id: "invoice-template", emoji: "📄", name: "Invoice Template", desc: "Fill in your own invoice and download PDF", ai: false },
   ];
 
   if (activeTool) {
@@ -2880,6 +3276,7 @@ function FoundersHub({ user }) {
         {activeTool === "invoice" && <InvoiceForm user={user} />}
         {activeTool === "pitch-deck" && <PitchDeckForm user={user} />}
         {activeTool === "break-even" && <BreakEvenCalculator />}
+        {activeTool === "invoice-template" && <StaticInvoiceTemplate user={user} />}
       </div>
     );
   }
@@ -2889,22 +3286,33 @@ function FoundersHub({ user }) {
       <p style={{ fontSize: 13, color: COLORS.textMuted, margin: "0 0 4px" }}>
         Tools built for founders — from fundraising to financial clarity.
       </p>
-      {TOOLS.map(tool => (
-        <button
-          key={tool.id}
-          onClick={() => setActiveTool(tool.id)}
-          style={toolCardStyle}
-        >
-          <span style={{ fontSize: 28, flexShrink: 0 }}>{tool.emoji}</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 2 }}>
-              {tool.name}
+      {TOOLS.map(tool => {
+        const locked = tool.ai && !isPro;
+        return (
+          <button
+            key={tool.id}
+            onClick={() => setActiveTool(tool.id)}
+            style={{ ...toolCardStyle, opacity: locked ? 0.65 : 1 }}
+          >
+            <span style={{ fontSize: 28, flexShrink: 0 }}>{tool.emoji}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{tool.name}</span>
+                {tool.ai ? (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#000", background: COLORS.accent, borderRadius: 4, padding: "1px 5px" }}>⭐ AI</span>
+                ) : (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "#3a7d44", borderRadius: 4, padding: "1px 5px" }}>Free</span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, color: COLORS.textMuted }}>{tool.desc}</div>
+              {locked && (
+                <div style={{ fontSize: 11, color: COLORS.accent, marginTop: 3 }}>Founding Member only</div>
+              )}
             </div>
-            <div style={{ fontSize: 12, color: COLORS.textMuted }}>{tool.desc}</div>
-          </div>
-          <span style={{ color: COLORS.textMuted, fontSize: 18 }}>›</span>
-        </button>
-      ))}
+            <span style={{ color: COLORS.textMuted, fontSize: 18 }}>›</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -2913,20 +3321,12 @@ function FoundersHub({ user }) {
 
 function FreelancerKit({ user }) {
   const [activeTool, setActiveTool] = useState(null);
+  const isPro = user?.plan === "founding_member" || user?.plan === "premium";
 
   const TOOLS = [
-    {
-      id: "proposal",
-      emoji: "📋",
-      name: "AI Proposal Generator",
-      desc: "Professional client proposals written by AI",
-    },
-    {
-      id: "day-rate",
-      emoji: "💰",
-      name: "Day Rate Calculator",
-      desc: "Calculate your ideal freelance pricing",
-    },
+    { id: "proposal", emoji: "📋", name: "AI Proposal Generator", desc: "Professional client proposals written by AI", ai: true },
+    { id: "day-rate", emoji: "💰", name: "Day Rate Calculator", desc: "Calculate your ideal freelance pricing", ai: false },
+    { id: "rate-card", emoji: "🎴", name: "Rate Card Template", desc: "List your services and download a PDF rate card", ai: false },
   ];
 
   if (activeTool) {
@@ -2937,6 +3337,7 @@ function FreelancerKit({ user }) {
         </button>
         {activeTool === "proposal" && <ProposalForm user={user} />}
         {activeTool === "day-rate" && <DayRateCalculator />}
+        {activeTool === "rate-card" && <StaticRateCard />}
       </div>
     );
   }
@@ -2946,22 +3347,33 @@ function FreelancerKit({ user }) {
       <p style={{ fontSize: 13, color: COLORS.textMuted, margin: "0 0 4px" }}>
         Tools built for freelancers — win clients and price your work confidently.
       </p>
-      {TOOLS.map(tool => (
-        <button
-          key={tool.id}
-          onClick={() => setActiveTool(tool.id)}
-          style={toolCardStyle}
-        >
-          <span style={{ fontSize: 28, flexShrink: 0 }}>{tool.emoji}</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 2 }}>
-              {tool.name}
+      {TOOLS.map(tool => {
+        const locked = tool.ai && !isPro;
+        return (
+          <button
+            key={tool.id}
+            onClick={() => setActiveTool(tool.id)}
+            style={{ ...toolCardStyle, opacity: locked ? 0.65 : 1 }}
+          >
+            <span style={{ fontSize: 28, flexShrink: 0 }}>{tool.emoji}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{tool.name}</span>
+                {tool.ai ? (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#000", background: COLORS.accent, borderRadius: 4, padding: "1px 5px" }}>⭐ AI</span>
+                ) : (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "#3a7d44", borderRadius: 4, padding: "1px 5px" }}>Free</span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, color: COLORS.textMuted }}>{tool.desc}</div>
+              {locked && (
+                <div style={{ fontSize: 11, color: COLORS.accent, marginTop: 3 }}>Founding Member only</div>
+              )}
             </div>
-            <div style={{ fontSize: 12, color: COLORS.textMuted }}>{tool.desc}</div>
-          </div>
-          <span style={{ color: COLORS.textMuted, fontSize: 18 }}>›</span>
-        </button>
-      ))}
+            <span style={{ color: COLORS.textMuted, fontSize: 18 }}>›</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 const admin = require("firebase-admin");
 const getUserPlan = require("../lib/getUserPlan");
+const checkToolLimit = require("../lib/checkToolLimit");
 
 if (!admin.apps.length) {
   try {
@@ -45,6 +46,9 @@ module.exports = async function handler(req, res) {
   if (plan !== "founding_member" && plan !== "premium") {
     return res.status(403).json({ error: "Pro feature — upgrade to access AI tools" });
   }
+
+  const limitResult = await checkToolLimit(uid, "calendar");
+  if (!limitResult.allowed) return res.status(429).json({ error: limitResult.message });
 
   const {
     brandName, niche, targetAudience, platforms, tone, goals, weekCount,
