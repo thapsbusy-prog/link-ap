@@ -673,7 +673,7 @@ function InvoiceForm({ user }) {
           fontSize: 15, fontWeight: 700,
         }}
       >
-        {generating ? "Generating…" : "✦ Generate Invoice"}
+        {generating ? "Generating…" : "Generate Invoice"}
       </button>
     </div>
   );
@@ -1238,7 +1238,7 @@ function ProposalForm({ user }) {
           fontSize: 15, fontWeight: 700,
         }}
       >
-        {generating ? "Generating…" : "✦ Generate Proposal"}
+        {generating ? "Generating…" : "Generate Proposal"}
       </button>
     </div>
   );
@@ -1792,7 +1792,7 @@ function ContentCalendarForm({ user }) {
           fontSize: 15, fontWeight: 700,
         }}
       >
-        {generating ? "Generating…" : "✦ Generate Calendar"}
+        {generating ? "Generating…" : "Generate Calendar"}
       </button>
     </div>
   );
@@ -2277,7 +2277,7 @@ function PitchDeckForm({ user }) {
           fontSize: 15, fontWeight: 700,
         }}
       >
-        {generating ? "Generating…" : "✦ Generate Pitch Deck"}
+        {generating ? "Generating…" : "Generate Pitch Deck"}
       </button>
     </div>
   );
@@ -3359,7 +3359,7 @@ function FoundersHub({ user }) {
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{tool.name}</span>
                 {tool.ai ? (
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#000", background: COLORS.accent, borderRadius: 4, padding: "1px 5px" }}>⭐ AI</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#000", background: COLORS.accent, borderRadius: 4, padding: "1px 5px" }}>PRO</span>
                 ) : (
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "#3a7d44", borderRadius: 4, padding: "1px 5px" }}>Free</span>
                 )}
@@ -3459,7 +3459,7 @@ function FreelancerKit({ user }) {
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{tool.name}</span>
                 {tool.ai ? (
-                  <span style={{ fontSize: 10, fontWeight: 700, color: "#000", background: COLORS.accent, borderRadius: 4, padding: "1px 5px" }}>⭐ AI</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#000", background: COLORS.accent, borderRadius: 4, padding: "1px 5px" }}>PRO</span>
                 ) : (
                   <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", background: "#3a7d44", borderRadius: 4, padding: "1px 5px" }}>Free</span>
                 )}
