@@ -17,7 +17,7 @@
  * - Keep the same Firebase config as src/firebase.js
  * - Keep onBackgroundMessage returning the
  *   showNotification promise
- * - Keep notificationclick opening /?tab=messages
+ * - Keep notificationclick navigating to the URL from notification data
  *
  * If you update the Firebase SDK version in package.json,
  * update the importScripts version numbers here too.
@@ -56,13 +56,15 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || '/?tab=messages';
+  const url = event.notification.data?.url || '/?tab=matches';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.focus();
-          return;
+          // Navigate the existing window to the notification's destination tab,
+          // then focus it — without this, clicking the notification left the user
+          // on whatever tab they were already on.
+          return client.navigate(url).then(c => (c || client).focus());
         }
       }
       return clients.openWindow(url);

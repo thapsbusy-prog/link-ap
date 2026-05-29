@@ -183,7 +183,10 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       if (isInActiveChat) return;
       const title = payload?.notification?.title || "New message";
       const body = payload?.notification?.body;
-      showNotif(body ? `${title}: ${body}` : title);
+      const notifType = payload?.data?.type;
+      const destTab = (notifType === "connection_request" || notifType === "connection_accepted")
+        ? "matches" : null;
+      showNotif(body ? `${title}: ${body}` : title, destTab);
       // playBeep/triggerVibrate intentionally omitted here — the Firestore
       // onSnapshot listener handles audio+haptics for foreground messages,
       // so calling them here too would double-fire for foreground users.
@@ -306,8 +309,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
     await setDoc(doc(db, "users", firebaseUser.uid, "passed", targetUser.uid), { passedAt: serverTimestamp() });
   };
 
-  const showNotif = (msg) => {
-    setNotification(msg);
+  const showNotif = (msg, tab = null) => {
+    setNotification({ msg, tab });
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -452,11 +455,15 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   return (
     <div style={{ minHeight: "100vh", background: COLORS.bg, maxWidth: 430, margin: "0 auto", position: "relative" }}>
       {notification && (
-        <div style={{
-          position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)",
-          background: COLORS.accent, color: "#000", padding: "10px 20px", borderRadius: 12,
-          fontSize: 13, fontWeight: 600, zIndex: 999, whiteSpace: "nowrap",
-        }}>{notification}</div>
+        <div
+          onClick={notification.tab ? () => setTab(notification.tab) : undefined}
+          style={{
+            position: "fixed", top: 16, left: "50%", transform: "translateX(-50%)",
+            background: COLORS.accent, color: "#000", padding: "10px 20px", borderRadius: 12,
+            fontSize: 13, fontWeight: 600, zIndex: 999, whiteSpace: "nowrap",
+            cursor: notification.tab ? "pointer" : "default",
+          }}
+        >{notification.msg}</div>
       )}
 
       <div style={{

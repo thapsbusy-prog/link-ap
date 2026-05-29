@@ -81,6 +81,14 @@ module.exports = async function handler(req, res) {
     body: "You have a new notification on Link-Ap",
   };
 
+  // Route each notification type to the correct tab
+  const urlByType = {
+    connection_request: "/?tab=matches",
+    connection_accepted: "/?tab=matches",
+    message: "/?tab=messages",
+  };
+  const notifUrl = urlByType[type] || "/?tab=matches";
+
   const [matchDoc, receivedDoc] = await Promise.all([
     admin.firestore()
       .collection("users")
@@ -127,10 +135,11 @@ module.exports = async function handler(req, res) {
       data: {
         title,
         body: notificationBody,
-        url: "/?tab=messages",
+        url: notifUrl,
+        type,
       },
       webpush: {
-        fcmOptions: { link: "/?tab=messages" },
+        fcmOptions: { link: notifUrl },
         notification: {
           icon: "/icons/icon-192.png",
           badge: "/icons/icon-192.png",
