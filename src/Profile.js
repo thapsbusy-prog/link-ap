@@ -357,71 +357,71 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
 
     // Header bg
     doc.setFillColor(248, 248, 252);
-    doc.rect(0, 3, PW, 44, 'F');
+    doc.rect(0, 3, PW, 42, 'F');
 
-    // Avatar circle
-    doc.setFillColor(ur, ug, ub);
-    doc.circle(M + 12, 25, 12, 'F');
-    doc.setFontSize(13);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text(user.avatar || '?', M + 12, 28.5, { align: 'center' });
-
-    // Name
+    // Name (starts at left margin — no avatar circle)
     const displayName = [user.title, user.name].filter(Boolean).join(' ');
-    doc.setFontSize(18);
+    doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(26, 26, 46);
-    doc.text(displayName, M + 30, 17);
-
-    // Pronouns next to name
-    if (user.pronouns) {
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(138, 138, 154);
-      const nameW = doc.getTextWidth(displayName) * (18 / 10);
-      doc.text(user.pronouns, M + 30 + nameW + 2, 17);
-    }
+    doc.text(displayName, M, 17);
 
     // Role
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(ur, ug, ub);
-    doc.text(user.role, M + 30, 25);
+    doc.text(user.role, M, 25);
 
-    // Location
+    // Location (single draw — no emoji to avoid rendering artefacts)
     doc.setFontSize(9.5);
     doc.setTextColor(120, 120, 140);
-    doc.text(user.location, M + 30, 32);
+    doc.text(user.location, M, 32);
 
     // LinkedIn
     if (user.linkedinProfileUrl) {
       doc.setFontSize(8.5);
       doc.setTextColor(10, 102, 194);
-      doc.text(user.linkedinProfileUrl.replace(/^https?:\/\//i, ''), M + 30, 39);
+      doc.text(user.linkedinProfileUrl.replace(/^https?:\/\//i, ''), M, 39);
     }
 
-    // Branding (top-right)
+    // Pronouns on its own line (muted, right-aligned to avoid clashing with name)
+    if (user.pronouns) {
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(138, 138, 154);
+      doc.text(user.pronouns, PW - M, 17, { align: 'right' });
+    }
+
+    // Branding (top-right, below pronouns)
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(ur, ug, ub);
-    doc.text('Link-Ap', PW - M, 39, { align: 'right' });
+    doc.text('Link-Ap', PW - M, 32, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(138, 138, 154);
-    doc.text('link-ap.online', PW - M, 44, { align: 'right' });
+    doc.text('link-ap.online', PW - M, 38, { align: 'right' });
 
-    let y = 58;
+    let y = 56;
 
-    const sectionLabel = (label) => {
+    const checkPageBreak = (needed = 20) => {
+      if (y + needed > 270) {
+        doc.addPage();
+        y = 20;
+      }
+    };
+
+    const sectionLabel = (label, indent = M) => {
+      checkPageBreak(10);
       doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(138, 138, 154);
-      doc.text(label, M, y);
+      doc.text(label, indent, y);
       y += 5.5;
     };
 
     const divider = () => {
+      checkPageBreak(15);
       doc.setDrawColor(220, 220, 230);
       doc.line(M, y, PW - M, y);
       y += 8;
@@ -433,6 +433,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(45, 45, 58);
       const lines = doc.splitTextToSize(user.bio, CW);
+      checkPageBreak(lines.length * 5.5);
       doc.text(lines, M, y);
       y += lines.length * 5.5 + 10;
     }
@@ -454,27 +455,66 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
       y += 14;
     }
 
+    // Looking For — categories summary + all Q&A details
     if (user.lookingFor?.length > 0) {
       divider();
       sectionLabel('LOOKING FOR');
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(45, 45, 58);
-      const lfText = doc.splitTextToSize(user.lookingFor.join('  ·  '), CW);
-      doc.text(lfText, M, y);
-      y += lfText.length * 5.5 + 10;
+      const lfSummary = doc.splitTextToSize(user.lookingFor.join('  ·  '), CW);
+      doc.text(lfSummary, M, y);
+      y += lfSummary.length * 5.5 + 6;
+
+      if (user.lookingForDetails && Object.values(user.lookingForDetails).some(v => v)) {
+        for (const lf of user.lookingFor) {
+          const questions = LOOKING_FOR_QUESTIONS[lf] || [];
+          const filledQs = questions.filter(q => user.lookingForDetails?.[q.key]);
+          if (filledQs.length === 0) continue;
+
+          checkPageBreak(14);
+          y += 4;
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(ur, ug, ub);
+          doc.text(lf.toUpperCase(), M, y);
+          y += 5.5;
+
+          for (const q of filledQs) {
+            checkPageBreak(14);
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(138, 138, 154);
+            doc.text(q.label, M, y);
+            y += 4.5;
+            doc.setFontSize(9.5);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(45, 45, 58);
+            const valLines = doc.splitTextToSize(String(user.lookingForDetails[q.key]), CW);
+            checkPageBreak(valLines.length * 5 + 4);
+            doc.text(valLines, M, y);
+            y += valLines.length * 5 + 5;
+          }
+          y += 2;
+        }
+      }
+      y += 4;
     }
 
     if (user.bringToTable) {
       divider();
+      const bringLines = doc.splitTextToSize(user.bringToTable, CW - 8);
+      const barH = bringLines.length * 5.5 + 14;
+      checkPageBreak(barH + 10);
+      // Left accent bar
       doc.setFillColor(ur, ug, ub);
-      doc.rect(M, y - 4, 2.5, (doc.splitTextToSize(user.bringToTable, CW - 8).length * 5.5) + 8, 'F');
-      sectionLabel('WHAT I BRING TO THE TABLE');
+      doc.rect(M, y - 2, 2.5, barH, 'F');
+      // Label and content indented past the bar
+      sectionLabel('WHAT I BRING TO THE TABLE', M + 7);
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(45, 45, 58);
-      const bringLines = doc.splitTextToSize(user.bringToTable, CW - 8);
-      doc.text(bringLines, M + 6, y);
+      doc.text(bringLines, M + 7, y);
       y += bringLines.length * 5.5 + 10;
     }
 
@@ -486,6 +526,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
       doc.setTextColor(45, 45, 58);
       for (const a of user.achievements) {
         const lines = doc.splitTextToSize(`•  ${a}`, CW);
+        checkPageBreak(lines.length * 5.5 + 3);
         doc.text(lines, M, y);
         y += lines.length * 5.5 + 3;
       }
@@ -499,8 +540,9 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(45, 45, 58);
-        doc.text(user.openTo.join('  ·  '), M, y);
-        y += 10;
+        const openLines = doc.splitTextToSize(user.openTo.join('  ·  '), CW);
+        doc.text(openLines, M, y);
+        y += openLines.length * 5.5 + 8;
       }
       if (user.currentlyExploring?.length > 0) {
         sectionLabel('CURRENTLY EXPLORING');
@@ -508,24 +550,33 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(45, 45, 58);
         const expLines = doc.splitTextToSize(user.currentlyExploring.join('  ·  '), CW);
+        checkPageBreak(expLines.length * 5.5);
         doc.text(expLines, M, y);
         y += expLines.length * 5.5 + 10;
       }
     }
 
-    // Footer
-    doc.setFillColor(248, 248, 252);
-    doc.rect(0, 281, PW, 16, 'F');
-    doc.setDrawColor(220, 220, 230);
-    doc.line(0, 281, PW, 281);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(138, 138, 154);
-    doc.text(`link-ap.online/user/${user.uid}`, PW / 2, 288, { align: 'center' });
-    doc.setFontSize(7);
-    doc.text('Generated with Link-Ap  ·  link-ap.online', PW / 2, 293, { align: 'center' });
+    // Footer on every page
+    const totalPages = doc.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setFillColor(248, 248, 252);
+      doc.rect(0, 281, PW, 16, 'F');
+      doc.setDrawColor(220, 220, 230);
+      doc.line(0, 281, PW, 281);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(138, 138, 154);
+      doc.text(`link-ap.online/user/${user.uid}`, PW / 2, 288, { align: 'center' });
+      doc.setFontSize(7);
+      doc.text(
+        `Generated with Link-Ap  ·  link-ap.online${totalPages > 1 ? `  ·  Page ${p} of ${totalPages}` : ''}`,
+        PW / 2, 293, { align: 'center' }
+      );
+    }
 
-    return doc.output('blob');
+    // arraybuffer → Blob is more reliable than doc.output('blob') across environments
+    return new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
   };
 
   const handleSharePDF = async () => {
