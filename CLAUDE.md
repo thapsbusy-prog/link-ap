@@ -38,6 +38,12 @@ The app is split across several source files. There is no routing library — `M
 - `onAuthStateChanged` is the single source of truth for auth state. It always resets `profile` to `null` and sets `loading = true` before fetching the user's Firestore doc, preventing stale profiles from a previous session.
 - Screen decision: loading → `<AuthScreen>` → `<Onboarding>` → `<MainApp>`
 
+**Onboarding design (as of 29 May 2026)**
+- `Onboarding` is intentionally minimal: collects only First Name, Last Name, Role, and Location (plus optional Title). All other profile fields default to empty/`[]`.
+- On completion a full Firestore profile doc is created with empty `bio`, `skills`, `lookingFor`, `bringToTable`, etc., so the rest of the app works immediately.
+- Richer profile data (bio, skills, looking for, what you bring, LinkedIn, pronouns) is collected **inside the app** via the Profile edit flow.
+- `ProfileCompletePrompt` (in `Profile.js`) shows in view mode whenever any of the four key sections are empty (bio, skills, lookingFor, bringToTable). It displays a percentage ring and a checklist, and opens edit mode on tap. It auto-hides once all four are filled.
+
 **Firestore data model**
 - `users/{uid}` — user profile document (fields: `uid`, `name`, `role`, `location`, `bio`, `skills[]`, `lookingFor[]`, `achievements[]`, `linkedin`, `avatar`, `color`, `createdAt`, `pronouns`, `title`, `photoURL`)
 - `users/{uid}/matches/{targetUid}` — a copy of the matched user's profile document; updated on every profile save via `writeBatch` (fields synced: `name`, `role`, `location`, `bio`, `skills`, `photoURL`, `avatar`, `color`, `lookingFor`, `pronouns`, `title`)

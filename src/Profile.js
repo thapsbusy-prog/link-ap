@@ -7,6 +7,74 @@ import { ShareModal } from "./Discover";
 
 const SCORE_COLOR = (s) => s >= 80 ? "#22C55E" : s >= 55 ? COLORS.accent : "#EF4444";
 
+const COMPLETION_SECTIONS = [
+  { key: "bio", label: "Your story (bio)", filled: u => !!u.bio },
+  { key: "skills", label: "Your skills", filled: u => u.skills?.length > 0 },
+  { key: "lookingFor", label: "What you're looking for", filled: u => u.lookingFor?.length > 0 },
+  { key: "bringToTable", label: "What you bring to the table", filled: u => !!u.bringToTable },
+];
+
+function ProfileCompletePrompt({ user, onEdit }) {
+  const sections = COMPLETION_SECTIONS.map(s => ({ ...s, done: s.filled(user) }));
+  const missing = sections.filter(s => !s.done);
+  if (missing.length === 0) return null;
+  const pct = Math.round(((sections.length - missing.length) / sections.length) * 100);
+
+  return (
+    <div style={{
+      background: COLORS.card, border: `1px solid ${COLORS.accent}55`,
+      borderRadius: 16, padding: "16px 20px", marginBottom: 16,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <div>
+          <p style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, margin: 0 }}>Finish setting up your profile</p>
+          <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "3px 0 0" }}>
+            A complete profile gets more matches
+          </p>
+        </div>
+        <div style={{
+          width: 42, height: 42, borderRadius: "50%", flexShrink: 0,
+          border: `2.5px solid ${COLORS.accent}`,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        }}>
+          <span style={{ fontSize: 12, fontWeight: 800, color: COLORS.accent, lineHeight: 1 }}>{pct}%</span>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 7, marginBottom: 14 }}>
+        {sections.map(s => (
+          <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <span style={{ fontSize: 13, color: s.done ? COLORS.green : COLORS.textMuted, lineHeight: 1 }}>
+              {s.done ? "✓" : "○"}
+            </span>
+            <span style={{ fontSize: 13, color: s.done ? COLORS.textMuted : COLORS.text }}>
+              {s.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={onEdit} style={{
+        width: "100%", padding: "11px", borderRadius: 10, border: "none",
+        background: COLORS.accent, color: "#000", cursor: "pointer",
+        fontSize: 13, fontWeight: 700,
+      }}>
+        Complete profile →
+      </button>
+    </div>
+  );
+}
+
+const renderLookingForValue = (q, val) => {
+  if (!val) return val;
+  if (q.type === "email") return <a href={`mailto:${val}`} style={{ color: COLORS.accent, textDecoration: "none" }}>{val}</a>;
+  if (q.type === "url") {
+    const href = /^https?:\/\//i.test(val) ? val : `https://${val}`;
+    return <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: COLORS.accent, textDecoration: "none" }}>{val}</a>;
+  }
+  return val;
+};
+
 function ProfileScoreCard({ scoreData, scoreLoading, onRescore }) {
   const handleShare = async () => {
     const text = `My Link-Ap profile scored ${scoreData.total}/100 — see how yours compares 👇\nlink-ap.online`;
@@ -368,7 +436,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
                   <div key={q.key}>
                     <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>{q.label}</label>
                     <input
-                      type="text"
+                      type={q.type || "text"}
                       value={form.lookingForDetails[q.key] || ""}
                       onChange={e => update("lookingForDetails", { ...form.lookingForDetails, [q.key]: e.target.value })}
                       placeholder="Optional"
@@ -450,6 +518,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
         </div>
       </div>
       <ProfileScoreCard scoreData={scoreData} scoreLoading={scoreLoading} onRescore={() => fetchScore(true)} />
+      <ProfileCompletePrompt user={user} onEdit={() => setEditing(true)} />
 
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>
         <style>{`@keyframes linkApPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
@@ -527,7 +596,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
                         <div key={q.key}>
                           <div style={{ marginBottom: 10 }}>
                             <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>{q.label}</div>
-                            <div style={{ fontSize: 13, color: COLORS.text, fontWeight: 600, lineHeight: 1.5 }}>{user.lookingForDetails[q.key]}</div>
+                            <div style={{ fontSize: 13, color: COLORS.text, fontWeight: 600, lineHeight: 1.5 }}>{renderLookingForValue(q, user.lookingForDetails[q.key])}</div>
                           </div>
                           {(qIdx < qArr.length - 1 || lfIdx < filteredArr.length - 1) && (
                             <div style={{ height: 1, background: COLORS.border, marginBottom: 10 }} />

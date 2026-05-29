@@ -3,6 +3,16 @@ import QRCode from "qrcode";
 import { analytics, logEvent, auth } from "./firebase";
 import { COLORS, Avatar, Tag, LocationPin, LinkedInIcon, LOOKING_FOR_QUESTIONS } from "./shared";
 
+const renderLookingForValue = (q, val) => {
+  if (!val) return val;
+  if (q.type === "email") return <a href={`mailto:${val}`} style={{ color: COLORS.accent, textDecoration: "none" }}>{val}</a>;
+  if (q.type === "url") {
+    const href = /^https?:\/\//i.test(val) ? val : `https://${val}`;
+    return <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: COLORS.accent, textDecoration: "none" }}>{val}</a>;
+  }
+  return val;
+};
+
 export function PublicProfile({ profileUser, onClose, currentUserUid, blocked, onBlock, onUnblock, matches, onDisconnect, onView }) {
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const isMutualMatch = matches?.some(m => m.uid === profileUser.uid);
@@ -99,7 +109,7 @@ export function PublicProfile({ profileUser, onClose, currentUserUid, blocked, o
                       <div key={q.key}>
                         <div style={{ marginBottom: 10 }}>
                           <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 2 }}>{q.label}</div>
-                          <div style={{ fontSize: 14, color: COLORS.text, fontWeight: 600, lineHeight: 1.5 }}>{profileUser.lookingForDetails[q.key]}</div>
+                          <div style={{ fontSize: 14, color: COLORS.text, fontWeight: 600, lineHeight: 1.5 }}>{renderLookingForValue(q, profileUser.lookingForDetails[q.key])}</div>
                         </div>
                         {(qIdx < qArr.length - 1 || lfIdx < filteredArr.length - 1) && (
                           <div style={{ height: 1, background: COLORS.border, marginBottom: 10 }} />
