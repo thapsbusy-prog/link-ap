@@ -2,7 +2,7 @@ const admin = require("firebase-admin");
 
 // Checks and increments monthly tool usage.
 // Returns { allowed: true } or { allowed: false, message }.
-module.exports = async function checkToolLimit(uid, toolKey, limit = 1) {
+module.exports = async function checkToolLimit(uid, toolKey, limit = 5) {
   const db = admin.firestore();
   const ref = db.collection("users").doc(uid).collection("private").doc("toolLimits");
   const monthKey = new Date().toISOString().slice(0, 7); // "YYYY-MM"
@@ -21,7 +21,7 @@ module.exports = async function checkToolLimit(uid, toolKey, limit = 1) {
       return {
         allowed: false,
         message:
-          "Monthly limit reached — 1 AI generation per month is included with your plan. Resets on the 1st.",
+          "Monthly limit reached — 5 AI generations per tool per month are included with your plan. Resets on the 1st.",
       };
     }
 
