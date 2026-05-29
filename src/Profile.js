@@ -206,6 +206,7 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
   const [saveError, setSaveError] = useState("");
   const [scoreData, setScoreData] = useState(null);
   const [scoreLoading, setScoreLoading] = useState(true);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(user.photoURL || null);
   const [photoBlob, setPhotoBlob] = useState(null);
   const [form, setForm] = useState({
@@ -338,6 +339,224 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
       setSaveError("Failed to save. Please try again.");
     }
     setSaving(false);
+  };
+
+  const generateProfilePDF = async () => {
+    const { jsPDF } = await import('jspdf');
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const PW = 210;
+    const M = 18;
+    const CW = PW - M * 2;
+
+    const hexToRgb = hex => [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+    const [ur, ug, ub] = hexToRgb(user.color || '#A78BFA');
+
+    // Top accent strip
+    doc.setFillColor(ur, ug, ub);
+    doc.rect(0, 0, PW, 3, 'F');
+
+    // Header bg
+    doc.setFillColor(248, 248, 252);
+    doc.rect(0, 3, PW, 44, 'F');
+
+    // Avatar circle
+    doc.setFillColor(ur, ug, ub);
+    doc.circle(M + 12, 25, 12, 'F');
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text(user.avatar || '?', M + 12, 28.5, { align: 'center' });
+
+    // Name
+    const displayName = [user.title, user.name].filter(Boolean).join(' ');
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(26, 26, 46);
+    doc.text(displayName, M + 30, 17);
+
+    // Pronouns next to name
+    if (user.pronouns) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(138, 138, 154);
+      const nameW = doc.getTextWidth(displayName) * (18 / 10);
+      doc.text(user.pronouns, M + 30 + nameW + 2, 17);
+    }
+
+    // Role
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(ur, ug, ub);
+    doc.text(user.role, M + 30, 25);
+
+    // Location
+    doc.setFontSize(9.5);
+    doc.setTextColor(120, 120, 140);
+    doc.text(user.location, M + 30, 32);
+
+    // LinkedIn
+    if (user.linkedinProfileUrl) {
+      doc.setFontSize(8.5);
+      doc.setTextColor(10, 102, 194);
+      doc.text(user.linkedinProfileUrl.replace(/^https?:\/\//i, ''), M + 30, 39);
+    }
+
+    // Branding (top-right)
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(ur, ug, ub);
+    doc.text('Link-Ap', PW - M, 39, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(138, 138, 154);
+    doc.text('link-ap.online', PW - M, 44, { align: 'right' });
+
+    let y = 58;
+
+    const sectionLabel = (label) => {
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(138, 138, 154);
+      doc.text(label, M, y);
+      y += 5.5;
+    };
+
+    const divider = () => {
+      doc.setDrawColor(220, 220, 230);
+      doc.line(M, y, PW - M, y);
+      y += 8;
+    };
+
+    if (user.bio) {
+      sectionLabel('ABOUT');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(45, 45, 58);
+      const lines = doc.splitTextToSize(user.bio, CW);
+      doc.text(lines, M, y);
+      y += lines.length * 5.5 + 10;
+    }
+
+    if (user.skills?.length > 0) {
+      divider();
+      sectionLabel('SKILLS');
+      let x = M;
+      doc.setFontSize(8.5);
+      for (const skill of user.skills) {
+        const sw = doc.getTextWidth(skill) + 7;
+        if (x + sw > PW - M) { x = M; y += 8; }
+        doc.setFillColor(235, 235, 248);
+        doc.roundedRect(x, y - 4.5, sw, 6.5, 1.5, 1.5, 'F');
+        doc.setTextColor(45, 45, 58);
+        doc.text(skill, x + 3.5, y);
+        x += sw + 4;
+      }
+      y += 14;
+    }
+
+    if (user.lookingFor?.length > 0) {
+      divider();
+      sectionLabel('LOOKING FOR');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(45, 45, 58);
+      const lfText = doc.splitTextToSize(user.lookingFor.join('  ·  '), CW);
+      doc.text(lfText, M, y);
+      y += lfText.length * 5.5 + 10;
+    }
+
+    if (user.bringToTable) {
+      divider();
+      doc.setFillColor(ur, ug, ub);
+      doc.rect(M, y - 4, 2.5, (doc.splitTextToSize(user.bringToTable, CW - 8).length * 5.5) + 8, 'F');
+      sectionLabel('WHAT I BRING TO THE TABLE');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(45, 45, 58);
+      const bringLines = doc.splitTextToSize(user.bringToTable, CW - 8);
+      doc.text(bringLines, M + 6, y);
+      y += bringLines.length * 5.5 + 10;
+    }
+
+    if (user.achievements?.length > 0) {
+      divider();
+      sectionLabel('ACHIEVEMENTS');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(45, 45, 58);
+      for (const a of user.achievements) {
+        const lines = doc.splitTextToSize(`•  ${a}`, CW);
+        doc.text(lines, M, y);
+        y += lines.length * 5.5 + 3;
+      }
+      y += 5;
+    }
+
+    if (user.openTo?.length > 0 || user.currentlyExploring?.length > 0) {
+      divider();
+      if (user.openTo?.length > 0) {
+        sectionLabel('OPEN TO');
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(45, 45, 58);
+        doc.text(user.openTo.join('  ·  '), M, y);
+        y += 10;
+      }
+      if (user.currentlyExploring?.length > 0) {
+        sectionLabel('CURRENTLY EXPLORING');
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(45, 45, 58);
+        const expLines = doc.splitTextToSize(user.currentlyExploring.join('  ·  '), CW);
+        doc.text(expLines, M, y);
+        y += expLines.length * 5.5 + 10;
+      }
+    }
+
+    // Footer
+    doc.setFillColor(248, 248, 252);
+    doc.rect(0, 281, PW, 16, 'F');
+    doc.setDrawColor(220, 220, 230);
+    doc.line(0, 281, PW, 281);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(138, 138, 154);
+    doc.text(`link-ap.online/user/${user.uid}`, PW / 2, 288, { align: 'center' });
+    doc.setFontSize(7);
+    doc.text('Generated with Link-Ap  ·  link-ap.online', PW / 2, 293, { align: 'center' });
+
+    return doc.output('blob');
+  };
+
+  const handleSharePDF = async () => {
+    if (generatingPDF) return;
+    setGeneratingPDF(true);
+    try {
+      const blob = await generateProfilePDF();
+      const fileName = `${(user.name || 'profile').replace(/\s+/g, '-')}-Link-Ap.pdf`;
+      const file = new File([blob], fileName, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: `${user.name}'s Link-Ap Profile`, text: 'Check out my professional profile on Link-Ap' });
+        } catch (e) {
+          if (e.name !== 'AbortError') { downloadBlob(blob, fileName); }
+        }
+      } else {
+        downloadBlob(blob, fileName);
+      }
+    } catch (e) {
+      console.error('PDF generation error:', e);
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
+
+  const downloadBlob = (blob, fileName) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
   };
 
   const cancelEdit = () => {
@@ -661,6 +880,34 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
             )}
 
           </div>
+
+          {/* Share as PDF — green when profile is 100% complete */}
+          {(() => {
+            const isComplete = COMPLETION_SECTIONS.every(s => s.filled(user));
+            return (
+              <div style={{ padding: "0 24px 24px" }}>
+                <button
+                  onClick={isComplete ? handleSharePDF : undefined}
+                  disabled={generatingPDF}
+                  style={{
+                    width: "100%", padding: "13px", borderRadius: 12, border: "none",
+                    background: isComplete ? COLORS.green : COLORS.border,
+                    color: isComplete ? "#000" : COLORS.textMuted,
+                    cursor: isComplete && !generatingPDF ? "pointer" : "not-allowed",
+                    fontSize: 14, fontWeight: 700, transition: "background 0.3s",
+                  }}
+                >
+                  {generatingPDF ? "Generating PDF..." : isComplete ? "Share Profile as PDF ↗" : "Complete your profile to share as PDF"}
+                </button>
+                {!isComplete && (
+                  <p style={{ fontSize: 11, color: COLORS.textMuted, textAlign: "center", margin: "8px 0 0" }}>
+                    Fill in bio, skills, looking for, and what you bring to unlock
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+
         </div>
       </div>
       {showShare && <ShareModal user={user} onClose={() => setShowShare(false)} />}
