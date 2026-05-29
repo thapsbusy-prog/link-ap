@@ -4,6 +4,7 @@ import { doc, setDoc, collection, getDocs, deleteDoc, updateDoc, deleteField, ar
 import { signOut, sendPasswordResetEmail } from "firebase/auth";
 import { COLORS, Avatar, TermsContent } from "./shared";
 import QuoteGenerator from "./LinkApQuoteGenerator";
+import PurposeCardGenerator from "./PurposeCardGenerator";
 
 // Props:
 //   user          — Firestore profile object ({ name, ... })
@@ -16,6 +17,7 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
   const [showTerms, setShowTerms] = useState(false);
   const [showBlockList, setShowBlockList] = useState(false);
   const [showContentStudio, setShowContentStudio] = useState(false);
+  const [showPurposeStudio, setShowPurposeStudio] = useState(false);
   const isAdmin = firebaseUser.email === "thaps.busy@gmail.com";
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -251,6 +253,25 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
     );
   }
 
+  if (showPurposeStudio) {
+    return (
+      <div style={{ background: COLORS.bg, minHeight: "100%" }}>
+        <div style={{
+          position: "sticky", top: 0, background: COLORS.bg, zIndex: 10,
+          padding: "16px 20px", borderBottom: `1px solid ${COLORS.border}`,
+          display: "flex", alignItems: "center", gap: 12,
+        }}>
+          <button
+            onClick={() => setShowPurposeStudio(false)}
+            style={{ background: "none", border: "none", color: COLORS.text, cursor: "pointer", padding: 0, fontSize: 22, lineHeight: 1 }}
+          >‹</button>
+          <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16 }}>Purpose Cards</div>
+        </div>
+        <PurposeCardGenerator />
+      </div>
+    );
+  }
+
   if (showBlockList) {
     return (
       <div style={{ padding: "24px 16px" }}>
@@ -377,6 +398,18 @@ export default function Settings({ user, firebaseUser, onEditProfile, blocked, o
             >
               <span style={{ fontSize: 18, lineHeight: 1 }}>✦</span>
               <span style={{ flex: 1, fontSize: 14, color: COLORS.text, textAlign: "left" }}>Quote Card Generator</span>
+              <span style={{ color: COLORS.textMuted, fontSize: 16 }}>›</span>
+            </button>
+            <button
+              onClick={() => setShowPurposeStudio(true)}
+              style={{
+                width: "100%", background: "none", border: "none", cursor: "pointer",
+                padding: "14px 16px", display: "flex", alignItems: "center", gap: 12,
+                borderTop: `1px solid ${COLORS.border}`,
+              }}
+            >
+              <span style={{ fontSize: 18, lineHeight: 1 }}>◈</span>
+              <span style={{ flex: 1, fontSize: 14, color: COLORS.text, textAlign: "left" }}>Purpose Card Generator</span>
               <span style={{ color: COLORS.textMuted, fontSize: 16 }}>›</span>
             </button>
           </div>
