@@ -43,6 +43,7 @@ const FEATURE_CARDS = {
       example: "You spot the perfect role on the go. Send your Link-Ap PDF as a first impression before the formal application lands — and stand out from the very first touch.",
     },
   ],
+
   "AI Pulse": [
     {
       pill: "AI PULSE",
@@ -59,6 +60,82 @@ const FEATURE_CARDS = {
       forWhom: "Investors & Scouts",
       forDesc: "Spot the sectors and signals that are moving early — before everyone is talking about them at the next pitch event.",
       example: "A Pulse card surfaces an emerging fintech pattern in Cape Town. You reach out to three founders already building in that direction on Link-Ap — before anyone else has made the connection.",
+    },
+  ],
+
+  "Why Connect": [
+    {
+      pill: "WHY CONNECT",
+      what: "AI Match Explanation",
+      whatDesc: "Before you send a connection request, Link-Ap tells you exactly why you and this person are worth connecting — based on your real goals and skills, not just job titles.",
+      forWhom: "Founders & Builders",
+      forDesc: "Stop guessing whether a connection is worth your time. See the specific overlap between your goals and theirs before you even reach out.",
+      example: "You discover a product designer on Link-Ap. Before connecting, the AI insight shows they're exploring the exact market you're building in. Now your connection note writes itself — and it lands.",
+    },
+    {
+      pill: "WHY CONNECT",
+      what: "AI Match Explanation",
+      whatDesc: "Before you send a connection request, Link-Ap tells you exactly why you and this person are worth connecting — based on your real goals and skills, not just job titles.",
+      forWhom: "Investors & Mentors",
+      forDesc: "Know the specific reason to connect with a founder before you commit an hour to a call that may go nowhere.",
+      example: "Link-Ap surfaces a founder whose problem space overlaps directly with your portfolio thesis. The AI insight confirms it in two lines — so you reach out with intent, not just curiosity.",
+    },
+  ],
+
+  "Note Assistant": [
+    {
+      pill: "NOTE ASSIST",
+      what: "AI Connection Note Assistant",
+      whatDesc: "Link-Ap drafts your connection note for you — specific, human-sounding, and grounded in both your profiles — in a single tap.",
+      forWhom: "Everyone on Link-Ap",
+      forDesc: "Never stare at a blank note field again. The AI writes a first-person opener that references real details from both your profiles, so it never reads like a template.",
+      example: "You want to connect with a Cape Town-based growth marketer. Tap '✦ AI draft' and Link-Ap writes: 'Your B2B SaaS growth work maps directly to what I'm building right now — I'd love to explore the overlap.' Edit one word. Send.",
+    },
+    {
+      pill: "NOTE ASSIST",
+      what: "AI Connection Note Assistant",
+      whatDesc: "Link-Ap drafts your connection note for you — specific, human-sounding, and grounded in both your profiles — in a single tap.",
+      forWhom: "Introverts & First-Time Connectors",
+      forDesc: "The hardest part of reaching out is finding the right words. Link-Ap does that for you, so you show up confident instead of hesitant.",
+      example: "You found someone whose skills are exactly what your project needs, but you don't know how to start. One tap gives you a note that sounds like you at your best — not a cold message from a stranger.",
+    },
+  ],
+
+  "Chat Starters": [
+    {
+      pill: "CHAT STARTERS",
+      what: "AI Conversation Starter Chips",
+      whatDesc: "The moment you open a new conversation on Link-Ap, three AI-generated openers appear — specific to both your profiles, never generic, never awkward.",
+      forWhom: "Everyone Who Just Matched",
+      forDesc: "Breaking the ice is the hardest part of a new connection. Link-Ap removes that friction entirely with openers that already know who you both are.",
+      example: "You match with a UI designer exploring SaaS product work. Three chips appear above the text field. You tap: 'What's the product problem you're most excited to solve right now?' — conversation started in two seconds.",
+    },
+    {
+      pill: "CHAT STARTERS",
+      what: "AI Conversation Starter Chips",
+      whatDesc: "The moment you open a new conversation on Link-Ap, three AI-generated openers appear — specific to both your profiles, never generic, never awkward.",
+      forWhom: "Busy Founders & Operators",
+      forDesc: "You matched with someone valuable but haven't had time to craft an opener. Link-Ap keeps the momentum going so great connections don't go cold.",
+      example: "Three days after matching with a potential co-founder, you finally open the chat. The starters are already there, still relevant, still specific. You tap one — the conversation picks up like it was always going to happen.",
+    },
+  ],
+
+  "Profile Score": [
+    {
+      pill: "PROFILE SCORE",
+      what: "AI Profile Score",
+      whatDesc: "Link-Ap scores your profile across 5 dimensions out of 100 and shows you exactly what to fix — so the right people actually stop on your card.",
+      forWhom: "Anyone Building Their Presence",
+      forDesc: "Stop guessing whether your profile is working. Get a score with specific quick-wins you can act on today, not vague advice.",
+      example: "Your profile scores 67/100. The AI flags your 'Looking for' section as too vague. You update it in two minutes. The next person who discovers you immediately understands who you need to meet.",
+    },
+    {
+      pill: "PROFILE SCORE",
+      what: "AI Profile Score",
+      whatDesc: "Link-Ap scores your profile across 5 dimensions out of 100 and shows you exactly what to fix — so the right people actually stop on your card.",
+      forWhom: "Founders Before a Big Moment",
+      forDesc: "Before a launch, a raise, or a speaking slot — make sure your profile is doing the work for you, not working against you.",
+      example: "Before your product launch, you run your profile score. It flags your bio as generic. You sharpen it to one sentence about the exact problem you solve. Your next investor match reaches out first — without you having to pitch.",
     },
   ],
 };
