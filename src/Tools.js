@@ -197,7 +197,7 @@ function InvoicePreview({ invoice, onStartOver, onDownload }) {
             )}
             <div style={{
               display: "flex", justifyContent: "space-between", width: 180,
-              paddingTop: 10, marginTop: 2, borderTop: `1px solid ${COLORS.border}`,
+              paddingTop: 12, marginTop: 8, borderTop: `1px solid ${COLORS.border}`,
             }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>Total</span>
               <span style={{ fontSize: 16, fontWeight: 800, color: COLORS.accent }}>
@@ -222,7 +222,7 @@ function InvoicePreview({ invoice, onStartOver, onDownload }) {
 
           {/* Payment terms */}
           {invoice.paymentTerms && (
-            <div style={{ marginTop: 14, fontSize: 12, color: COLORS.textMuted, textAlign: "center" }}>
+            <div style={{ marginTop: 14, fontSize: 12, color: COLORS.textMuted, wordBreak: "break-word", overflowWrap: "break-word" }}>
               {invoice.paymentTerms}
             </div>
           )}
@@ -405,8 +405,10 @@ function InvoiceForm({ user }) {
     };
     addRow("Subtotal", `${s}${(invoice.subtotal || 0).toFixed(2)}`);
     if (invoice.tax > 0) addRow("VAT (15%)", `${s}${(invoice.tax || 0).toFixed(2)}`);
+    y += 3;
     doc.setDrawColor(200, 200, 200);
-    doc.line(TX, y - 2, M + CW, y - 2);
+    doc.line(TX, y, M + CW, y);
+    y += 5;
     addRow("Total", `${s}${(invoice.total || 0).toFixed(2)}`, true);
 
     y += 4;
@@ -426,8 +428,9 @@ function InvoiceForm({ user }) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
       doc.setTextColor(110, 110, 110);
-      doc.text(invoice.paymentTerms, M, y);
-      y += 8;
+      const ptLines = doc.splitTextToSize(invoice.paymentTerms, CW);
+      doc.text(ptLines, M, y);
+      y += ptLines.length * 5 + 4;
     }
 
     // Footer
@@ -2934,7 +2937,9 @@ function StaticInvoiceTemplate({ user }) {
     };
     addRow("Subtotal", `${s}${subtotal.toFixed(2)}`);
     if (tax > 0) addRow("VAT (15%)", `${s}${tax.toFixed(2)}`);
-    doc.setDrawColor(200, 200, 200); doc.line(TX, y - 2, M + CW, y - 2);
+    y += 3;
+    doc.setDrawColor(200, 200, 200); doc.line(TX, y, M + CW, y);
+    y += 5;
     addRow("Total", `${s}${total.toFixed(2)}`, true); y += 4;
 
     if (inv.notes) {
@@ -2944,7 +2949,8 @@ function StaticInvoiceTemplate({ user }) {
     }
     if (inv.paymentTerms) {
       doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(110, 110, 110);
-      doc.text(inv.paymentTerms, M, y);
+      const ptl = doc.splitTextToSize(inv.paymentTerms, CW);
+      doc.text(ptl, M, y); y += ptl.length * 5 + 4;
     }
 
     doc.setFillColor(19, 19, 26); doc.rect(0, 284, W, 13, "F");
