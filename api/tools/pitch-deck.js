@@ -1,6 +1,6 @@
 const admin = require("firebase-admin");
-const getUserPlan = require("../lib/getUserPlan");
-const checkToolLimit = require("../lib/checkToolLimit");
+const getUserPlan = require("../_lib/getUserPlan");
+const checkToolLimit = require("../_lib/checkToolLimit");
 
 if (!admin.apps.length) {
   try {
