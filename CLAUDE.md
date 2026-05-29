@@ -261,7 +261,7 @@ This section is the live project health snapshot. Update it after every fix or f
 |--------|--------|-------|
 | Founders Hub | ✅ AI Invoice Generator | Form → Preview flow; jsPDF download; Web Share API; plan-gated |
 | Freelancer Kit | ✅ AI Proposal Generator | Form → Preview flow; 7-section AI proposal; jsPDF multi-page download; Web Share API; plan-gated |
-| Growth Lab | 🔧 Shell only | Placeholder card; first tool TBD |
+| Growth Lab | ✅ AI Content Calendar Generator | Form → Preview flow; 2 or 4 weeks; 3 posts/week/platform; jsPDF multi-page download; Web Share API; plan-gated |
 
 #### Revenue features (ideated, not built)
 

@@ -12,6 +12,9 @@ const SUBTABS = [
 const CURRENCY_OPTIONS = ["ZAR", "USD", "GBP", "EUR"];
 const CURRENCY_SYMBOLS = { ZAR: "R", USD: "$", GBP: "£", EUR: "€" };
 
+const PLATFORM_OPTIONS = ["LinkedIn", "Instagram", "X", "Facebook"];
+const TONE_OPTIONS = ["Professional", "Casual", "Inspirational", "Educational"];
+
 const newItem = () => ({
   id: `${Date.now()}-${Math.random()}`,
   description: "",
@@ -1238,11 +1241,564 @@ function ProposalForm({ user }) {
   );
 }
 
+// ─── Content Calendar Preview ────────────────────────────────────────────────
+
+function ContentCalendarPreview({ calendar, onStartOver, onDownload }) {
+  const canShare = typeof navigator !== "undefined" && !!navigator.share;
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: calendar.calendarTitle,
+        text: `Content calendar for ${calendar.brandName} generated on Link-Ap`,
+      });
+    } catch {}
+  };
+
+  return (
+    <div>
+      {/* Action buttons */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+        <button
+          onClick={onStartOver}
+          style={{
+            flex: 1, padding: "10px 14px", borderRadius: 10,
+            border: `1px solid ${COLORS.border}`, background: "transparent",
+            color: COLORS.textMuted, cursor: "pointer", fontSize: 13,
+          }}
+        >Start Over</button>
+        {canShare && (
+          <button
+            onClick={handleShare}
+            style={{
+              flex: 1, padding: "10px 14px", borderRadius: 10,
+              border: `1px solid ${COLORS.border}`, background: "transparent",
+              color: COLORS.text, cursor: "pointer", fontSize: 13, fontWeight: 500,
+            }}
+          >Share</button>
+        )}
+        <button
+          onClick={onDownload}
+          style={{
+            flex: 2, padding: "10px 18px", borderRadius: 10,
+            border: "none", background: COLORS.accent,
+            color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 700,
+          }}
+        >Download PDF</button>
+      </div>
+
+      {/* Preview card */}
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 16, overflow: "hidden",
+      }}>
+        {/* Header */}
+        <div style={{
+          background: COLORS.accent, padding: "16px 20px",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+        }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 600, color: "#00000088", letterSpacing: 1 }}>
+              CONTENT CALENDAR
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#000" }}>
+              Link<span style={{ color: "#00000066" }}>-Ap</span>
+            </div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#000" }}>{calendar.brandName}</div>
+            <div style={{ fontSize: 11, color: "#00000099" }}>{calendar.generatedDate}</div>
+          </div>
+        </div>
+
+        <div style={{ padding: "20px 20px 24px" }}>
+          {/* Title */}
+          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 10 }}>
+            {calendar.calendarTitle}
+          </div>
+
+          {/* Platform + tone pills */}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+            {(calendar.platforms || []).map(p => (
+              <span key={p} style={{
+                fontSize: 11, padding: "3px 10px", borderRadius: 20,
+                background: `${COLORS.accent}18`, border: `1px solid ${COLORS.accent}44`,
+                color: COLORS.accent, fontWeight: 600,
+              }}>{p}</span>
+            ))}
+            <span style={{
+              fontSize: 11, padding: "3px 10px", borderRadius: 20,
+              background: COLORS.border, color: COLORS.textMuted,
+            }}>{calendar.tone}</span>
+          </div>
+
+          {/* Weeks */}
+          {(calendar.weeks || []).map(week => (
+            <div key={week.weekNumber} style={{ marginBottom: 24 }}>
+              {/* Week header */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: 10, marginBottom: 10,
+                padding: "8px 12px", borderRadius: 10,
+                background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+              }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  background: COLORS.accent, display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 800, color: "#000", flexShrink: 0,
+                }}>
+                  {week.weekNumber}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text }}>
+                    Week {week.weekNumber}
+                  </div>
+                  <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600 }}>
+                    {week.theme}
+                  </div>
+                </div>
+              </div>
+
+              {/* Posts */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {(week.posts || []).map((post, i) => (
+                  <div key={i} style={{
+                    padding: "12px 14px", borderRadius: 12,
+                    background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+                  }}>
+                    {/* Meta row */}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8, alignItems: "center" }}>
+                      {[post.day, post.platform, post.postType].map((tag, ti) => (
+                        <span key={ti} style={{
+                          fontSize: 10, padding: "2px 8px", borderRadius: 20,
+                          background: COLORS.card, border: `1px solid ${COLORS.border}`,
+                          color: COLORS.textMuted, fontWeight: 500,
+                        }}>{tag}</span>
+                      ))}
+                      <span style={{
+                        fontSize: 10, padding: "2px 8px", borderRadius: 20,
+                        background: `${COLORS.accent}18`, color: COLORS.accent,
+                        fontWeight: 600, marginLeft: "auto",
+                      }}>⏰ {post.bestTimeToPost}</span>
+                    </div>
+                    {/* Topic */}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, marginBottom: 6 }}>
+                      {post.topic}
+                    </div>
+                    {/* Caption */}
+                    <div style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1.6 }}>
+                      {post.caption}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* General Tips */}
+          {(calendar.generalTips || []).length > 0 && (
+            <div style={{
+              padding: "14px 16px", borderRadius: 12,
+              background: COLORS.bg, border: `1px solid ${COLORS.border}`,
+            }}>
+              <div style={{
+                fontSize: 11, color: COLORS.accent, fontWeight: 700,
+                marginBottom: 10, letterSpacing: 0.5,
+              }}>
+                GENERAL TIPS
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {calendar.generalTips.map((tip, i) => (
+                  <li key={i} style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.7 }}>{tip}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Footer */}
+          <div style={{
+            marginTop: 20, paddingTop: 14,
+            borderTop: `1px solid ${COLORS.border}`, textAlign: "center",
+          }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: COLORS.accent }}>Link</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: COLORS.textMuted }}>-Ap</span>
+            <span style={{ fontSize: 11, color: COLORS.textMuted }}> · link-ap.online</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Content Calendar Form ────────────────────────────────────────────────────
+
+function ContentCalendarForm({ user }) {
+  const [view, setView] = useState("form");
+  const [form, setForm] = useState({
+    brandName: user?.name || "",
+    niche: "",
+    targetAudience: "",
+    platforms: ["LinkedIn"],
+    tone: "Professional",
+    goals: "",
+    weekCount: 4,
+  });
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState("");
+  const [calendar, setCalendar] = useState(null);
+
+  const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const togglePlatform = (p) => {
+    setForm(f => ({
+      ...f,
+      platforms: f.platforms.includes(p)
+        ? f.platforms.filter(x => x !== p)
+        : [...f.platforms, p],
+    }));
+  };
+
+  const canSubmit =
+    form.brandName.trim() &&
+    form.niche.trim() &&
+    form.targetAudience.trim() &&
+    form.platforms.length > 0;
+
+  const generate = async () => {
+    if (!canSubmit || generating) return;
+    setGenerating(true);
+    setGenError("");
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const res = await fetch("/api/tools/content-calendar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          brandName: form.brandName.trim(),
+          niche: form.niche.trim(),
+          targetAudience: form.targetAudience.trim(),
+          platforms: form.platforms,
+          tone: form.tone,
+          goals: form.goals.trim(),
+          weekCount: form.weekCount,
+        }),
+      });
+      if (res.status === 403) {
+        setGenError("Pro feature — upgrade to access AI tools.");
+        return;
+      }
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setCalendar(data);
+      setView("preview");
+    } catch {
+      setGenError("Something went wrong. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const downloadPDF = () => {
+    if (!calendar) return;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const W = 210;
+    const M = 20;
+    const CW = W - 2 * M;
+    let y = 0;
+
+    const checkPage = (needed = 10) => {
+      if (y + needed > 272) { doc.addPage(); y = 20; }
+    };
+
+    // Amber header
+    doc.setFillColor(245, 166, 35);
+    doc.rect(0, 0, W, 20, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text("CONTENT CALENDAR", M, 8);
+    doc.setFontSize(13);
+    doc.text("Link-Ap", M, 15);
+    doc.setFontSize(9);
+    doc.text(calendar.brandName, W - M, 8, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text(calendar.generatedDate, W - M, 15, { align: "right" });
+    y = 30;
+
+    // Platform + tone
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Platforms: ${(calendar.platforms || []).join(", ")}`, M, y);
+    doc.text(`Tone: ${calendar.tone}`, W - M, y, { align: "right" });
+    y += 14;
+
+    // Weeks
+    for (const week of (calendar.weeks || [])) {
+      checkPage(20);
+
+      // Week section header
+      doc.setFillColor(245, 166, 35);
+      doc.rect(M, y - 4, CW, 9, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`WEEK ${week.weekNumber} — ${(week.theme || "").toUpperCase()}`, M + 2, y);
+      y += 10;
+
+      for (const post of (week.posts || [])) {
+        checkPage(32);
+
+        // Post meta bar
+        doc.setFillColor(248, 248, 248);
+        doc.rect(M, y - 3, CW, 7, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(40, 40, 40);
+        const metaLine = `${post.day}  ·  ${post.platform}  ·  ${post.postType}  ·  ${post.bestTimeToPost}`;
+        doc.text(metaLine, M + 2, y);
+        y += 8;
+
+        // Topic
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(26, 26, 26);
+        const topicLines = doc.splitTextToSize(post.topic || "", CW - 4);
+        for (const line of topicLines) {
+          checkPage(6);
+          doc.text(line, M + 2, y);
+          y += 5;
+        }
+
+        // Caption
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(90, 90, 90);
+        const captionLines = doc.splitTextToSize(post.caption || "", CW - 4);
+        for (const line of captionLines) {
+          checkPage(5);
+          doc.text(line, M + 2, y);
+          y += 5;
+        }
+        y += 5;
+      }
+      y += 4;
+    }
+
+    // General Tips
+    if ((calendar.generalTips || []).length > 0) {
+      checkPage(14);
+      doc.setFillColor(245, 166, 35);
+      doc.rect(M, y - 4, CW, 7, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(0, 0, 0);
+      doc.text("GENERAL TIPS", M + 2, y);
+      y += 8;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(40, 40, 40);
+      for (const tip of calendar.generalTips) {
+        const lines = doc.splitTextToSize(`• ${tip}`, CW - 4);
+        checkPage(lines.length * 5 + 3);
+        doc.text(lines, M + 2, y);
+        y += lines.length * 5 + 2;
+      }
+    }
+
+    // Footer
+    doc.setFillColor(19, 19, 26);
+    doc.rect(0, 284, W, 13, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(245, 166, 35);
+    doc.text("Link-Ap", W / 2 - 8, 291);
+    doc.setTextColor(138, 138, 154);
+    doc.setFont("helvetica", "normal");
+    doc.text(" · link-ap.online", W / 2 - 1, 291);
+
+    doc.save(`ContentCalendar-${(calendar.brandName || "Brand").replace(/\s+/g, "-")}.pdf`);
+  };
+
+  const startOver = () => {
+    setView("form");
+    setCalendar(null);
+    setGenError("");
+  };
+
+  if (view === "preview" && calendar) {
+    return (
+      <ContentCalendarPreview
+        calendar={calendar}
+        onStartOver={startOver}
+        onDownload={downloadPDF}
+      />
+    );
+  }
+
+  // ── FORM VIEW ─────────────────────────────────────────────────────────────
+
+  const pillStyle = (active) => ({
+    padding: "7px 14px", borderRadius: 20, cursor: "pointer",
+    fontSize: 13, fontWeight: 500,
+    background: active ? COLORS.accent : COLORS.card,
+    color: active ? "#000" : COLORS.textMuted,
+    border: `1px solid ${active ? COLORS.accent : COLORS.border}`,
+  });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: 0 }}>
+        Fill in the details below and let AI build a ready-to-use content calendar for your brand.
+      </p>
+
+      {/* Brand details */}
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 14, padding: 18,
+      }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>
+          BRAND DETAILS
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Brand / Business Name</label>
+            <input
+              style={inputStyle}
+              value={form.brandName}
+              onChange={e => upd("brandName", e.target.value)}
+              placeholder="e.g. Thapelo Designs"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Your Niche</label>
+            <input
+              style={inputStyle}
+              value={form.niche}
+              onChange={e => upd("niche", e.target.value)}
+              placeholder="e.g. Freelance design, B2B SaaS, Food & beverage"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Target Audience</label>
+            <input
+              style={inputStyle}
+              value={form.targetAudience}
+              onChange={e => upd("targetAudience", e.target.value)}
+              placeholder="e.g. Small business owners in South Africa"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Platforms */}
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 14, padding: 18,
+      }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>
+          PLATFORMS
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {PLATFORM_OPTIONS.map(p => (
+            <button
+              key={p}
+              onClick={() => togglePlatform(p)}
+              style={pillStyle(form.platforms.includes(p))}
+            >{p}</button>
+          ))}
+        </div>
+        {form.platforms.length === 0 && (
+          <div style={{ fontSize: 12, color: COLORS.red, marginTop: 8 }}>
+            Select at least one platform
+          </div>
+        )}
+      </div>
+
+      {/* Tone */}
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 14, padding: 18,
+      }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>
+          TONE
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {TONE_OPTIONS.map(t => (
+            <button
+              key={t}
+              onClick={() => upd("tone", t)}
+              style={pillStyle(form.tone === t)}
+            >{t}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Goals */}
+      <div>
+        <label style={labelStyle}>Goals</label>
+        <textarea
+          style={{ ...inputStyle, resize: "none", lineHeight: 1.5 }}
+          rows={3}
+          value={form.goals}
+          onChange={e => upd("goals", e.target.value)}
+          placeholder="e.g. Build brand awareness, generate leads, grow following"
+        />
+      </div>
+
+      {/* Calendar length */}
+      <div style={{
+        background: COLORS.card, border: `1px solid ${COLORS.border}`,
+        borderRadius: 14, padding: 18,
+      }}>
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, marginBottom: 14 }}>
+          CALENDAR LENGTH
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {[{ label: "2 Weeks", value: 2 }, { label: "4 Weeks", value: 4 }].map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => upd("weekCount", opt.value)}
+              style={pillStyle(form.weekCount === opt.value)}
+            >{opt.label}</button>
+          ))}
+        </div>
+      </div>
+
+      {genError && (
+        <div style={{
+          padding: "10px 14px", borderRadius: 10,
+          background: `${COLORS.red}18`, color: COLORS.red, fontSize: 13,
+        }}>
+          {genError}
+        </div>
+      )}
+
+      <button
+        onClick={generate}
+        disabled={!canSubmit || generating}
+        style={{
+          padding: "14px", borderRadius: 12, border: "none",
+          background: canSubmit && !generating ? COLORS.accent : COLORS.border,
+          color: canSubmit && !generating ? "#000" : COLORS.textMuted,
+          cursor: canSubmit && !generating ? "pointer" : "not-allowed",
+          fontSize: 15, fontWeight: 700,
+        }}
+      >
+        {generating ? "Generating…" : "✦ Generate Calendar"}
+      </button>
+    </div>
+  );
+}
+
 // ─── Tools (main export) ──────────────────────────────────────────────────────
 
 export default function Tools({ user }) {
   const [subtab, setSubtab] = useState("founders");
-  const current = SUBTABS.find(s => s.id === subtab);
 
   return (
     <div style={{ padding: "16px 20px", paddingBottom: 40 }}>
@@ -1271,20 +1827,7 @@ export default function Tools({ user }) {
       {subtab === "founders" && <InvoiceForm user={user} />}
       {subtab === "freelancer" && <ProposalForm user={user} />}
 
-      {subtab === "growth" && (
-        <div style={{
-          background: COLORS.card, border: `1px solid ${COLORS.border}`,
-          borderRadius: 16, padding: 32, textAlign: "center",
-        }}>
-          <div style={{ fontSize: 36, marginBottom: 16 }}>🔧</div>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, margin: "0 0 8px" }}>
-            Coming soon
-          </h3>
-          <p style={{ fontSize: 14, color: COLORS.textMuted, lineHeight: 1.6, margin: 0 }}>
-            {current?.label} tools are on the way.
-          </p>
-        </div>
-      )}
+      {subtab === "growth" && <ContentCalendarForm user={user} />}
     </div>
   );
 }
