@@ -262,9 +262,11 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
   }, [firebaseUser.uid]);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "users", firebaseUser.uid, "received"), snap => {
-      setReceived(snap.docs.map(d => d.data()));
-    });
+    const unsub = onSnapshot(
+      collection(db, "users", firebaseUser.uid, "received"),
+      snap => { setReceived(snap.docs.map(d => d.data())); },
+      err => { console.error("[received listener]", err.code, err.message); }
+    );
     return unsub;
   }, [firebaseUser.uid]);
 
@@ -316,10 +318,15 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
 
   const handleSendRequestWithNote = async (targetUser, note) => {
     if (blockedByUids.includes(targetUser.uid)) return false;
-    await Promise.all([
-      setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), { ...targetUser, note, sentAt: serverTimestamp() }),
-      setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), { ...user, note, sentAt: serverTimestamp() }),
-    ]);
+    try {
+      await Promise.all([
+        setDoc(doc(db, "users", firebaseUser.uid, "sent", targetUser.uid), { ...targetUser, note, sentAt: serverTimestamp() }),
+        setDoc(doc(db, "users", targetUser.uid, "received", firebaseUser.uid), { ...user, uid: firebaseUser.uid, note, sentAt: serverTimestamp() }),
+      ]);
+    } catch (e) {
+      console.error("[SendRequest] Firestore write failed:", e.message, e.code);
+      throw e;
+    }
     try {
       // CRITICAL — pass recipientUid (not token) to /api/notify
       // Server fetches fresh fcmTokens from Firestore to support
@@ -335,8 +342,8 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         }),
       });
     } catch (e) { console.warn("FCM notify error (send request):", e); }
-  logEvent(analytics, "connection_request_sent");
-  return true;
+    logEvent(analytics, "connection_request_sent");
+    return true;
   };
 
   const handleConnectWithNote = async (targetUser, note) => {
@@ -617,12 +624,18 @@ function SearchModal({ currentUser, sent, matches, onClose, onSendRequest, block
   const handleSend = async () => {
     if (!note.trim() || !target || sending) return;
     setSending(true);
-    const success = await onSendRequest(target, note.trim());
-    setSending(false);
-    if (success) {
-      setSentOk(true);
-      setTimeout(() => { setTarget(null); setNote(""); setSentOk(false); }, 1800);
-    } else {
+    try {
+      const success = await onSendRequest(target, note.trim());
+      setSending(false);
+      if (success) {
+        setSentOk(true);
+        setTimeout(() => { setTarget(null); setNote(""); setSentOk(false); }, 1800);
+      } else {
+        setSendError("Couldn't send request. Please try again.");
+        setTimeout(() => setSendError(""), 3000);
+      }
+    } catch (e) {
+      setSending(false);
       setSendError("Couldn't send request. Please try again.");
       setTimeout(() => setSendError(""), 3000);
     }

@@ -514,15 +514,23 @@ function ConnectNoteModal({ target, onSend, onCancel }) {
   const [sentOk, setSentOk] = useState(false);
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState(false);
+  const [sendError, setSendError] = useState(false);
   const MAX = 300;
   const MIN = 10;
 
   const handleSend = async () => {
     if (note.trim().length < MIN || sending) return;
     setSending(true);
-    await onSend(note.trim());
-    setSending(false);
-    setSentOk(true);
+    setSendError(false);
+    try {
+      await onSend(note.trim());
+      setSending(false);
+      setSentOk(true);
+    } catch (e) {
+      setSending(false);
+      setSendError(true);
+      setTimeout(() => setSendError(false), 4000);
+    }
   };
 
   const handleDraftWithAI = async () => {
@@ -620,6 +628,11 @@ function ConnectNoteModal({ target, onSend, onCancel }) {
           </p>
         </div>
 
+        {sendError && (
+          <p style={{ fontSize: 12, color: COLORS.red, textAlign: "center", margin: 0 }}>
+            Failed to send — please try again.
+          </p>
+        )}
         <button
           onClick={handleSend}
           disabled={note.trim().length < MIN || sending || sentOk}
