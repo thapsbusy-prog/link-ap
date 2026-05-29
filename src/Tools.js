@@ -3261,10 +3261,62 @@ function FoundersHub({ user }) {
   const isPro = user?.plan === "founding_member" || user?.plan === "premium";
 
   const TOOLS = [
-    { id: "invoice", emoji: "🧾", name: "AI Invoice Generator", desc: "AI drafts a professional invoice in seconds", ai: true },
-    { id: "pitch-deck", emoji: "📊", name: "Pitch Deck Outline", desc: "10-slide AI-powered investor pitch outline", ai: true },
-    { id: "break-even", emoji: "⚖️", name: "Break-Even Calculator", desc: "Find your profitability threshold instantly", ai: false },
-    { id: "invoice-template", emoji: "📄", name: "Invoice Template", desc: "Fill in your own invoice and download PDF", ai: false },
+    {
+      id: "invoice",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="14" y1="17" x2="8" y2="17"/>
+          <line x1="10" y1="9" x2="8" y2="9"/>
+        </svg>
+      ),
+      name: "AI Invoice Generator",
+      desc: "AI drafts a professional invoice in seconds",
+      ai: true,
+    },
+    {
+      id: "pitch-deck",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <rect x="2" y="3" width="20" height="13" rx="2"/>
+          <path d="M12 16v5M8 21h8"/>
+          <path d="M7 8v5M12 6v7M17 10v3"/>
+        </svg>
+      ),
+      name: "Pitch Deck Outline",
+      desc: "10-slide AI-powered investor pitch outline",
+      ai: true,
+    },
+    {
+      id: "break-even",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+          <line x1="2" y1="20" x2="22" y2="20"/>
+        </svg>
+      ),
+      name: "Break-Even Calculator",
+      desc: "Find your profitability threshold instantly",
+      ai: false,
+    },
+    {
+      id: "invoice-template",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+      ),
+      name: "Invoice Template",
+      desc: "Fill in your own invoice and download PDF",
+      ai: false,
+    },
   ];
 
   if (activeTool) {
@@ -3294,7 +3346,9 @@ function FoundersHub({ user }) {
             onClick={() => setActiveTool(tool.id)}
             style={{ ...toolCardStyle, opacity: locked ? 0.65 : 1 }}
           >
-            <span style={{ fontSize: 28, flexShrink: 0 }}>{tool.emoji}</span>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${COLORS.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {tool.icon()}
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{tool.name}</span>
@@ -3324,9 +3378,46 @@ function FreelancerKit({ user }) {
   const isPro = user?.plan === "founding_member" || user?.plan === "premium";
 
   const TOOLS = [
-    { id: "proposal", emoji: "📋", name: "AI Proposal Generator", desc: "Professional client proposals written by AI", ai: true },
-    { id: "day-rate", emoji: "💰", name: "Day Rate Calculator", desc: "Calculate your ideal freelance pricing", ai: false },
-    { id: "rate-card", emoji: "🎴", name: "Rate Card Template", desc: "List your services and download a PDF rate card", ai: false },
+    {
+      id: "proposal",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+          <line x1="8" y1="16" x2="13" y2="16"/>
+        </svg>
+      ),
+      name: "AI Proposal Generator",
+      desc: "Professional client proposals written by AI",
+      ai: true,
+    },
+    {
+      id: "day-rate",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+          <polyline points="16 7 22 7 22 13"/>
+        </svg>
+      ),
+      name: "Day Rate Calculator",
+      desc: "Calculate your ideal freelance pricing",
+      ai: false,
+    },
+    {
+      id: "rate-card",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <rect x="2" y="5" width="20" height="14" rx="2"/>
+          <line x1="2" y1="10" x2="22" y2="10"/>
+          <line x1="7" y1="15" x2="10" y2="15"/>
+          <line x1="14" y1="15" x2="17" y2="15"/>
+        </svg>
+      ),
+      name: "Rate Card Template",
+      desc: "List your services and download a PDF rate card",
+      ai: false,
+    },
   ];
 
   if (activeTool) {
@@ -3355,7 +3446,9 @@ function FreelancerKit({ user }) {
             onClick={() => setActiveTool(tool.id)}
             style={{ ...toolCardStyle, opacity: locked ? 0.65 : 1 }}
           >
-            <span style={{ fontSize: 28, flexShrink: 0 }}>{tool.emoji}</span>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${COLORS.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {tool.icon()}
+            </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{tool.name}</span>
