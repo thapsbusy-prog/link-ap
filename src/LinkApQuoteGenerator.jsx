@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { auth } from "./firebase";
 
 // Exact values from COLORS in shared.js
 const BG       = "#0A0A0F";
@@ -255,9 +256,13 @@ export default function QuoteGenerator() {
   const generate = async () => {
     setLoading(true);
     try {
+      const idToken = await auth.currentUser?.getIdToken();
       const res  = await fetch("/api/quote-generate", {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+        },
         body:    JSON.stringify({ category }),
       });
       const data = await res.json();

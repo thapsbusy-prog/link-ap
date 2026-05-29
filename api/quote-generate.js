@@ -1,3 +1,17 @@
+const admin = require("firebase-admin");
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY
+        ?.replace(/^"|"$/g, "")
+        .replace(/\\n/g, "\n"),
+    }),
+  });
+}
+
 const CATEGORIES = {
   Inspire: "motivational and empowering, about purposeful professional growth and meaningful connections",
   Entice:
@@ -9,9 +23,18 @@ const CATEGORIES = {
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ quote: null });
+
+  const authHeader = req.headers.authorization || "";
+  const idToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!idToken) return res.status(401).json({ quote: null });
+  try {
+    await admin.auth().verifyIdToken(idToken);
+  } catch {
+    return res.status(401).json({ quote: null });
+  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
