@@ -57,12 +57,12 @@ const INTRO_CARDS = [
     example: "Link-Ap gives you deep context on every founder before any conversation. Read their story, their skills, and their vision at a glance — so your time goes to the conversations that are already worth having.",
   },
   {
-    pill: "CAPE TOWN BUILT",
-    what: "Africa's builders are here. They're just under-connected.",
-    whatDesc: "The next wave of African founders, operators, and innovators exists — but they're scattered, invisible to each other, and disconnected from the capital and collaborators they need to grow.",
-    forWhom: "The Cape Town Ecosystem & Beyond",
-    forDesc: "Founders, investors, freelancers, and builders across South Africa and Africa who are building things that matter and need the right people around them.",
-    example: "Link-Ap is the networking layer built for this ecosystem — connecting people with shared intent, surfacing the right introductions, and giving every builder a fair shot at the room they deserve.",
+    pill: "BUILT FOR AFRICA",
+    what: "Africa's biggest problems are its greatest opportunities.",
+    whatDesc: "The solutions this continent needs won't come from outside. They'll come from the builders, founders, and thinkers already living the problems — who just need to find each other.",
+    forWhom: "African Builders, Dreamers & Problem-Solvers",
+    forDesc: "Those who see a broken system, a missing service, or an unmet need — and feel the pull to do something about it rather than wait for someone else to.",
+    example: "Link-Ap connects the people asking the same questions, building in the same direction, and driven by the same urgency. Because the right co-founder, investor, or collaborator could be the only thing standing between an idea and a movement.",
   },
 ];
 
