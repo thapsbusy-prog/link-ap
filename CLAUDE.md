@@ -139,6 +139,15 @@ The app is split across several source files. There is no routing library — `M
 
 After completing any feature addition or fix, update CLAUDE.md to reflect new state variables, new imports, new Firebase collections or storage paths, and any new architectural decisions.
 
+## Content Studio — Feature Card rule
+
+After shipping any **materially new feature** that drives user acquisition or retention, add it to `src/FeatureCardGenerator.jsx` — specifically the `FEATURE_CARDS` object. Write 2–3 persona cards covering the distinct user types who benefit most.
+
+**Qualifies** — new AI capabilities, new sharing or export flows, new discovery or matching mechanics, new engagement loops.
+**Does not qualify** — bug fixes, UI tweaks, copy changes, security patches, or internal-only changes.
+
+Card structure: `{ pill, what, whatDesc, forWhom, forDesc, example }`. Adding a new key to `FEATURE_CARDS` is all that's needed — the tab and navigation appear automatically. Keep `what` and `whatDesc` consistent across persona variations of the same feature; only `forWhom`, `forDesc`, and `example` change per card.
+
 ## Color Scheme
 
 | Token | Value |
