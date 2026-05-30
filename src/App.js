@@ -517,10 +517,10 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
         )}
         {tab === "discover" && <Discover users={intentFiltered} onConnect={handleConnectWithNote} onPass={handlePass} onViewProfile={setViewingProfile} onLoadMore={loadMoreUsers} loadingMore={loadingMore} hasMore={hasMore} user={user} seenUids={seenUids} setSeenUids={setSeenUids} />}
         {tab === "matches" && <Matches matches={matches} sent={sent} received={received} firebaseUser={firebaseUser} user={user} onChat={(uid) => { handleOpenChat(uid); setTab("messages"); }} onViewProfile={setViewingProfile} onAcceptRequest={handleAcceptRequest} onDeclineRequest={handleDeclineRequest} onDiscover={() => setTab("discover")} blockedUids={blockedUids} blockedByUids={blockedByUids} onDisconnect={handleDisconnect} />}
-        {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} lastMessages={lastMessages} currentUserName={user?.name} />}
+        {tab === "messages" && !activeChat && <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={null} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} lastMessages={lastMessages} currentUserName={user?.name} user={user} />}
         {tab === "profile" && <Profile user={user} firebaseUser={firebaseUser} onProfileUpdate={onProfileUpdate} editTrigger={profileEditTrigger} onSettings={() => setTab("settings")} />}
         {tab === "settings" && <Settings user={user} firebaseUser={firebaseUser} onEditProfile={() => { setProfileEditTrigger(t => t + 1); setTab("profile"); }} blocked={blocked} onUnblock={handleUnblock} />}
-        {tab === "pulse" && <Pulse firebaseUser={firebaseUser} />}
+        {tab === "pulse" && <Pulse firebaseUser={firebaseUser} user={user} />}
         {tab === "tools" && <Tools user={user} />}
       </div>
 
@@ -530,7 +530,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           width: "100%", maxWidth: 430, height: "100dvh", zIndex: 20,
           background: COLORS.bg, display: "flex", flexDirection: "column",
         }}>
-          <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} lastMessages={lastMessages} currentUserName={user?.name} />
+          <Messages matches={matches} sent={sent} firebaseUser={firebaseUser} activeChat={activeChat} setActiveChat={handleOpenChat} unreadChats={unreadChats} onViewProfile={setViewingProfile} blockedUids={blockedUids} blockedByUids={blockedByUids} lastMessages={lastMessages} currentUserName={user?.name} user={user} />
         </div>
       )}
 

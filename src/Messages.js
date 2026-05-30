@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase";
 import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
-import { COLORS, Avatar, formatRelativeTime } from "./shared";
+import { COLORS, Avatar, formatRelativeTime, isProfileComplete } from "./shared";
 
-export function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile, blockedUids = new Set(), blockedByUids = [], lastMessages = {}, currentUserName }) {
+export function Messages({ matches, sent = [], firebaseUser, activeChat, setActiveChat, unreadChats = new Set(), onViewProfile, blockedUids = new Set(), blockedByUids = [], lastMessages = {}, currentUserName, user }) {
   const [input, setInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const [starters, setStarters] = useState(null);
@@ -191,7 +191,7 @@ export function Messages({ matches, sent = [], firebaseUser, activeChat, setActi
             <div ref={bottomRef} />
           </div>
 
-            {chatMessages.length === 0 && starters?.length > 0 && (
+            {chatMessages.length === 0 && starters?.length > 0 && isProfileComplete(user) && (
               <div style={{
                 padding: "10px 14px 4px",
                 borderTop: `1px solid ${COLORS.border}`,

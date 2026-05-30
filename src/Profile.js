@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { db, storage } from "./firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, doc, setDoc, getDocs, writeBatch } from "firebase/firestore";
-import { COLORS, Avatar, LocationPin, LinkedInIcon, Input, TextArea, Select, SkillsInput, LOOKING_FOR_OPTIONS, LOOKING_FOR_QUESTIONS, OPEN_TO_OPTIONS, PRONOUN_OPTIONS, TITLE_OPTIONS, getBringToTablePrompt, normalizeUrl, validateLinkedIn, linkedinNameMatches } from "./shared";
+import { COLORS, Avatar, LocationPin, LinkedInIcon, Input, TextArea, Select, SkillsInput, LOOKING_FOR_OPTIONS, LOOKING_FOR_QUESTIONS, OPEN_TO_OPTIONS, PRONOUN_OPTIONS, TITLE_OPTIONS, getBringToTablePrompt, normalizeUrl, validateLinkedIn, linkedinNameMatches, isProfileComplete } from "./shared";
 import { ShareModal } from "./Discover";
 
 const SCORE_COLOR = (s) => s >= 80 ? "#22C55E" : s >= 55 ? COLORS.accent : "#EF4444";
@@ -787,7 +787,33 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
           )}
         </div>
       </div>
-      <ProfileScoreCard scoreData={scoreData} scoreLoading={scoreLoading} onRescore={() => fetchScore(true)} />
+      {isProfileComplete(user) ? (
+        <ProfileScoreCard scoreData={scoreData} scoreLoading={scoreLoading} onRescore={() => fetchScore(true)} />
+      ) : (
+        <div style={{
+          background: COLORS.card,
+          border: "1px solid rgba(245,166,35,0.2)",
+          borderRadius: 16, padding: "20px",
+          marginBottom: 16,
+          display: "flex", alignItems: "center", gap: 14,
+        }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+            background: "rgba(245,166,35,0.12)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, marginBottom: 3 }}>AI Profile Score — locked</div>
+            <div style={{ fontSize: 11, color: COLORS.textMuted, lineHeight: 1.5 }}>
+              Complete your bio, skills, what you're looking for, and what you bring to the table to unlock your AI score.
+            </div>
+          </div>
+        </div>
+      )}
       <ProfileCompletePrompt user={user} onEdit={() => setEditing(true)} />
 
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>

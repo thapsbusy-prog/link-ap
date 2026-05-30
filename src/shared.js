@@ -274,6 +274,16 @@ export function Select({ label, value, onChange, options, placeholder }) {
   );
 }
 
+export function isProfileComplete(user) {
+  if (!user) return false;
+  return (
+    !!user.bio &&
+    user.skills?.length > 0 &&
+    user.lookingFor?.length > 0 &&
+    !!user.bringToTable
+  );
+}
+
 export function TermsContent() {
   return (
     <div style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1.7 }}>
