@@ -4,7 +4,7 @@ import { auth } from "./firebase";
 import {
   signInWithRedirect, signInWithPopup, getRedirectResult, GoogleAuthProvider,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  sendPasswordResetEmail, sendEmailVerification,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { COLORS, Input, TermsContent } from "./shared";
 
@@ -99,11 +99,7 @@ export default function AuthScreen() {
       if (mode === "login") {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        await sendEmailVerification(cred.user, {
-          url: window.location.origin,
-          handleCodeInApp: true,
-        });
+        await createUserWithEmailAndPassword(auth, email, password);
       }
       // onAuthStateChanged handles transition; no setLoading(false) needed on success
     } catch (e) {
