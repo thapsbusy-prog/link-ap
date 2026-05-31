@@ -792,7 +792,7 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
     advance(current);
   };
 
-  const isFoundingMember = user?.plan === "founding_member" || (user?.signupIndex && user.signupIndex <= 100);
+  const isFoundingMember = !user?.plan || user.plan === "founding_member" || (user?.signupIndex && user.signupIndex <= 100);
 
   if (dailyActedCount >= DAILY_LIMIT) return (
     <div style={{ padding: 24, textAlign: "center", paddingTop: 80, color: COLORS.textMuted }}>
