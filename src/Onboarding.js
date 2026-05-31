@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { db, auth } from "./firebase";
-import { serverTimestamp, doc, setDoc, runTransaction } from "firebase/firestore";
+import { serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { COLORS, USER_COLORS, Input, Select, TITLE_OPTIONS } from "./shared";
 
@@ -48,16 +48,15 @@ export default function Onboarding({ firebaseUser, onComplete }) {
         createdAt: serverTimestamp(),
         termsAcceptedAt: serverTimestamp(),
       };
-      let signupIndex;
-      await runTransaction(db, async (tx) => {
-        const statsRef = doc(db, "meta", "stats");
-        const statsSnap = await tx.get(statsRef);
-        const current = statsSnap.exists() ? (statsSnap.data().totalUsers || 0) : 0;
-        signupIndex = current + 1;
-        tx.set(statsRef, { totalUsers: signupIndex }, { merge: true });
+      const idToken = await firebaseUser.getIdToken();
+      const regRes = await fetch("/api/register", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${idToken}` },
       });
+      if (!regRes.ok) throw new Error("register failed");
+      const { signupIndex, plan } = await regRes.json();
       profile.signupIndex = signupIndex;
-      profile.plan = signupIndex <= 100 ? "founding_member" : "free";
+      profile.plan = plan;
       profile.planAssignedAt = serverTimestamp();
       await setDoc(doc(db, "users", firebaseUser.uid), profile);
       onComplete(profile);
