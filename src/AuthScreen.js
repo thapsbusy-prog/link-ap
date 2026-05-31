@@ -100,7 +100,10 @@ export default function AuthScreen() {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
-        await sendEmailVerification(cred.user);
+        await sendEmailVerification(cred.user, {
+          url: window.location.origin,
+          handleCodeInApp: true,
+        });
       }
       // onAuthStateChanged handles transition; no setLoading(false) needed on success
     } catch (e) {

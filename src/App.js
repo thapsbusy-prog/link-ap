@@ -7,7 +7,7 @@ import {
   getDocs, startAfter, limit, where, arrayUnion, updateDoc, deleteField,
 } from "firebase/firestore";
 import {
-  onAuthStateChanged,
+  onAuthStateChanged, applyActionCode,
 } from "firebase/auth";
 import PrivacyPolicy from './PrivacyPolicy';
 import { COLORS, Avatar, LocationPin } from "./shared";
@@ -868,6 +868,23 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [emailVerified, setEmailVerified] = useState(true);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get("mode");
+    const oobCode = params.get("oobCode");
+    if (mode === "verifyEmail" && oobCode) {
+      window.history.replaceState({}, "", window.location.pathname);
+      applyActionCode(auth, oobCode)
+        .then(async () => {
+          if (auth.currentUser) await auth.currentUser.reload().catch(() => {});
+          setEmailVerified(true);
+        })
+        .catch(() => {
+          // Let EmailVerifyScreen handle it — user can request a new link
+        });
+    }
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {

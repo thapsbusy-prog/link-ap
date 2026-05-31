@@ -9,6 +9,44 @@ function formatTime(s) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
+function MailIcon() {
+  return (
+    <div style={{
+      width: 68, height: 68, borderRadius: 22,
+      background: `${COLORS.accent}18`,
+      border: `1px solid ${COLORS.accent}35`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      margin: "0 auto",
+    }}>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="4" width="20" height="16" rx="2"
+          stroke={COLORS.accent} strokeWidth="1.8" strokeLinejoin="round"/>
+        <polyline points="2,6 12,13 22,6"
+          stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <div style={{
+      width: 68, height: 68, borderRadius: 22,
+      background: `${COLORS.red}12`,
+      border: `1px solid ${COLORS.red}30`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      margin: "0 auto",
+    }}>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9"
+          stroke={COLORS.red} strokeWidth="1.8"/>
+        <polyline points="12,7 12,12 15.5,14.5"
+          stroke={COLORS.red} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
+}
+
 export default function EmailVerifyScreen({ firebaseUser, onVerified }) {
   const expiresAt = useRef(Date.now() + EXPIRY_SECS * 1000);
   const [secondsLeft, setSecondsLeft] = useState(EXPIRY_SECS);
@@ -54,7 +92,10 @@ export default function EmailVerifyScreen({ firebaseUser, onVerified }) {
     setResent(false);
     setError("");
     try {
-      await sendEmailVerification(auth.currentUser);
+      await sendEmailVerification(auth.currentUser, {
+        url: window.location.origin,
+        handleCodeInApp: true,
+      });
       // Reset the 15-minute window
       expiresAt.current = Date.now() + EXPIRY_SECS * 1000;
       setSecondsLeft(EXPIRY_SECS);
@@ -74,7 +115,7 @@ export default function EmailVerifyScreen({ firebaseUser, onVerified }) {
       }}>
         <div style={{ width: "100%", maxWidth: 400 }}>
           <div style={{ textAlign: "center", marginBottom: 40 }}>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>⏱️</div>
+            <div style={{ marginBottom: 20 }}><ClockIcon /></div>
             <div style={{ fontSize: 26, fontWeight: 800, color: COLORS.text, marginBottom: 10 }}>
               Link expired
             </div>
@@ -135,7 +176,7 @@ export default function EmailVerifyScreen({ firebaseUser, onVerified }) {
     }}>
       <div style={{ width: "100%", maxWidth: 400 }}>
         <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ fontSize: 52, marginBottom: 16 }}>📬</div>
+          <div style={{ marginBottom: 20 }}><MailIcon /></div>
           <div style={{ fontSize: 26, fontWeight: 800, color: COLORS.text, marginBottom: 10 }}>
             Verify your email
           </div>
