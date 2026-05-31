@@ -372,10 +372,10 @@ export function IntroScreen({ onContinue }) {
             }}>
               {/* Google Play logo */}
               <svg width="28" height="28" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                <path d="M48 432L240 256 48 80v352z" fill="#EA4335"/>
-                <path d="M48 80l272 176-70 70L48 80z" fill="#FBBC04"/>
-                <path d="M48 432l202-176 70 70L48 432z" fill="#34A853"/>
-                <path d="M320 256L48 80l192 176-192 176 272-176z" fill="#4285F4"/>
+                <path d="M24 28 L256 256 L24 256 Z" fill="#FBBC04"/>
+                <path d="M24 28 L256 256 L488 256 Z" fill="#4285F4"/>
+                <path d="M24 256 L256 256 L24 484 Z" fill="#34A853"/>
+                <path d="M256 256 L488 256 L24 484 Z" fill="#EA4335"/>
               </svg>
               <div>
                 <div style={{ color: "#9A9A9A", fontSize: 10, fontWeight: 500, lineHeight: 1 }}>GET IT ON</div>
@@ -395,7 +395,7 @@ export function IntroScreen({ onContinue }) {
             marginBottom: 14,
           }}>
             {/* Apple logo */}
-            <svg width="28" height="28" viewBox="0 0 814 1000" xmlns="http://www.w3.org/2000/svg" fill={COLORS.textMuted}>
+            <svg width="24" height="28" viewBox="0 0 814 1000" xmlns="http://www.w3.org/2000/svg" fill="#FFFFFF">
               <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.6 0 695.7 0 605.4 0 434.9 116.4 345.7 230.8 345.7c63 0 115.3 41.6 154.8 41.6 37.8 0 97.2-44.2 168.3-44.2zm-41.2-168C767 110 790 58.4 790 28.4c0-3.2-.3-6.4-.9-9.2-57.1 2.2-125.3 38.2-166.1 85.8-35.2 40.8-63.7 95-63.7 149.5 0 3.5.6 7 .9 8.3 3.5.6 9.2 1.3 14.8 1.3 51.6 0 117.3-34.2 152.8-82.2z"/>
             </svg>
             <div>
