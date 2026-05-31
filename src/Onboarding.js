@@ -2,11 +2,12 @@ import { useState } from "react";
 import { db, auth } from "./firebase";
 import { serverTimestamp, doc, setDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { COLORS, USER_COLORS, Input, Select, TITLE_OPTIONS } from "./shared";
+import { COLORS, USER_COLORS, Input, Select, TITLE_OPTIONS, TermsContent } from "./shared";
 
 export default function Onboarding({ firebaseUser, onComplete }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [showTerms, setShowTerms] = useState(false);
   const [form, setForm] = useState({ title: "", firstName: "", lastName: "", role: "", location: "" });
 
   const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -123,9 +124,37 @@ export default function Onboarding({ firebaseUser, onComplete }) {
         </div>
 
         <p style={{ textAlign: "center", color: COLORS.textMuted, fontSize: 11, marginTop: 20 }}>
-          By continuing you agree to our Terms of Service and Privacy Policy.
+          By continuing you agree to our{" "}
+          <span onClick={() => setShowTerms(true)} style={{ color: COLORS.accent, cursor: "pointer", textDecoration: "underline" }}>Terms of Service</span>
+          {" "}and{" "}
+          <span onClick={() => setShowTerms(true)} style={{ color: COLORS.accent, cursor: "pointer", textDecoration: "underline" }}>Privacy Policy</span>.
         </p>
       </div>
+
+      {showTerms && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+          background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center",
+          justifyContent: "center", zIndex: 100, padding: 20, boxSizing: "border-box",
+        }}>
+          <div style={{
+            background: COLORS.card, border: `1px solid ${COLORS.border}`,
+            borderRadius: 20, width: "100%", maxWidth: 460,
+            maxHeight: "85dvh", display: "flex", flexDirection: "column",
+          }}>
+            <div style={{
+              padding: "16px 20px", borderBottom: `1px solid ${COLORS.border}`,
+              display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0,
+            }}>
+              <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16 }}>Terms of Service &amp; Privacy Policy</div>
+              <button onClick={() => setShowTerms(false)} style={{ background: "none", border: "none", color: COLORS.textMuted, cursor: "pointer", fontSize: 24, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ overflowY: "auto", padding: "16px 20px" }}>
+              <TermsContent />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -33,6 +33,16 @@ module.exports = async function handler(req, res) {
 
   try {
     const db = admin.firestore();
+
+    // Idempotency — if this user already has a signupIndex, return it without touching the counter.
+    // Prevents double-counting if the client retries after a network failure between /api/register
+    // succeeding and the subsequent setDoc completing.
+    const userSnap = await db.collection("users").doc(uid).get();
+    if (userSnap.exists && userSnap.data().signupIndex) {
+      const d = userSnap.data();
+      return res.status(200).json({ signupIndex: d.signupIndex, plan: d.plan });
+    }
+
     const statsRef = db.collection("meta").doc("stats");
 
     let signupIndex;

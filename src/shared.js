@@ -225,11 +225,11 @@ export function SkillsInput({ skills, onChange, label = "Your key skills" }) {
   );
 }
 
-export function Input({ label, value, onChange, placeholder, type = "text", autoComplete }) {
+export function Input({ label, value, onChange, placeholder, type = "text", autoComplete, onKeyDown }) {
   return (
     <div>
       <label style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 6, display: "block" }}>{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} autoComplete={autoComplete || "off"} style={{
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} autoComplete={autoComplete || "off"} onKeyDown={onKeyDown} style={{
         width: "100%", padding: "12px 16px", borderRadius: 12,
         background: COLORS.bg, border: `1px solid ${COLORS.border}`,
         color: COLORS.text, fontSize: 14, outline: "none", boxSizing: "border-box",

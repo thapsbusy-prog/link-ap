@@ -14,6 +14,7 @@ import { COLORS, Avatar, LocationPin } from "./shared";
 import { Messages } from "./Messages";
 import { Profile } from "./Profile";
 import AuthScreen from "./AuthScreen";
+import EmailVerifyScreen from "./EmailVerifyScreen";
 import { IntroScreen } from "./IntroScreen";
 import Onboarding from "./Onboarding";
 import Settings from "./Settings";
@@ -866,13 +867,19 @@ export default function App() {
   const [firebaseUser, setFirebaseUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [emailVerified, setEmailVerified] = useState(true);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       setProfile(null);
       setFirebaseUser(user ?? null);
+      if (!user) {
+        setEmailVerified(true); // reset so sign-in screen isn't blocked
+      }
       if (user) {
+        const isPasswordUser = user.providerData?.some(p => p.providerId === "password");
+        setEmailVerified(!isPasswordUser || user.emailVerified);
         const snap = await getDoc(doc(db, "users", user.uid));
         if (snap.exists()) {
           const data = snap.data();
@@ -900,6 +907,7 @@ export default function App() {
   else if (loading) content = <div style={{ minHeight: "100vh", background: COLORS.bg }} />;
   else if (!firebaseUser && showIntro) content = <IntroScreen onContinue={() => setShowIntro(false)} />;
   else if (!firebaseUser) content = <AuthScreen />;
+  else if (!emailVerified) content = <EmailVerifyScreen firebaseUser={firebaseUser} onVerified={() => setEmailVerified(true)} />;
   else if (!profile || profile.uid !== firebaseUser.uid) content = <Onboarding firebaseUser={firebaseUser} onComplete={setProfile} />;
   else content = <MainApp user={profile} firebaseUser={firebaseUser} onProfileUpdate={setProfile} />;
   return <ErrorBoundary>{content}</ErrorBoundary>;

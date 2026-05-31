@@ -4,7 +4,7 @@ import { auth } from "./firebase";
 import {
   signInWithRedirect, signInWithPopup, getRedirectResult, GoogleAuthProvider,
   createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  sendPasswordResetEmail,
+  sendPasswordResetEmail, sendEmailVerification,
 } from "firebase/auth";
 import { COLORS, Input, TermsContent } from "./shared";
 
@@ -38,6 +38,10 @@ function getErrorMessage(err) {
       return "Sign-in was cancelled. Please try again.";
     case "auth/popup-blocked":
       return "Pop-up was blocked by your browser. Please allow pop-ups and try again.";
+    case "auth/account-exists-with-different-credential":
+      return "An account with that email already exists using a different sign-in method. Try signing in with your email and password instead.";
+    case "auth/user-disabled":
+      return "This account has been disabled. Please contact support for help.";
     case "auth/network-request-failed":
       return "Network error — check your connection and try again.";
     default:
@@ -95,7 +99,8 @@ export default function AuthScreen() {
       if (mode === "login") {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await sendEmailVerification(cred.user);
       }
       // onAuthStateChanged handles transition; no setLoading(false) needed on success
     } catch (e) {
@@ -173,6 +178,7 @@ export default function AuthScreen() {
               placeholder="you@example.com"
               type="email"
               autoComplete="email"
+              onKeyDown={e => { if (e.key === "Enter" && canSubmit) handleEmail(); }}
             />
             <Input
               label="Password"
@@ -181,6 +187,7 @@ export default function AuthScreen() {
               placeholder="••••••••"
               type="password"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
+              onKeyDown={e => { if (e.key === "Enter" && canSubmit) handleEmail(); }}
             />
           </div>
 
