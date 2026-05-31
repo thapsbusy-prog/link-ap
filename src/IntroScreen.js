@@ -405,11 +405,9 @@ export function IntroScreen({ onContinue }) {
           </div>
 
           {/* Web app */}
-          <a
-            href="https://link-ap.online"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: "none", display: "block" }}
+          <div
+            onClick={onContinue}
+            style={{ textDecoration: "none", display: "block", cursor: "pointer" }}
           >
             <div style={{
               background: "rgba(245,166,35,0.07)",
@@ -428,7 +426,7 @@ export function IntroScreen({ onContinue }) {
                 <div style={{ color: COLORS.accent, fontSize: 16, fontWeight: 700, lineHeight: 1.3 }}>Web App — link-ap.online</div>
               </div>
             </div>
-          </a>
+          </div>
         </div>
 
         {/* Secondary sign-in */}
