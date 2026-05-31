@@ -504,7 +504,7 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
       <div style={{ paddingBottom: 90 }}>
         {tab === "discover" && !!(user.bio && user.skills?.length > 0 && user.lookingFor?.length > 0 && user.photoURL) === false && (
           <div onClick={() => setTab("profile")} style={{
-            margin: "0 20px 12px", padding: "12px 16px", borderRadius: 12,
+            margin: "16px 20px 0", padding: "12px 16px", borderRadius: 12,
             background: "#2D1F00", border: "1px solid #6B4A00",
             display: "flex", alignItems: "center", justifyContent: "space-between",
             cursor: "pointer",
