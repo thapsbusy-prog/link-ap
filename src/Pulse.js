@@ -17,7 +17,37 @@ function nextBatchLabel(ts) {
   const elapsedDays = (Date.now() - ts) / DAY_MS;
   const remaining = Math.ceil(REFRESH_DAYS - elapsedDays);
   if (remaining <= 0) return "Fresh today";
-  return `🌱 Next batch in ${remaining} day${remaining === 1 ? "" : "s"}`;
+  return `Next batch in ${remaining} day${remaining === 1 ? "" : "s"}`;
+}
+
+function IconBulb({ size = 18, color = COLORS.accent }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
+      <path d="M9 18h6"/>
+      <path d="M10 22h4"/>
+      <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+    </svg>
+  );
+}
+
+function IconCalendar({ size = 13, color = COLORS.accent }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
+      <rect x="3" y="4" width="18" height="18" rx="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  );
+}
+
+function IconTag({ size = 12, color = COLORS.accent }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={size} height={size}>
+      <path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.41l8.83 8.83a2 2 0 0 0 2.83 0l7.17-7.17a2 2 0 0 0 0-2.83z"/>
+      <line x1="7" y1="7" x2="7.01" y2="7"/>
+    </svg>
+  );
 }
 
 function IdeaCard({ idea }) {
@@ -73,10 +103,10 @@ function IdeaCard({ idea }) {
         </h3>
 
         <span style={{
-          display: "inline-block", fontSize: 11, fontWeight: 700, color: COLORS.accent,
+          display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: COLORS.accent,
           background: `${COLORS.accent}1A`, padding: "3px 8px", borderRadius: 6, marginBottom: 10,
         }}>
-          💰 {idea.startupCost}
+          <IconTag size={12} /> {idea.startupCost}
         </span>
 
         <p style={{ fontSize: 13, color: COLORS.textMuted, lineHeight: 1.6, margin: 0 }}>
@@ -196,7 +226,8 @@ export default function Pulse({ firebaseUser, user }) {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: 0 }}>💡 Business Ideas</h2>
+              <IconBulb size={18} />
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: 0 }}>Business Ideas</h2>
             </div>
             <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>
               5 fresh ideas every 5 days — built for South Africa
@@ -218,9 +249,11 @@ export default function Pulse({ firebaseUser, user }) {
         {generatedAt && (
           <div style={{ marginTop: 10 }}>
             <span style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
               fontSize: 11, fontWeight: 700, color: COLORS.accent,
               background: `${COLORS.accent}1A`, padding: "4px 10px", borderRadius: 20,
             }}>
+              <IconCalendar size={13} />
               {nextBatchLabel(generatedAt)}{stale ? " · cached" : ""}
             </span>
           </div>
