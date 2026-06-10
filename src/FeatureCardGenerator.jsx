@@ -191,6 +191,87 @@ const FEATURE_CARDS = {
       example: "You need budget approval for a new product line. You generate the deck outline as a framework for your internal presentation. The structured narrative lands, the budget is approved, and you have a head start on the external pitch when the time comes.",
     },
   ],
+
+  "Quote Generator": [
+    {
+      pill: "QUOTE GENERATOR",
+      what: "AI Quote Generator",
+      whatDesc: "Fill in your line items and Link-Ap drafts a professional, branded price quote — complete with a quote number, validity period, optional deposit, and terms — ready to send before the client looks elsewhere.",
+      forWhom: "Freelancers Fielding Quick Requests",
+      forDesc: "A client wants a number today, not next week. Now you can send a polished quote in minutes, with a clear validity window so you're never locked into an old price.",
+      example: "A prospective client DMs you asking 'how much for a logo + brand guide?' You add two line items, set the quote to expire in 14 days, and send a styled PDF quote within five minutes — while the conversation is still warm.",
+    },
+    {
+      pill: "QUOTE GENERATOR",
+      what: "AI Quote Generator",
+      whatDesc: "Fill in your line items and Link-Ap drafts a professional, branded price quote — complete with a quote number, validity period, optional deposit, and terms — ready to send before the client looks elsewhere.",
+      forWhom: "Founders Quoting Project Work",
+      forDesc: "Bigger projects need a deposit upfront. Now you can specify a deposit percentage and have it calculated and presented automatically, so cash flow conversations happen before work starts, not after.",
+      example: "You're scoping a three-month build for a client. You add the milestones as line items, set a 30% deposit, and generate the quote. The client approves it, pays the deposit, and you've secured working capital before writing a line of code.",
+    },
+    {
+      pill: "QUOTE GENERATOR",
+      what: "AI Quote Generator",
+      whatDesc: "Fill in your line items and Link-Ap drafts a professional, branded price quote — complete with a quote number, validity period, optional deposit, and terms — ready to send before the client looks elsewhere.",
+      forWhom: "Operators Moving from Quote to Invoice",
+      forDesc: "Once a quote is accepted, retyping everything into an invoice wastes time and risks mismatched numbers. Now one tap carries the line items straight across.",
+      example: "Your client replies 'looks good, go ahead.' You open the accepted quote and tap 'Convert to Invoice →' — the same line items and client details land in the Invoice Generator, ready to add a due date and send.",
+    },
+  ],
+
+  "Payment Chaser": [
+    {
+      pill: "PAYMENT CHASER",
+      what: "AI Payment Chaser",
+      whatDesc: "Tell Link-Ap who owes you, how much, and how overdue they are, and it writes a polite-but-firm follow-up message — matched to your tone and channel — ready to copy and send.",
+      forWhom: "Freelancers Avoiding Awkward Conversations",
+      forDesc: "Chasing late payments feels uncomfortable, so it gets put off — and the invoice gets put off too. Now you get a message that's firm without being awkward, in seconds.",
+      example: "An invoice is 10 days overdue. You select 'Gentle nudge' and 'WhatsApp', and Link-Ap writes a short, warm reminder. You copy it, paste it into the chat, and the client pays within the hour.",
+    },
+    {
+      pill: "PAYMENT CHASER",
+      what: "AI Payment Chaser",
+      whatDesc: "Tell Link-Ap who owes you, how much, and how overdue they are, and it writes a polite-but-firm follow-up message — matched to your tone and channel — ready to copy and send.",
+      forWhom: "Small Business Owners Managing Multiple Clients",
+      forDesc: "When several invoices are overdue at once, writing individual follow-ups is the first thing to slip. Now each one takes seconds, so nothing falls through the cracks.",
+      example: "You have three invoices overdue by different amounts. For each one you set the days overdue and escalation level, generate the message, and send it by email — all before your morning coffee is finished.",
+    },
+    {
+      pill: "PAYMENT CHASER",
+      what: "AI Payment Chaser",
+      whatDesc: "Tell Link-Ap who owes you, how much, and how overdue they are, and it writes a polite-but-firm follow-up message — matched to your tone and channel — ready to copy and send.",
+      forWhom: "Founders Escalating Without Burning Bridges",
+      forDesc: "A client who's gone quiet for weeks needs a firmer message — but an overly aggressive one can damage the relationship. Now the escalation tone is calibrated for you.",
+      example: "An invoice is now 45 days overdue and the client has stopped responding. You select 'Final notice', and Link-Ap drafts a serious but professional email referencing next steps — firm enough to prompt action, without making threats.",
+    },
+  ],
+
+  "Runway Calculator": [
+    {
+      pill: "RUNWAY CALCULATOR",
+      what: "Cash Flow Runway Calculator",
+      whatDesc: "Enter your cash on hand, monthly income, and fixed costs, and Link-Ap shows exactly how many months your runway lasts, your projected run-out date, and what it would take to break even.",
+      forWhom: "Founders Watching the Bank Balance",
+      forDesc: "Knowing your runway in your head is risky — a clear number changes how you plan hiring, spending, and fundraising timelines.",
+      example: "You check your numbers and see you have 4.2 months of runway, running out around late October. That's enough warning to start fundraising conversations now instead of in a panic next month.",
+    },
+    {
+      pill: "RUNWAY CALCULATOR",
+      what: "Cash Flow Runway Calculator",
+      whatDesc: "Enter your cash on hand, monthly income, and fixed costs, and Link-Ap shows exactly how many months your runway lasts, your projected run-out date, and what it would take to break even.",
+      forWhom: "Freelancers Planning Around Slow Months",
+      forDesc: "Income can be unpredictable. Now you can see how long your savings cover a quiet period — and what extra income would close the gap.",
+      example: "Work has dried up for the month. You plug in your savings and fixed costs and see you have 3.5 months before things get tight, plus the exact amount of extra monthly income that would stop the burn — so you know what to aim for.",
+    },
+    {
+      pill: "RUNWAY CALCULATOR",
+      what: "Cash Flow Runway Calculator",
+      whatDesc: "Enter your cash on hand, monthly income, and fixed costs, and Link-Ap shows exactly how many months your runway lasts, your projected run-out date, and what it would take to break even.",
+      forWhom: "Founders Planning Around a Big Expense",
+      forDesc: "A large one-off cost — like a tax bill or new equipment — can blindside an otherwise healthy cash position. Now you can model it before it happens.",
+      example: "You know a tax payment is due in month 4. You add it as a once-off outflow and see your runway shorten from 'no limit' to 7 months — giving you time to plan ahead instead of being caught off guard.",
+    },
+  ],
 };
 
 const FEATURES = Object.keys(FEATURE_CARDS);

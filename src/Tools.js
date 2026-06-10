@@ -2,6 +2,9 @@ import { useState } from "react";
 import { jsPDF } from "jspdf";
 import { auth } from "./firebase";
 import { COLORS } from "./shared";
+import QuoteGenerator from "./tools/QuoteGenerator";
+import RunwayCalculator from "./tools/RunwayCalculator";
+import PaymentChaser from "./tools/PaymentChaser";
 
 const SUBTABS = [
   { id: "founders", label: "Founders Hub" },
@@ -254,17 +257,26 @@ function InvoicePreview({ invoice, onStartOver, onDownload, buildPdf, pdfFileNam
 
 // ─── Invoice Form ─────────────────────────────────────────────────────────────
 
-function InvoiceForm({ user }) {
+function InvoiceForm({ user, initialData }) {
   const [view, setView] = useState("form");
   const [form, setForm] = useState({
-    fromName: user?.name || "",
-    fromEmail: user?.email || "",
-    clientName: "",
-    clientEmail: "",
-    currency: "ZAR",
+    fromName: initialData?.fromName || user?.name || "",
+    fromEmail: initialData?.fromEmail || user?.email || "",
+    clientName: initialData?.clientName || "",
+    clientEmail: initialData?.clientEmail || "",
+    currency: initialData?.currency || "ZAR",
     dueDate: "",
   });
-  const [lineItems, setLineItems] = useState([newItem()]);
+  const [lineItems, setLineItems] = useState(
+    initialData?.lineItems?.length
+      ? initialData.lineItems.map(i => ({
+          id: `${Date.now()}-${Math.random()}`,
+          description: i.description,
+          qty: i.qty,
+          unitPrice: i.unitPrice,
+        }))
+      : [newItem()]
+  );
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState("");
   const [invoice, setInvoice] = useState(null);
@@ -3348,9 +3360,40 @@ const backBtnStyle = {
 
 function FoundersHub({ user }) {
   const [activeTool, setActiveTool] = useState(null);
+  const [convertData, setConvertData] = useState(null);
   const isPro = user?.plan === "founding_member" || user?.plan === "premium";
 
+  const handleConvertToInvoice = (quote) => {
+    setConvertData({
+      fromName: quote.fromName,
+      fromEmail: quote.fromEmail,
+      clientName: quote.clientName,
+      clientEmail: quote.clientEmail,
+      currency: quote.currency,
+      lineItems: quote.lineItems,
+    });
+    setActiveTool("invoice");
+  };
+
+  const goBack = () => {
+    setActiveTool(null);
+    setConvertData(null);
+  };
+
   const TOOLS = [
+    {
+      id: "quote",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <path d="M9 15l2 2 4-4"/>
+        </svg>
+      ),
+      name: "AI Quote Generator",
+      desc: "AI drafts a professional price quote in seconds",
+      ai: true,
+    },
     {
       id: "invoice",
       icon: () => (
@@ -3407,18 +3450,33 @@ function FoundersHub({ user }) {
       desc: "Fill in your own invoice and download PDF",
       ai: false,
     },
+    {
+      id: "runway",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <path d="M2 12h20"/>
+          <path d="M5 12V7l14-2v7"/>
+          <path d="M5 12v5l14 2v-7"/>
+        </svg>
+      ),
+      name: "Cash Flow Runway Calculator",
+      desc: "See how many months your cash will last",
+      ai: false,
+    },
   ];
 
   if (activeTool) {
     return (
       <div>
-        <button onClick={() => setActiveTool(null)} style={backBtnStyle}>
+        <button onClick={goBack} style={backBtnStyle}>
           ← Back to Founders Hub
         </button>
-        {activeTool === "invoice" && <InvoiceForm user={user} />}
+        {activeTool === "quote" && <QuoteGenerator user={user} onConvertToInvoice={handleConvertToInvoice} />}
+        {activeTool === "invoice" && <InvoiceForm user={user} initialData={convertData} />}
         {activeTool === "pitch-deck" && <PitchDeckForm user={user} />}
         {activeTool === "break-even" && <BreakEvenCalculator />}
         {activeTool === "invoice-template" && <StaticInvoiceTemplate user={user} />}
+        {activeTool === "runway" && <RunwayCalculator />}
       </div>
     );
   }
@@ -3488,6 +3546,17 @@ function FreelancerKit({ user }) {
       ai: true,
     },
     {
+      id: "payment-chase",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+      ),
+      name: "AI Payment Chaser",
+      desc: "Polite-but-firm payment reminders, written for you",
+      ai: true,
+    },
+    {
       id: "day-rate",
       icon: () => (
         <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
@@ -3522,6 +3591,7 @@ function FreelancerKit({ user }) {
           ← Back to Freelancer Kit
         </button>
         {activeTool === "proposal" && <ProposalForm user={user} />}
+        {activeTool === "payment-chase" && <PaymentChaser user={user} />}
         {activeTool === "day-rate" && <DayRateCalculator />}
         {activeTool === "rate-card" && <StaticRateCard />}
       </div>

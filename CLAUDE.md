@@ -29,6 +29,7 @@ The app is split across several source files. There is no routing library — `M
 - `src/Profile.js` — `Profile` component
 - `src/Settings.js` — `Settings` component
 - `src/Tools.js` — `Tools` component (6th tab); three subtab pills: Founders Hub, Freelancer Kit, Growth Lab; shell only — placeholder cards
+- `src/tools/` — **(10 June 2026)** all new tool implementations, one file per tool: `QuoteGenerator.js`, `PaymentChaser.js`, `RunwayCalculator.js`, plus `toolsShared.js` (shared constants, styles, and `sharePdf()` helper). `src/Tools.js` is **frozen for new tool code** — only imports and picker-card wiring may be added there for new tools.
 - `src/Pulse.js` — `Pulse` component (AI Pulse tab) and `TrendCard`, `SkeletonCard` sub-components
 - `src/AuthScreen.js` — `AuthScreen` component
 - `src/Onboarding.js` — `Onboarding` component
@@ -52,15 +53,22 @@ The app is split across several source files. There is no routing library — `M
 - `src/Tools.js` — 6th tab (after Pulse); subtabs: Founders Hub, Freelancer Kit, Growth Lab. Accepts `user` prop.
 - Bottom nav wrench icon (inline SVG), label "Tools", tab id `"tools"`.
 - **Founders Hub** and **Freelancer Kit** now use a tool picker pattern: a list of cards (emoji + name + desc) where tapping opens the selected tool with a "← Back" link. Growth Lab remains a direct single-tool view.
-- **Founders Hub tools** (3): AI Invoice Generator, Pitch Deck Outline Generator, Break-Even Calculator.
-- **Freelancer Kit tools** (2): AI Proposal Generator, Day Rate Calculator.
-- **Founders Hub — AI Invoice Generator**: form view collects from/client details, currency (ZAR/USD/GBP/EUR), due date, line items (add/remove rows, running subtotal with ZAR VAT preview). Calls `POST /api/tools/invoice-generate`. Preview view shows styled invoice card with Download PDF (jsPDF A4), Share (Web Share API), and Start Over.
+- **Founders Hub tools** (5): AI Quote Generator, AI Invoice Generator, Pitch Deck Outline Generator, Break-Even Calculator, Cash Flow Runway Calculator.
+- **Freelancer Kit tools** (3): AI Proposal Generator, AI Payment Chaser, Day Rate Calculator.
+- **Founders Hub — AI Invoice Generator**: form view collects from/client details, currency (ZAR/USD/GBP/EUR), due date, line items (add/remove rows, running subtotal with ZAR VAT preview). Calls `POST /api/tools/invoice-generate`. Preview view shows styled invoice card with Download PDF (jsPDF A4), Share (Web Share API), and Start Over. Accepts an optional `initialData` prop (10 June 2026) used to pre-fill the form when arriving via the Quote Generator's "Convert to Invoice" flow.
 - **Founders Hub — Pitch Deck Outline Generator**: form collects businessName (pre-filled from user.name), oneLiner, problem, solution, targetMarket (required), revenueModel, traction, askAmount, currency (optional). Calls `POST /api/tools/pitch-deck`. Preview shows 10 slides (numbered amber circle + title, key message italic, bullet list, speaker note box). Download PDF (jsPDF multi-page with checkPage), Share, Start Over.
 - **Founders Hub — Break-Even Calculator**: pure client-side, no API. Form: fixedCosts, variableUnitCost, sellingPrice, currency. Results: breakEvenUnits, breakEvenRevenue, contributionMargin, contributionMarginPct, visual stacked bar (amber=fixed, muted=variable), plain-English explanation. Formulas: CM = price - varCost; units = ceil(fixed / CM); revenue = units × price.
 - **Freelancer Kit — Day Rate Calculator**: pure client-side, no API. Form: annualIncome, billableDays (default 220), annualExpenses, profitBuffer % (default 20), currency. Results: dayRate (rounded to nearest 50), halfDayRate, hourlyRate, project rate guidance (3/10/20 days), plain-English explanation. Formula: base = (income + expenses) / days; dayRate = round50(base × (1 + buffer/100)).
+- **Founders Hub — AI Quote Generator (10 June 2026)** — `src/tools/QuoteGenerator.js`: front-half of the Invoice Generator. Form: from/client details, currency (ZAR/USD/GBP/EUR), line items (running subtotal + ZAR VAT preview), quote validity (7/14/30 days, default 14), optional deposit %. Calls `POST /api/tools/quote-generate`. Preview labeled "QUOTATION" with "Valid until {date}" and a deposit line if set; buttons Download PDF (`buildQuotePDF`, jsPDF A4), Share (`sharePdf`), Start Over, plus a **"Convert to Invoice →"** button.
+- **Convert to Invoice flow (10 June 2026)**: `FoundersHub` holds `convertData` state and `handleConvertToInvoice(quote)`, passed to `QuoteGenerator` as `onConvertToInvoice`. Tapping "Convert to Invoice →" maps the quote's from/client/currency/line items into `convertData`, switches `activeTool` to `"invoice"`, and `InvoiceForm` consumes `convertData` via its `initialData` prop to pre-fill the form. `goBack()` resets both `activeTool` and `convertData`.
+- **Freelancer Kit — AI Payment Chaser (10 June 2026)** — `src/tools/PaymentChaser.js`: writes polite-but-firm payment follow-up messages, no PDF. Form: client first name, your name/business (pre-filled from user.name), invoice number (optional), amount + currency, days overdue, escalation level ("Gentle nudge" / "Firm reminder" / "Final notice"), channel (Email / WhatsApp). Calls `POST /api/tools/payment-chase`. Preview shows the message in a styled card (subject shown above for Email); buttons: Copy to clipboard ("Copied ✓" feedback), Share (text-only `navigator.share({ text })`), Regenerate, Start Over.
+- **Founders Hub — Cash Flow Runway Calculator (10 June 2026)** — `src/tools/RunwayCalculator.js`: pure client-side, no API, not plan-gated. Form: cashOnHand, avgMonthlyIncome, fixedMonthlyCosts, optional once-off inflow/outflow each with a target month (default 1), currency. Simulates month-by-month cash balance (capped at 60 months); reports runway in months (1 decimal) with a fractional-month run-out date, or "Cash-flow positive — no runway limit" if it never depletes. Results include monthly burn/surplus, a horizontal burn-down bar (amber = remaining runway against a 24-month view), and a plain-English explanation including the extra monthly revenue needed to break even when burning cash.
 - `api/tools/invoice-generate.js` — POST; verifies auth; gates via `getUserPlan` (403 for free users); sanitizes all inputs; computes subtotal/VAT/total server-side (overrides Claude's arithmetic); prompts Claude for `invoiceNumber`, `notes`, `paymentTerms` only.
 - `api/tools/pitch-deck.js` — POST; verifies auth; gates via `getUserPlan`; sanitizes all inputs; prompts Claude to return 10-slide JSON (`deckTitle`, `generatedDate`, `businessName`, `slides[]`, `pitchTips[]`); overrides identity fields server-side.
-- `api/lib/getUserPlan.js` — shared Admin SDK plan-gate utility for all tool routes.
+- `api/tools/quote-generate.js` (10 June 2026) — POST; verifies auth; gates via `getUserPlan`; sanitizes all inputs; computes `validUntilDate`/subtotal/VAT/total/deposit server-side; prompts Claude for `quoteNumber` (QUO-YYYY-NNN), `notes`, `termsAndConditions` only; overrides computed/identity fields server-side.
+- `api/tools/payment-chase.js` (10 June 2026) — POST; verifies auth; gates via `getUserPlan`; sanitizes all inputs; prompts Claude to return `{ subject, message }` matched to escalation level and channel (subject forced empty for WhatsApp).
+- `api/_lib/getUserPlan.js` — shared Admin SDK plan-gate utility for all tool routes.
+- `api/_lib/checkToolLimit.js` — shared Admin SDK per-user monthly usage limiter (`users/{uid}/private/toolLimits`, Firestore transaction); used by `quote-generate.js` and `payment-chase.js`.
 
 **PDF Share behaviour (10 June 2026)**
 - All PDF-generating tool previews (`InvoicePreview`, `ProposalPreview`, `ContentCalendarPreview`, `PitchDeckPreview` in `src/Tools.js`) and `Profile.js`'s "Share Profile as PDF" now share the actual generated PDF file via the Web Share API Level 2 (`navigator.canShare({ files: [file] })`), not just text.
@@ -272,14 +280,17 @@ This section is the live project health snapshot. Update it after every fix or f
 | AI Profile Score / Optimiser | ❌ Not built | — |
 | Conversation Starter Chips | ✅ Shipped (26 May 2026) | `src/Messages.js` + `api/chat-starters.js`; permanent cache in `chatStarters/{chatId}`; chips shown above input bar on empty chats |
 
-#### Tools Tab (as of 29 May 2026)
+#### Tools Tab (as of 10 June 2026)
 
 | Tool | Subtab | Status | Notes |
 |------|--------|--------|-------|
-| AI Invoice Generator | Founders Hub | ✅ Shipped | Form → Preview; jsPDF download; Web Share API; plan-gated |
+| AI Quote Generator | Founders Hub | ✅ Shipped (10 June 2026) | `src/tools/QuoteGenerator.js` + `api/tools/quote-generate.js`; Form → Preview; jsPDF download; Web Share API; plan-gated; "Convert to Invoice →" pre-fills Invoice Generator |
+| AI Invoice Generator | Founders Hub | ✅ Shipped | Form → Preview; jsPDF download; Web Share API; plan-gated; accepts optional `initialData` from Quote Generator |
 | Pitch Deck Outline Generator | Founders Hub | ✅ Shipped | 10-slide AI outline; speaker notes per slide; jsPDF multi-page; Web Share API; plan-gated |
 | Break-Even Calculator | Founders Hub | ✅ Shipped | Client-side only; no API; visual stacked bar; instant results |
+| Cash Flow Runway Calculator | Founders Hub | ✅ Shipped (10 June 2026) | `src/tools/RunwayCalculator.js`; client-side only; no API; not plan-gated; month-by-month simulation; burn-down bar |
 | AI Proposal Generator | Freelancer Kit | ✅ Shipped | Form → Preview; 7-section AI proposal; jsPDF multi-page; Web Share API; plan-gated |
+| AI Payment Chaser | Freelancer Kit | ✅ Shipped (10 June 2026) | `src/tools/PaymentChaser.js` + `api/tools/payment-chase.js`; no PDF; Copy/Share/Regenerate; plan-gated |
 | Day Rate Calculator | Freelancer Kit | ✅ Shipped | Client-side only; no API; rounds to nearest 50; project rate guidance |
 | AI Content Calendar Generator | Growth Lab | ✅ Shipped | Form → Preview; 2 or 4 weeks; 3 posts/week/platform; jsPDF multi-page; plan-gated |
 
