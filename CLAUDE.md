@@ -62,6 +62,11 @@ The app is split across several source files. There is no routing library — `M
 - `api/tools/pitch-deck.js` — POST; verifies auth; gates via `getUserPlan`; sanitizes all inputs; prompts Claude to return 10-slide JSON (`deckTitle`, `generatedDate`, `businessName`, `slides[]`, `pitchTips[]`); overrides identity fields server-side.
 - `api/lib/getUserPlan.js` — shared Admin SDK plan-gate utility for all tool routes.
 
+**PDF Share behaviour (10 June 2026)**
+- All PDF-generating tool previews (`InvoicePreview`, `ProposalPreview`, `ContentCalendarPreview`, `PitchDeckPreview` in `src/Tools.js`) and `Profile.js`'s "Share Profile as PDF" now share the actual generated PDF file via the Web Share API Level 2 (`navigator.canShare({ files: [file] })`), not just text.
+- Each tool's PDF-building logic was extracted into a `build*PDF()` function (returns the `jsPDF` doc without saving) shared by both the Download button (`doc.save(filename)`) and the Share button (`doc.output("blob")` → `File`).
+- Share handler order: if `navigator.canShare({ files })` — share the PDF file (with title/text); else if `navigator.share` exists — share text only (previous behaviour); else — download the PDF directly. On `AbortError` (user cancelled share sheet) do nothing; on any other error, fall back to downloading the PDF.
+
 **Onboarding design (as of 29 May 2026)**
 - `Onboarding` is intentionally minimal: collects only First Name, Last Name, Role, and Location (plus optional Title). All other profile fields default to empty/`[]`.
 - On completion a full Firestore profile doc is created with empty `bio`, `skills`, `lookingFor`, `bringToTable`, etc., so the rest of the app works immediately.

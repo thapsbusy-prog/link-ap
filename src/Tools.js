@@ -45,17 +45,30 @@ const labelStyle = {
 
 // ─── Invoice Preview ──────────────────────────────────────────────────────────
 
-function InvoicePreview({ invoice, onStartOver, onDownload }) {
+function InvoicePreview({ invoice, onStartOver, onDownload, buildPdf, pdfFileName }) {
   const sym = invoice.currencySymbol || "";
   const canShare = typeof navigator !== "undefined" && !!navigator.share;
 
   const handleShare = async () => {
+    const shareData = {
+      title: `Invoice ${invoice.invoiceNumber}`,
+      text: `Invoice from ${invoice.fromName} for ${invoice.clientName} — ${sym}${invoice.total.toFixed(2)}`,
+    };
     try {
-      await navigator.share({
-        title: `Invoice ${invoice.invoiceNumber}`,
-        text: `Invoice from ${invoice.fromName} for ${invoice.clientName} — ${sym}${invoice.total.toFixed(2)}`,
-      });
-    } catch {}
+      const doc = buildPdf();
+      const file = new File([doc.output("blob")], pdfFileName, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ ...shareData, files: [file] });
+      } else if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        doc.save(pdfFileName);
+      }
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        try { buildPdf().save(pdfFileName); } catch {}
+      }
+    }
   };
 
   return (
@@ -316,8 +329,8 @@ function InvoiceForm({ user }) {
     }
   };
 
-  const downloadPDF = () => {
-    if (!invoice) return;
+  const buildInvoicePDF = () => {
+    if (!invoice) return null;
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const W = 210;
     const M = 20;
@@ -444,6 +457,12 @@ function InvoiceForm({ user }) {
     doc.setFont("helvetica", "normal");
     doc.text(" · link-ap.online", W / 2 - 1, 291);
 
+    return doc;
+  };
+
+  const downloadPDF = () => {
+    const doc = buildInvoicePDF();
+    if (!doc) return;
     doc.save(`Invoice-${invoice.invoiceNumber}.pdf`);
   };
 
@@ -459,6 +478,8 @@ function InvoiceForm({ user }) {
         invoice={invoice}
         onStartOver={startOver}
         onDownload={downloadPDF}
+        buildPdf={buildInvoicePDF}
+        pdfFileName={`Invoice-${invoice.invoiceNumber}.pdf`}
       />
     );
   }
@@ -681,17 +702,30 @@ function InvoiceForm({ user }) {
 
 // ─── Proposal Preview ─────────────────────────────────────────────────────────
 
-function ProposalPreview({ proposal, onStartOver, onDownload }) {
+function ProposalPreview({ proposal, onStartOver, onDownload, buildPdf, pdfFileName }) {
   const canShare = typeof navigator !== "undefined" && !!navigator.share;
   const secs = proposal.sections || {};
 
   const handleShare = async () => {
+    const shareData = {
+      title: `Proposal ${proposal.proposalNumber}`,
+      text: `Proposal from ${proposal.fromName} for ${proposal.clientName}`,
+    };
     try {
-      await navigator.share({
-        title: `Proposal ${proposal.proposalNumber}`,
-        text: `Proposal from ${proposal.fromName} for ${proposal.clientName}`,
-      });
-    } catch {}
+      const doc = buildPdf();
+      const file = new File([doc.output("blob")], pdfFileName, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ ...shareData, files: [file] });
+      } else if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        doc.save(pdfFileName);
+      }
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        try { buildPdf().save(pdfFileName); } catch {}
+      }
+    }
   };
 
   return (
@@ -909,8 +943,8 @@ function ProposalForm({ user }) {
     }
   };
 
-  const downloadPDF = () => {
-    if (!proposal) return;
+  const buildProposalPDF = () => {
+    if (!proposal) return null;
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const W = 210;
     const M = 20;
@@ -1043,6 +1077,12 @@ function ProposalForm({ user }) {
     doc.setFont("helvetica", "normal");
     doc.text(" · link-ap.online", W / 2 - 1, 291);
 
+    return doc;
+  };
+
+  const downloadPDF = () => {
+    const doc = buildProposalPDF();
+    if (!doc) return;
     doc.save(`Proposal-${proposal.proposalNumber}.pdf`);
   };
 
@@ -1058,6 +1098,8 @@ function ProposalForm({ user }) {
         proposal={proposal}
         onStartOver={startOver}
         onDownload={downloadPDF}
+        buildPdf={buildProposalPDF}
+        pdfFileName={`Proposal-${proposal.proposalNumber}.pdf`}
       />
     );
   }
@@ -1246,16 +1288,29 @@ function ProposalForm({ user }) {
 
 // ─── Content Calendar Preview ────────────────────────────────────────────────
 
-function ContentCalendarPreview({ calendar, onStartOver, onDownload }) {
+function ContentCalendarPreview({ calendar, onStartOver, onDownload, buildPdf, pdfFileName }) {
   const canShare = typeof navigator !== "undefined" && !!navigator.share;
 
   const handleShare = async () => {
+    const shareData = {
+      title: calendar.calendarTitle,
+      text: `Content calendar for ${calendar.brandName} generated on Link-Ap`,
+    };
     try {
-      await navigator.share({
-        title: calendar.calendarTitle,
-        text: `Content calendar for ${calendar.brandName} generated on Link-Ap`,
-      });
-    } catch {}
+      const doc = buildPdf();
+      const file = new File([doc.output("blob")], pdfFileName, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ ...shareData, files: [file] });
+      } else if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        doc.save(pdfFileName);
+      }
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        try { buildPdf().save(pdfFileName); } catch {}
+      }
+    }
   };
 
   return (
@@ -1504,8 +1559,8 @@ function ContentCalendarForm({ user }) {
     }
   };
 
-  const downloadPDF = () => {
-    if (!calendar) return;
+  const buildCalendarPDF = () => {
+    if (!calendar) return null;
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const W = 210;
     const M = 20;
@@ -1624,6 +1679,12 @@ function ContentCalendarForm({ user }) {
     doc.setFont("helvetica", "normal");
     doc.text(" · link-ap.online", W / 2 - 1, 291);
 
+    return doc;
+  };
+
+  const downloadPDF = () => {
+    const doc = buildCalendarPDF();
+    if (!doc) return;
     doc.save(`ContentCalendar-${(calendar.brandName || "Brand").replace(/\s+/g, "-")}.pdf`);
   };
 
@@ -1639,6 +1700,8 @@ function ContentCalendarForm({ user }) {
         calendar={calendar}
         onStartOver={startOver}
         onDownload={downloadPDF}
+        buildPdf={buildCalendarPDF}
+        pdfFileName={`ContentCalendar-${(calendar.brandName || "Brand").replace(/\s+/g, "-")}.pdf`}
       />
     );
   }
@@ -1800,16 +1863,29 @@ function ContentCalendarForm({ user }) {
 
 // ─── Pitch Deck Preview ───────────────────────────────────────────────────────
 
-function PitchDeckPreview({ deck, onStartOver, onDownload }) {
+function PitchDeckPreview({ deck, onStartOver, onDownload, buildPdf, pdfFileName }) {
   const canShare = typeof navigator !== "undefined" && !!navigator.share;
 
   const handleShare = async () => {
+    const shareData = {
+      title: deck.deckTitle,
+      text: `${deck.businessName} investor pitch deck — generated on Link-Ap`,
+    };
     try {
-      await navigator.share({
-        title: deck.deckTitle,
-        text: `${deck.businessName} investor pitch deck — generated on Link-Ap`,
-      });
-    } catch {}
+      const doc = buildPdf();
+      const file = new File([doc.output("blob")], pdfFileName, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ ...shareData, files: [file] });
+      } else if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        doc.save(pdfFileName);
+      }
+    } catch (e) {
+      if (e.name !== "AbortError") {
+        try { buildPdf().save(pdfFileName); } catch {}
+      }
+    }
   };
 
   return (
@@ -2003,8 +2079,8 @@ function PitchDeckForm({ user }) {
     }
   };
 
-  const downloadPDF = () => {
-    if (!deck) return;
+  const buildDeckPDF = () => {
+    if (!deck) return null;
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const W = 210;
     const M = 20;
@@ -2121,6 +2197,12 @@ function PitchDeckForm({ user }) {
     doc.setFont("helvetica", "normal");
     doc.text(" · link-ap.online", W / 2 - 1, 291);
 
+    return doc;
+  };
+
+  const downloadPDF = () => {
+    const doc = buildDeckPDF();
+    if (!doc) return;
     doc.save(`PitchDeck-${(deck.businessName || "Business").replace(/\s+/g, "-")}.pdf`);
   };
 
@@ -2136,6 +2218,8 @@ function PitchDeckForm({ user }) {
         deck={deck}
         onStartOver={startOver}
         onDownload={downloadPDF}
+        buildPdf={buildDeckPDF}
+        pdfFileName={`PitchDeck-${(deck.businessName || "Business").replace(/\s+/g, "-")}.pdf`}
       />
     );
   }
