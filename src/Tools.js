@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { jsPDF } from "jspdf";
 import { auth } from "./firebase";
-import { COLORS, isProfileComplete } from "./shared";
+import { COLORS } from "./shared";
 
 const SUBTABS = [
   { id: "founders", label: "Founders Hub" },
@@ -3265,7 +3265,6 @@ const backBtnStyle = {
 function FoundersHub({ user }) {
   const [activeTool, setActiveTool] = useState(null);
   const isPro = user?.plan === "founding_member" || user?.plan === "premium";
-  const profileComplete = isProfileComplete(user);
 
   const TOOLS = [
     {
@@ -3346,8 +3345,8 @@ function FoundersHub({ user }) {
         Tools built for founders — from fundraising to financial clarity.
       </p>
       {TOOLS.map(tool => {
-        const locked = tool.ai && (!isPro || !profileComplete);
-        const lockReason = tool.ai && !isPro ? "Founding Member only" : tool.ai && !profileComplete ? "Complete your profile to unlock" : null;
+        const locked = tool.ai && !isPro;
+        const lockReason = locked ? "Founding Member only" : null;
         return (
           <button
             key={tool.id}
@@ -3388,7 +3387,6 @@ function FoundersHub({ user }) {
 function FreelancerKit({ user }) {
   const [activeTool, setActiveTool] = useState(null);
   const isPro = user?.plan === "founding_member" || user?.plan === "premium";
-  const profileComplete = isProfileComplete(user);
 
   const TOOLS = [
     {
@@ -3452,8 +3450,8 @@ function FreelancerKit({ user }) {
         Tools built for freelancers — win clients and price your work confidently.
       </p>
       {TOOLS.map(tool => {
-        const locked = tool.ai && (!isPro || !profileComplete);
-        const lockReason = tool.ai && !isPro ? "Founding Member only" : tool.ai && !profileComplete ? "Complete your profile to unlock" : null;
+        const locked = tool.ai && !isPro;
+        const lockReason = locked ? "Founding Member only" : null;
         return (
           <button
             key={tool.id}
@@ -3520,31 +3518,7 @@ export default function Tools({ user }) {
 
       {subtab === "founders" && <FoundersHub user={user} />}
       {subtab === "freelancer" && <FreelancerKit user={user} />}
-      {subtab === "growth" && (
-        isProfileComplete(user) ? <ContentCalendarForm user={user} /> : (
-          <div style={{
-            background: COLORS.card,
-            border: "1px solid rgba(245,166,35,0.2)",
-            borderRadius: 16, padding: "28px 20px",
-            textAlign: "center",
-          }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: 12,
-              background: "rgba(245,166,35,0.12)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 14px",
-            }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: COLORS.text, marginBottom: 8 }}>Complete your profile to unlock</div>
-            <div style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1.7 }}>
-              Fill in your bio, skills, what you're looking for, and what you bring to the table — then come back to use the AI Content Calendar.
-            </div>
-          </div>
-        )
-      )}
+      {subtab === "growth" && <ContentCalendarForm user={user} />}
     </div>
   );
 }

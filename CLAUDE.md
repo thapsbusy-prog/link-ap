@@ -32,7 +32,7 @@ The app is split across several source files. There is no routing library — `M
 - `src/Pulse.js` — `Pulse` component (AI Pulse tab) and `TrendCard`, `SkeletonCard` sub-components
 - `src/AuthScreen.js` — `AuthScreen` component
 - `src/Onboarding.js` — `Onboarding` component
-- `src/shared.js` — shared constants (`COLORS`, `USER_COLORS`, option arrays), shared helpers (`normalizeUrl`, `validateLinkedIn`, `linkedinNameMatches`, `getBringToTablePrompt`, `formatRelativeTime`), and shared UI components (`Avatar`, `Tag`, `Input`, `TextArea`, `Select`, `SkillsInput`, `LocationPin`, `LinkedInIcon`, `TermsContent`)
+- `src/shared.js` — shared constants (`COLORS`, `USER_COLORS`, option arrays), shared helpers (`normalizeUrl`, `validateLinkedIn`, `linkedinNameMatches`, `getBringToTablePrompt`, `formatRelativeTime`, `isProfileComplete`), and shared UI components (`Avatar`, `Tag`, `Input`, `TextArea`, `Select`, `SkillsInput`, `LocationPin`, `LinkedInIcon`, `TermsContent`)
 
 **Auth flow (`App` root component)**
 - `firebaseUser` starts as `undefined` (loading), becomes `null` (signed out) or a Firebase user object (signed in).
@@ -67,6 +67,11 @@ The app is split across several source files. There is no routing library — `M
 - On completion a full Firestore profile doc is created with empty `bio`, `skills`, `lookingFor`, `bringToTable`, etc., so the rest of the app works immediately.
 - Richer profile data (bio, skills, looking for, what you bring, LinkedIn, pronouns) is collected **inside the app** via the Profile edit flow.
 - `ProfileCompletePrompt` (in `Profile.js`) shows in view mode whenever any of the four key sections are empty (bio, skills, lookingFor, bringToTable). It displays a percentage ring and a checklist, and opens edit mode on tap. It auto-hides once all four are filled.
+
+**Profile completeness is a nudge, not a gate (10 June 2026)**
+- All authenticated users with a minimal onboarding profile (name, role, location) have full access to every tab and AI feature, regardless of profile completeness. Removed completeness gates from: AI Profile Score (`Profile.js`, was "locked" placeholder), AI Pulse tab (`Pulse.js`, was a full-tab block screen), Discover "✦ Why Connect" AI explanation and its loading state (`Discover.js`), the AI draft button in `ConnectNoteModal` (`aiEnabled` prop removed — always shown), Conversation Starter Chips (`Messages.js`), and the Tools tab AI tools / Growth Lab Content Calendar (`Tools.js` — `FoundersHub`/`FreelancerKit` tool locking now checks only `isPro`, the founding_member/premium plan gate; the `profileComplete` checks were removed). Plan-based gating (`founding_member`/`premium` via `getUserPlan.js` and the client-side `isPro` checks) is unchanged.
+- `ProfileCompletePrompt` (`Profile.js`) reworded to "Boost your profile" with copy explicitly stating the user already has full access; completing it just helps with stronger connections/matches. Added a small "✕" dismiss control — dismissal is local component state (`dismissedPrompt`), resets on next app open or tab remount; no Firestore changes.
+- New `isProfileComplete(user)` helper in `src/shared.js` (checks `bio`, `skills`, `lookingFor`, `bringToTable`) — the **only** place profile completeness still gates anything: downloading/sharing the profile PDF in `Profile.js`. Tapping "Share Profile as PDF ↗" with an incomplete profile shows a modal ("Complete your profile first so your download looks its best") with a "Complete profile" button that opens edit mode, instead of disabling the button.
 
 **Firestore data model**
 - `users/{uid}` — user profile document (fields: `uid`, `name`, `role`, `location`, `bio`, `skills[]`, `lookingFor[]`, `achievements[]`, `linkedin`, `avatar`, `color`, `createdAt`, `pronouns`, `title`, `photoURL`, `signupIndex`, `plan`, `planAssignedAt`)

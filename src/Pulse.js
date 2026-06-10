@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { COLORS, isProfileComplete } from "./shared";
+import { COLORS } from "./shared";
 
 const CATEGORY_COLORS = {
   Productivity: "#7C3AED",
@@ -154,51 +154,6 @@ export default function Pulse({ firebaseUser, user }) {
   }, [firebaseUser]);
 
   useEffect(() => { fetchTrends(); }, [fetchTrends]);
-
-  if (!isProfileComplete(user)) {
-    return (
-      <div style={{ padding: "16px 20px", paddingBottom: 32 }}>
-        <div style={{ marginBottom: 20 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: "0 0 4px" }}>AI Pulse</h2>
-          <p style={{ fontSize: 12, color: COLORS.textMuted, margin: 0 }}>Daily trends for builders</p>
-        </div>
-        <div style={{
-          background: COLORS.card,
-          border: `1px solid rgba(245,166,35,0.25)`,
-          borderRadius: 16, padding: "28px 24px",
-          textAlign: "center",
-        }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: 14,
-            background: "rgba(245,166,35,0.12)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 14px",
-          }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
-              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, marginBottom: 8 }}>
-            Complete your profile to unlock AI Pulse
-          </div>
-          <p style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1.7, margin: "0 0 18px" }}>
-            AI Pulse delivers daily startup and tech trends tailored for builders.
-            Fill in your bio, skills, what you're looking for, and what you bring to the table — then come back here.
-          </p>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 6,
-            padding: "8px 16px",
-            background: "rgba(245,166,35,0.1)",
-            border: "1px solid rgba(245,166,35,0.3)",
-            borderRadius: 99,
-            fontSize: 12, fontWeight: 600, color: COLORS.accent,
-          }}>
-            Go to Profile tab → complete the 4 sections
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ padding: "16px 20px", paddingBottom: 32 }}>

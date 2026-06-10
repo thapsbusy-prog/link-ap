@@ -14,7 +14,7 @@ const COMPLETION_SECTIONS = [
   { key: "bringToTable", label: "What you bring to the table", filled: u => !!u.bringToTable },
 ];
 
-function ProfileCompletePrompt({ user, onEdit }) {
+function ProfileCompletePrompt({ user, onEdit, onDismiss }) {
   const sections = COMPLETION_SECTIONS.map(s => ({ ...s, done: s.filled(user) }));
   const missing = sections.filter(s => !s.done);
   if (missing.length === 0) return null;
@@ -24,12 +24,18 @@ function ProfileCompletePrompt({ user, onEdit }) {
     <div style={{
       background: COLORS.card, border: `1px solid ${COLORS.accent}55`,
       borderRadius: 16, padding: "16px 20px", marginBottom: 16,
+      position: "relative",
     }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      <button onClick={onDismiss} aria-label="Dismiss" style={{
+        position: "absolute", top: 10, right: 10,
+        background: "none", border: "none", color: COLORS.textMuted,
+        cursor: "pointer", fontSize: 14, padding: 4, lineHeight: 1,
+      }}>✕</button>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, paddingRight: 22 }}>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, margin: 0 }}>Finish setting up your profile</p>
-          <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "3px 0 0" }}>
-            A complete profile gets more matches
+          <p style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, margin: 0 }}>Boost your profile</p>
+          <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "3px 0 0", lineHeight: 1.6 }}>
+            You already have full access to everything — completing your profile just helps you make stronger connections and get better AI matches.
           </p>
         </div>
         <div style={{
@@ -59,7 +65,7 @@ function ProfileCompletePrompt({ user, onEdit }) {
         background: COLORS.accent, color: "#000", cursor: "pointer",
         fontSize: 13, fontWeight: 700,
       }}>
-        Complete profile →
+        Boost my profile →
       </button>
     </div>
   );
@@ -207,6 +213,8 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
   const [scoreData, setScoreData] = useState(null);
   const [scoreLoading, setScoreLoading] = useState(true);
   const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [dismissedPrompt, setDismissedPrompt] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(user.photoURL || null);
   const [photoBlob, setPhotoBlob] = useState(null);
   const [form, setForm] = useState({
@@ -787,34 +795,10 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
           )}
         </div>
       </div>
-      {isProfileComplete(user) ? (
-        <ProfileScoreCard scoreData={scoreData} scoreLoading={scoreLoading} onRescore={() => fetchScore(true)} />
-      ) : (
-        <div style={{
-          background: COLORS.card,
-          border: "1px solid rgba(245,166,35,0.2)",
-          borderRadius: 16, padding: "20px",
-          marginBottom: 16,
-          display: "flex", alignItems: "center", gap: 14,
-        }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-            background: "rgba(245,166,35,0.12)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
-              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: COLORS.text, marginBottom: 3 }}>AI Profile Score — locked</div>
-            <div style={{ fontSize: 11, color: COLORS.textMuted, lineHeight: 1.5 }}>
-              Complete your bio, skills, what you're looking for, and what you bring to the table to unlock your AI score.
-            </div>
-          </div>
-        </div>
+      <ProfileScoreCard scoreData={scoreData} scoreLoading={scoreLoading} onRescore={() => fetchScore(true)} />
+      {!dismissedPrompt && (
+        <ProfileCompletePrompt user={user} onEdit={() => setEditing(true)} onDismiss={() => setDismissedPrompt(true)} />
       )}
-      <ProfileCompletePrompt user={user} onEdit={() => setEditing(true)} />
 
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, overflow: "hidden" }}>
         <style>{`@keyframes linkApPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
@@ -963,36 +947,46 @@ export function Profile({ user, firebaseUser, onProfileUpdate, editTrigger, onSe
 
           </div>
 
-          {/* Share as PDF — green when profile is 100% complete */}
-          {(() => {
-            const isComplete = COMPLETION_SECTIONS.every(s => s.filled(user));
-            return (
-              <div style={{ padding: "0 24px 24px" }}>
-                <button
-                  onClick={isComplete ? handleSharePDF : undefined}
-                  disabled={generatingPDF}
-                  style={{
-                    width: "100%", padding: "13px", borderRadius: 12, border: "none",
-                    background: isComplete ? COLORS.green : COLORS.border,
-                    color: isComplete ? "#000" : COLORS.textMuted,
-                    cursor: isComplete && !generatingPDF ? "pointer" : "not-allowed",
-                    fontSize: 14, fontWeight: 700, transition: "background 0.3s",
-                  }}
-                >
-                  {generatingPDF ? "Generating PDF..." : isComplete ? "Share Profile as PDF ↗" : "Complete your profile to share as PDF"}
-                </button>
-                {!isComplete && (
-                  <p style={{ fontSize: 11, color: COLORS.textMuted, textAlign: "center", margin: "8px 0 0" }}>
-                    Fill in bio, skills, looking for, and what you bring to unlock
-                  </p>
-                )}
-              </div>
-            );
-          })()}
+          {/* Share as PDF */}
+          <div style={{ padding: "0 24px 24px" }}>
+            <button
+              onClick={() => isProfileComplete(user) ? handleSharePDF() : setShowCompleteModal(true)}
+              disabled={generatingPDF}
+              style={{
+                width: "100%", padding: "13px", borderRadius: 12, border: "none",
+                background: COLORS.green,
+                color: "#000",
+                cursor: generatingPDF ? "not-allowed" : "pointer",
+                fontSize: 14, fontWeight: 700, transition: "background 0.3s",
+              }}
+            >
+              {generatingPDF ? "Generating PDF..." : "Share Profile as PDF ↗"}
+            </button>
+          </div>
 
         </div>
       </div>
       {showShare && <ShareModal user={user} onClose={() => setShowShare(false)} />}
+      {showCompleteModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px" }}>
+          <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 16, width: "100%", maxWidth: 360, padding: 24 }}>
+            <div style={{ fontWeight: 700, color: COLORS.text, fontSize: 16, marginBottom: 10 }}>Complete your profile first</div>
+            <p style={{ fontSize: 13, color: COLORS.textMuted, lineHeight: 1.6, marginBottom: 20 }}>
+              Complete your profile first so your download looks its best.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowCompleteModal(false)} style={{
+                flex: 1, padding: "12px", borderRadius: 10, border: `1px solid ${COLORS.border}`,
+                background: "transparent", color: COLORS.textMuted, cursor: "pointer", fontSize: 13, fontWeight: 600,
+              }}>Cancel</button>
+              <button onClick={() => { setShowCompleteModal(false); setEditing(true); }} style={{
+                flex: 1, padding: "12px", borderRadius: 10, border: "none",
+                background: COLORS.accent, color: "#000", cursor: "pointer", fontSize: 13, fontWeight: 700,
+              }}>Complete profile</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

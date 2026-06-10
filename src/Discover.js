@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
 import { analytics, logEvent, auth } from "./firebase";
-import { COLORS, Avatar, Tag, LocationPin, LinkedInIcon, LOOKING_FOR_QUESTIONS, isProfileComplete } from "./shared";
+import { COLORS, Avatar, Tag, LocationPin, LinkedInIcon, LOOKING_FOR_QUESTIONS } from "./shared";
 
 const renderLookingForValue = (q, val) => {
   if (!val) return val;
@@ -508,7 +508,7 @@ export function ShareModal({ user, onClose }) {
   );
 }
 
-function ConnectNoteModal({ target, onSend, onCancel, aiEnabled = true }) {
+function ConnectNoteModal({ target, onSend, onCancel }) {
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
   const [sentOk, setSentOk] = useState(false);
@@ -592,31 +592,19 @@ function ConnectNoteModal({ target, onSend, onCancel, aiEnabled = true }) {
             <label style={{ fontSize: 12, color: COLORS.textMuted }}>
               Why do you want to connect with {target.name.split(" ")[0]}? <span style={{ color: COLORS.red }}>*</span>
             </label>
-            {aiEnabled ? (
-              <button
-                onClick={handleDraftWithAI}
-                disabled={drafting || sentOk}
-                style={{
-                  background: "transparent", border: `1px solid ${COLORS.accent}66`,
-                  borderRadius: 8, padding: "3px 10px",
-                  color: drafting ? COLORS.textMuted : COLORS.accent,
-                  fontSize: 11, fontWeight: 600, cursor: drafting ? "default" : "pointer",
-                  flexShrink: 0,
-                }}
-              >
-                {drafting ? "Drafting…" : "✦ AI draft"}
-              </button>
-            ) : (
-              <span style={{
-                fontSize: 10, color: COLORS.textMuted,
-                display: "flex", alignItems: "center", gap: 4,
-              }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.textMuted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="10" height="10">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-                Complete profile to use AI draft
-              </span>
-            )}
+            <button
+              onClick={handleDraftWithAI}
+              disabled={drafting || sentOk}
+              style={{
+                background: "transparent", border: `1px solid ${COLORS.accent}66`,
+                borderRadius: 8, padding: "3px 10px",
+                color: drafting ? COLORS.textMuted : COLORS.accent,
+                fontSize: 11, fontWeight: 600, cursor: drafting ? "default" : "pointer",
+                flexShrink: 0,
+              }}
+            >
+              {drafting ? "Drafting…" : "✦ AI draft"}
+            </button>
           </div>
           {draftError && (
             <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "0 0 6px" }}>
@@ -728,7 +716,7 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!currentUid || !user || !isProfileComplete(user)) { setExplanation(null); setLoadingExplanation(false); return; }
+      if (!currentUid || !user) { setExplanation(null); setLoadingExplanation(false); return; }
       if (explanationCache.current[currentUid] !== undefined) {
         setExplanation(explanationCache.current[currentUid]);
         setLoadingExplanation(false);
@@ -870,43 +858,24 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
               <div style={{ color: COLORS.textMuted, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}><LocationPin /> {current.location}</div>
             </div>
           </div>
-          {!isProfileComplete(user) ? (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 14px", marginBottom: 20,
-              background: "rgba(245,166,35,0.07)",
-              border: "1px solid rgba(245,166,35,0.2)",
-              borderRadius: 10,
-            }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14" style={{ flexShrink: 0 }}>
-                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-              <span style={{ fontSize: 11, color: COLORS.textMuted, lineHeight: 1.5 }}>
-                Complete your profile to unlock <span style={{ color: COLORS.accent, fontWeight: 600 }}>✦ Why Connect</span> AI insights
-              </span>
+          {loadingExplanation && (
+            <div style={{ marginBottom: 20 }}>
+              <style>{`@keyframes matchExplainPulse { 0%,100%{opacity:0.25} 50%{opacity:0.6} }`}</style>
+              <div style={{ height: 10, borderRadius: 4, background: COLORS.border, marginBottom: 6, width: "90%", animation: "matchExplainPulse 1.4s ease-in-out infinite" }} />
+              <div style={{ height: 10, borderRadius: 4, background: COLORS.border, width: "65%", animation: "matchExplainPulse 1.4s ease-in-out infinite 0.2s" }} />
             </div>
-          ) : (
-            <>
-              {loadingExplanation && (
-                <div style={{ marginBottom: 20 }}>
-                  <style>{`@keyframes matchExplainPulse { 0%,100%{opacity:0.25} 50%{opacity:0.6} }`}</style>
-                  <div style={{ height: 10, borderRadius: 4, background: COLORS.border, marginBottom: 6, width: "90%", animation: "matchExplainPulse 1.4s ease-in-out infinite" }} />
-                  <div style={{ height: 10, borderRadius: 4, background: COLORS.border, width: "65%", animation: "matchExplainPulse 1.4s ease-in-out infinite 0.2s" }} />
-                </div>
-              )}
-              {!loadingExplanation && explanation && (
-                <div style={{
-                  borderLeft: `2px solid ${COLORS.accent}`,
-                  background: COLORS.bg,
-                  borderRadius: "0 8px 8px 0",
-                  padding: "10px 14px",
-                  marginBottom: 20,
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.accent, marginBottom: 6 }}>✦ Why connect</div>
-                  <p style={{ fontSize: 13, lineHeight: 1.5, color: COLORS.text, margin: 0 }}>{explanation}</p>
-                </div>
-              )}
-            </>
+          )}
+          {!loadingExplanation && explanation && (
+            <div style={{
+              borderLeft: `2px solid ${COLORS.accent}`,
+              background: COLORS.bg,
+              borderRadius: "0 8px 8px 0",
+              padding: "10px 14px",
+              marginBottom: 20,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.accent, marginBottom: 6 }}>✦ Why connect</div>
+              <p style={{ fontSize: 13, lineHeight: 1.5, color: COLORS.text, margin: 0 }}>{explanation}</p>
+            </div>
           )}
           <p style={{ fontSize: 14, lineHeight: 1.6, color: COLORS.text, marginBottom: 20 }}>{current.bio}</p>
           <div style={{ marginBottom: 16 }}>
@@ -944,7 +913,6 @@ export function Discover({ users, onConnect, onPass, onViewProfile, onLoadMore, 
       {connectTarget && (
         <ConnectNoteModal
           target={connectTarget}
-          aiEnabled={isProfileComplete(user)}
           onSend={async (note) => {
             await onConnect(connectTarget, note);
             advance(connectTarget);
