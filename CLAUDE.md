@@ -30,7 +30,7 @@ The app is split across several source files. There is no routing library — `M
 - `src/Settings.js` — `Settings` component
 - `src/Tools.js` — `Tools` component (6th tab); three subtab pills: Founders Hub, Freelancer Kit, Growth Lab; shell only — placeholder cards
 - `src/tools/` — **(10 June 2026)** all new tool implementations, one file per tool: `QuoteGenerator.js`, `PaymentChaser.js`, `RunwayCalculator.js`, plus `toolsShared.js` (shared constants, styles, and `sharePdf()` helper). `src/Tools.js` is **frozen for new tool code** — only imports and picker-card wiring may be added there for new tools.
-- `src/Pulse.js` — `Pulse` component (AI Pulse tab) and `TrendCard`, `SkeletonCard` sub-components
+- `src/Pulse.js` — `Pulse` component (Business Ideas / Pulse tab) and `IdeaCard`, `SkeletonCard` sub-components
 - `src/AuthScreen.js` — `AuthScreen` component
 - `src/Onboarding.js` — `Onboarding` component
 - `src/shared.js` — shared constants (`COLORS`, `USER_COLORS`, option arrays), shared helpers (`normalizeUrl`, `validateLinkedIn`, `linkedinNameMatches`, `getBringToTablePrompt`, `formatRelativeTime`, `isProfileComplete`), and shared UI components (`Avatar`, `Tag`, `Input`, `TextArea`, `Select`, `SkillsInput`, `LocationPin`, `LinkedInIcon`, `TermsContent`)
@@ -128,12 +128,17 @@ The app is split across several source files. There is no routing library — `M
 - Cache lives in `users/{uid}/private/profileScore` — already readable/writable by the owner per existing Firestore rules (no rule changes needed).
 
 **AI Pulse Tab feature (26 May 2026)**
-- `src/Pulse.js` — default export `Pulse` component; fetches from `/api/pulse` with Firebase ID token; renders `TrendCard` (expandable, with share) and `SkeletonCard` loading state.
-- `api/pulse.js` — Vercel serverless GET handler; Firestore cache (`aiTrends/latest`, 24-hour TTL); calls Anthropic `claude-sonnet-4-6` to generate 6 trend cards (fields: `category`, `headline`, `summary`, `howToUse`); serves stale cache on generation failure.
-- `vercel.json` — cron `0 6 * * *` hits `/api/pulse` daily to refresh cache before users wake up.
-- Bottom nav: **Settings removed from nav bar** — now accessed via gear icon (⚙) in Profile view header (`onSettings` prop). Pulse tab added in its place with an EKG-line icon.
+- `vercel.json` — cron `0 6 * * *` hits `/api/pulse` daily (no-ops until the 5-day cache expires — see Business Ideas Feed below).
+- Bottom nav: **Settings removed from nav bar** — now accessed via gear icon (⚙) in Profile view header (`onSettings` prop). Pulse tab added in its place with an EKG-line icon (tab id `"pulse"` unchanged).
 - `Profile` now accepts `onSettings` prop (optional); renders a gear icon button next to Share/Edit when prop is provided.
-- Firestore collection `aiTrends/latest` — single doc with `trends[]` array and `generatedAt` timestamp; Admin SDK only (client read/write blocked).
+
+**Business Ideas Feed (10 June 2026 — repurposed from AI Pulse trend cards)**
+- `src/Pulse.js` — default export `Pulse` component (still mounted on the `"pulse"` tab); header reads "💡 Business Ideas" / "5 fresh ideas every 5 days — built for South Africa"; fetches from `/api/pulse` with Firebase ID token; renders `IdeaCard` (expandable, with share) and `SkeletonCard` loading state. A countdown chip (`nextBatchLabel`) shows "🌱 Next batch in N days" or "Fresh today" based on `generatedAt`. Free for all users — not plan-gated.
+- `api/pulse.js` — Vercel serverless GET handler; Firestore cache (`aiTrends/latest`, 5-day/120-hour TTL); calls Anthropic `claude-sonnet-4-6` to generate 5 business-idea cards for unemployed/aspiring South African entrepreneurs; serves stale cache on generation failure. The daily cron keeps hitting the route but only regenerates once the cache is older than 5 days.
+- Idea card schema (`ideas[]`, exactly 5 per batch): `title`, `category` (one of `Services` / `Food & Trade` / `Digital` / `Green/Agri` / `Skills & Education`), `emoji`, `whatItIs`, `whyInDemand`, `startupCost` (ZAR range), `howToStart` (array of 3-5 steps), `whereTheMarket`, `howToFindClients`, `howToScale`.
+- Collapsed `IdeaCard` shows emoji + title, category pill, startup-cost chip, and the first sentence of `whyInDemand`; expanded view shows all six labelled sections (What it is / Why it's in demand / Where the market is / How to find clients / How to scale / How to start as a step list).
+- Share text format: `"{emoji} {title}\n\n{whyInDemand}\n\nFound on Link-Ap — link-ap.online"`.
+- Firestore collection `aiTrends/latest` — single doc, now `{ ideas: [...], generatedAt }`; Admin SDK only (client read/write blocked). Migration: if the cached doc still has the old `trends[]` shape (no `ideas` array), it's treated as expired and regenerated immediately.
 
 **Smart Match Explanation feature (18 May 2026)**
 - `api/match-explain.js` — new Vercel serverless function; accepts `POST { currentUser, targetUser }`, calls Anthropic `claude-sonnet-4-6` (raw fetch, no SDK), returns `{ explanation: string | null }`. Requires `ANTHROPIC_API_KEY` Vercel env var. Never throws — always returns 200 with `{ explanation: null }` on any failure.
@@ -274,7 +279,7 @@ This section is the live project health snapshot. Update it after every fix or f
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| AI Pulse feed | ✅ Shipped (26 May 2026) | `src/Pulse.js` + `api/pulse.js`; daily Vercel cron at 06:00 UTC; 24h Firestore cache at `aiTrends/latest` |
+| Business Ideas feed (was AI Pulse) | ✅ Shipped (26 May 2026, repurposed 10 June 2026) | `src/Pulse.js` + `api/pulse.js`; daily Vercel cron at 06:00 UTC (no-ops until cache expires); 5-day Firestore cache at `aiTrends/latest`; 5 SA business-idea playbooks per batch, not plan-gated |
 | AI Profile Score | ✅ Shipped (26 May 2026) | `src/Profile.js` + `api/profile-score.js`; 5 dimensions × 20pts; 7-day cache; refreshes on profile save |
 | AI Connection Note Assistant | ✅ Shipped (26 May 2026) | `ConnectNoteModal` in `Discover.js` + `api/note-assist.js`; "✦ AI draft" button pre-fills textarea |
 | AI Profile Score / Optimiser | ❌ Not built | — |
@@ -322,5 +327,5 @@ This section is the live project health snapshot. Update it after every fix or f
 |------------|---------|--------|
 | `matchExplanations/{currentUid}_{targetUid}` | AI match explanation cache (7-day TTL) | Admin SDK only — client read/write blocked in firestore.rules |
 | `users/{uid}/private/rateLimits` | Per-user API rate limit counters | Admin SDK only |
-| `aiTrends/latest` | AI Pulse daily trend cards (24-hour TTL, single doc) | Admin SDK only — client read/write blocked in firestore.rules |
+| `aiTrends/latest` | Business Ideas feed batches (5-day TTL, single doc, `{ ideas: [...], generatedAt }`) | Admin SDK only — client read/write blocked in firestore.rules |
 | `meta/stats` | Global counters; `totalUsers` field drives `signupIndex` at registration | Admin SDK write (via `runTransaction` in Onboarding); no client read needed |

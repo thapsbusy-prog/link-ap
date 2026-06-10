@@ -2,33 +2,31 @@ import { useState, useEffect, useCallback } from "react";
 import { COLORS } from "./shared";
 
 const CATEGORY_COLORS = {
-  Productivity: "#7C3AED",
-  Tools:        "#0EA5E9",
-  Business:     "#F5A623",
-  Design:       "#EC4899",
-  Marketing:    "#10B981",
-  Upskill:      "#6366F1",
-  Coding:       "#14B8A6",
-  Strategy:     "#F59E0B",
+  "Services":            "#0EA5E9",
+  "Food & Trade":        "#F5A623",
+  "Digital":             "#7C3AED",
+  "Green/Agri":          "#10B981",
+  "Skills & Education":  "#6366F1",
 };
 
-function formatAge(ts) {
+const REFRESH_DAYS = 5;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function nextBatchLabel(ts) {
   if (!ts) return null;
-  const mins = Math.floor((Date.now() - ts) / 60000);
-  if (mins < 2) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  const elapsedDays = (Date.now() - ts) / DAY_MS;
+  const remaining = Math.ceil(REFRESH_DAYS - elapsedDays);
+  if (remaining <= 0) return "Fresh today";
+  return `🌱 Next batch in ${remaining} day${remaining === 1 ? "" : "s"}`;
 }
 
-function TrendCard({ card }) {
+function IdeaCard({ idea }) {
   const [expanded, setExpanded] = useState(false);
-  const catColor = CATEGORY_COLORS[card.category] || COLORS.accent;
+  const catColor = CATEGORY_COLORS[idea.category] || COLORS.accent;
 
   const handleShare = async (e) => {
     e.stopPropagation();
-    const text = `${card.headline}\n\n${card.summary}\n\nHow to use: ${card.howToUse}\n\nvia link-ap.online`;
+    const text = `${idea.emoji} ${idea.title}\n\n${idea.whyInDemand}\n\nFound on Link-Ap — link-ap.online`;
     if (navigator.share) {
       try { await navigator.share({ text }); } catch {}
     } else {
@@ -56,7 +54,7 @@ function TrendCard({ card }) {
             fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8,
             color: catColor, background: `${catColor}22`, padding: "3px 8px", borderRadius: 6,
           }}>
-            {card.category}
+            {idea.category}
           </span>
           <button
             onClick={handleShare}
@@ -64,40 +62,76 @@ function TrendCard({ card }) {
               background: "transparent", border: "none", cursor: "pointer",
               color: COLORS.textMuted, padding: "2px 6px", fontSize: 13,
             }}
-            title="Share this trend"
+            title="Share this idea"
           >
             ↗
           </button>
         </div>
 
-        <h3 style={{ fontSize: 15, fontWeight: 700, color: COLORS.text, lineHeight: 1.35, margin: "0 0 10px" }}>
-          {card.headline}
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, lineHeight: 1.35, margin: "0 0 8px" }}>
+          {idea.emoji} {idea.title}
         </h3>
 
+        <span style={{
+          display: "inline-block", fontSize: 11, fontWeight: 700, color: COLORS.accent,
+          background: `${COLORS.accent}1A`, padding: "3px 8px", borderRadius: 6, marginBottom: 10,
+        }}>
+          💰 {idea.startupCost}
+        </span>
+
         <p style={{ fontSize: 13, color: COLORS.textMuted, lineHeight: 1.6, margin: 0 }}>
-          {card.summary}
+          {idea.whyInDemand.split(/(?<=[.!?])\s+/)[0]}
         </p>
 
         {expanded && (
-          <div style={{
-            marginTop: 14, padding: "12px 14px", borderRadius: 10,
-            background: `${catColor}18`, border: `1px solid ${catColor}35`,
-          }}>
-            <p style={{
-              fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8,
-              color: catColor, margin: "0 0 6px",
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+            {[
+              ["What it is", idea.whatItIs],
+              ["Why it's in demand", idea.whyInDemand],
+              ["Where the market is", idea.whereTheMarket],
+              ["How to find clients", idea.howToFindClients],
+              ["How to scale", idea.howToScale],
+            ].map(([label, body]) => (
+              <div key={label} style={{
+                padding: "12px 14px", borderRadius: 10,
+                background: `${catColor}18`, border: `1px solid ${catColor}35`,
+              }}>
+                <p style={{
+                  fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8,
+                  color: catColor, margin: "0 0 6px",
+                }}>
+                  {label}
+                </p>
+                <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, margin: 0 }}>
+                  {body}
+                </p>
+              </div>
+            ))}
+
+            <div style={{
+              padding: "12px 14px", borderRadius: 10,
+              background: `${catColor}18`, border: `1px solid ${catColor}35`,
             }}>
-              How to use this
-            </p>
-            <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, margin: 0 }}>
-              {card.howToUse}
-            </p>
+              <p style={{
+                fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8,
+                color: catColor, margin: "0 0 8px",
+              }}>
+                How to start
+              </p>
+              <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
+                {idea.howToStart.map((step, i) => (
+                  <li key={i} style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6 }}>
+                    {step}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
 
         <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end" }}>
           <span style={{ fontSize: 11, color: COLORS.textMuted }}>
-            {expanded ? "Less ▲" : "How to use ▼"}
+            {expanded ? "Less ▲" : "Read the playbook ▼"}
           </span>
         </div>
       </div>
@@ -126,13 +160,13 @@ function SkeletonCard({ index }) {
 }
 
 export default function Pulse({ firebaseUser, user }) {
-  const [trends, setTrends] = useState(null);
+  const [ideas, setIdeas] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [generatedAt, setGeneratedAt] = useState(null);
   const [stale, setStale] = useState(false);
 
-  const fetchTrends = useCallback(async () => {
+  const fetchIdeas = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -142,18 +176,18 @@ export default function Pulse({ firebaseUser, user }) {
       });
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const data = await res.json();
-      setTrends(data.trends || []);
+      setIdeas(data.ideas || []);
       setGeneratedAt(data.generatedAt || null);
       setStale(!!data.stale);
     } catch (err) {
       console.error("Pulse fetch error:", err);
-      setError("Couldn't load trends right now.");
+      setError("Couldn't load ideas right now.");
     } finally {
       setLoading(false);
     }
   }, [firebaseUser]);
 
-  useEffect(() => { fetchTrends(); }, [fetchTrends]);
+  useEffect(() => { fetchIdeas(); }, [fetchIdeas]);
 
   return (
     <div style={{ padding: "16px 20px", paddingBottom: 32 }}>
@@ -162,19 +196,15 @@ export default function Pulse({ firebaseUser, user }) {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: 0 }}>AI Pulse</h2>
-              <span style={{
-                fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1,
-                color: COLORS.accent, background: `${COLORS.accent}22`, padding: "2px 6px", borderRadius: 4,
-              }}>DAILY</span>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: 0 }}>💡 Business Ideas</h2>
             </div>
             <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>
-              What's moving in AI — explained for builders
+              5 fresh ideas every 5 days — built for South Africa
             </p>
           </div>
           {!loading && (
             <button
-              onClick={fetchTrends}
+              onClick={fetchIdeas}
               style={{
                 background: "transparent", border: `1px solid ${COLORS.border}`,
                 color: COLORS.textMuted, borderRadius: 8, padding: "6px 12px",
@@ -186,9 +216,14 @@ export default function Pulse({ firebaseUser, user }) {
           )}
         </div>
         {generatedAt && (
-          <p style={{ fontSize: 11, color: COLORS.textMuted, margin: "8px 0 0" }}>
-            Updated {formatAge(generatedAt)}{stale ? " · cached" : ""}
-          </p>
+          <div style={{ marginTop: 10 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 700, color: COLORS.accent,
+              background: `${COLORS.accent}1A`, padding: "4px 10px", borderRadius: 20,
+            }}>
+              {nextBatchLabel(generatedAt)}{stale ? " · cached" : ""}
+            </span>
+          </div>
         )}
       </div>
 
@@ -204,7 +239,7 @@ export default function Pulse({ firebaseUser, user }) {
           <p style={{ fontSize: 28, margin: "0 0 10px" }}>⚡</p>
           <p style={{ color: COLORS.textMuted, fontSize: 14, margin: "0 0 16px" }}>{error}</p>
           <button
-            onClick={fetchTrends}
+            onClick={fetchIdeas}
             style={{
               background: COLORS.accent, color: "#000", border: "none",
               borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer",
@@ -215,12 +250,12 @@ export default function Pulse({ firebaseUser, user }) {
         </div>
       )}
 
-      {/* Trend cards */}
-      {!loading && !error && trends && (
+      {/* Idea cards */}
+      {!loading && !error && ideas && (
         <>
-          {trends.map((card, i) => <TrendCard key={i} card={card} />)}
+          {ideas.map((idea, i) => <IdeaCard key={i} idea={idea} />)}
           <p style={{ textAlign: "center", fontSize: 11, color: COLORS.textMuted, marginTop: 4 }}>
-            Tap any card · Share trends with your network
+            Tap any card for the full playbook · Share ideas with your network
           </p>
         </>
       )}

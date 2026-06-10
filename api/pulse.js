@@ -17,9 +17,11 @@ if (!admin.apps.length) {
   }
 }
 
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const CACHE_TTL_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
 
-async function generateTrends(db) {
+const VALID_CATEGORIES = ["Services", "Food & Trade", "Digital", "Green/Agri", "Skills & Education"];
+
+async function generateIdeas(db) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
 
@@ -32,19 +34,32 @@ async function generateTrends(db) {
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 1500,
-      system: `You are the AI editor for Link-Ap, a professional networking app for African entrepreneurs, founders, and builders. Generate 6 AI trend cards for today. Each card must be directly relevant to how entrepreneurs, solo operators, or startup founders can benefit from AI tools. Keep language plain, practical, and jargon-free. Be specific — name actual tools, models, or techniques.
+      max_tokens: 3000,
+      system: `You are the editor of "Business Ideas" on Link-Ap, an empowerment feed for unemployed and aspiring entrepreneurs in South Africa. Generate 5 fresh, viable business ideas for this batch.
 
-Exactly one of the 6 cards must use the category "Upskill". This card must feature a specific AI skill, certification, or short online course that makes someone highly competitive right now — in the job market, freelance market, or as a service provider. The summary must explain what the skill is and why employers or clients are paying a premium for it today. The howToUse must name the specific platform where you can get it (e.g. Coursera, DeepLearning.AI, Google, Hugging Face), roughly how long it takes, whether it is free or paid, and what concrete market opportunity or income it unlocks.
+Audience: people with little to no capital, who may be unemployed, between jobs, or looking to start a side hustle. Tone must be plain, encouraging, and dignified — never patronising, never preachy.
 
-Respond ONLY with valid JSON — an array of exactly 6 objects, each with:
-- "category": one of ["Productivity", "Tools", "Business", "Design", "Marketing", "Upskill", "Coding", "Strategy"]
-- "headline": string, max 12 words, punchy and specific
-- "summary": string, 2-3 plain English sentences explaining what is new or happening
-- "howToUse": string, 1-2 sentences with a concrete practical tip for an entrepreneur or builder
+Requirements:
+- Ideas must be realistic for South Africa in 2026.
+- Weight the batch toward low-capital and skills-accessible ideas — most South Africans starting out have very little money to invest.
+- Mix the 5 ideas across different categories — don't repeat the same category twice unless unavoidable.
+- Vary the ideas across batches. Avoid generic, overused suggestions (e.g. "start a blog", "become a social media influencer", "start a YouTube channel") unless given a genuinely fresh, specific angle.
+- ZAR amounts in startupCost must be realistic for the South African context (e.g. "R0 – R500", "R2,000 – R5,000", "R15,000 – R30,000").
 
-No markdown. No preamble. No explanation. Output the JSON array only.`,
-      messages: [{ role: "user", content: "Generate today's 6 AI trend cards." }],
+Respond ONLY with valid JSON — an object with a single key "ideas", an array of exactly 5 objects, each with:
+- "title": string — short, concrete idea name (e.g. "Mobile Car Wash for Office Parks")
+- "category": one of ["Services", "Food & Trade", "Digital", "Green/Agri", "Skills & Education"]
+- "emoji": string — one relevant emoji
+- "whatItIs": string — 2-3 sentences, plain language, explaining the idea
+- "whyInDemand": string — 2-3 sentences on why this is in high demand in South Africa right now
+- "startupCost": string — honest ZAR range to start
+- "howToStart": array of 3-5 strings — concrete first steps an unemployed person with little money can take this week
+- "whereTheMarket": string — where the customers physically or digitally are (e.g. townships, office parks, schools, Facebook Marketplace, WhatsApp groups, churches, taxi ranks, complexes)
+- "howToFindClients": string — practical client-acquisition tactics for someone with no marketing budget (word of mouth scripts, WhatsApp status, community groups, flyers, partnerships)
+- "howToScale": string — the path from first client to a real business (hiring, equipment, pricing up, formalising), pointing to SEDA/NYDA/IDC support where relevant
+
+No markdown. No preamble. No explanation. Output the JSON object only.`,
+      messages: [{ role: "user", content: "Generate this batch's 5 business ideas." }],
     }),
   });
 
@@ -56,19 +71,30 @@ No markdown. No preamble. No explanation. Output the JSON array only.`,
   const data = await response.json();
   const text = data.content?.[0]?.text?.trim() || "";
 
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) throw new Error("No JSON array in Anthropic response");
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("No JSON object in Anthropic response");
 
-  const trends = JSON.parse(jsonMatch[0]);
-  if (!Array.isArray(trends) || trends.length === 0) throw new Error("Empty trends array");
+  const parsed = JSON.parse(jsonMatch[0]);
+  const ideas = parsed?.ideas;
+  if (!Array.isArray(ideas) || ideas.length === 0) throw new Error("Empty ideas array");
 
-  const valid = trends.slice(0, 6).filter(
-    t => t && typeof t.headline === "string" && typeof t.summary === "string" && typeof t.howToUse === "string"
+  const valid = ideas.slice(0, 5).filter(idea =>
+    idea
+    && typeof idea.title === "string"
+    && VALID_CATEGORIES.includes(idea.category)
+    && typeof idea.emoji === "string"
+    && typeof idea.whatItIs === "string"
+    && typeof idea.whyInDemand === "string"
+    && typeof idea.startupCost === "string"
+    && Array.isArray(idea.howToStart) && idea.howToStart.every(s => typeof s === "string")
+    && typeof idea.whereTheMarket === "string"
+    && typeof idea.howToFindClients === "string"
+    && typeof idea.howToScale === "string"
   );
-  if (valid.length === 0) throw new Error("No valid trend objects");
+  if (valid.length === 0) throw new Error("No valid idea objects");
 
   await db.doc("aiTrends/latest").set({
-    trends: valid,
+    ideas: valid,
     generatedAt: admin.firestore.FieldValue.serverTimestamp(),
   });
 
@@ -100,19 +126,22 @@ module.exports = async function handler(req, res) {
     const cacheSnap = await db.doc("aiTrends/latest").get();
     if (cacheSnap.exists) {
       const cached = cacheSnap.data();
-      const generatedAt = cached.generatedAt?.toDate?.()?.getTime() || 0;
-      if (Date.now() - generatedAt < CACHE_TTL_MS) {
-        return res.status(200).json({ trends: cached.trends, generatedAt });
+      // Migration: old shape used `trends` — treat as expired and regenerate
+      if (Array.isArray(cached.ideas)) {
+        const generatedAt = cached.generatedAt?.toDate?.()?.getTime() || 0;
+        if (Date.now() - generatedAt < CACHE_TTL_MS) {
+          return res.status(200).json({ ideas: cached.ideas, generatedAt });
+        }
       }
     }
   } catch (err) {
     console.error("Pulse cache read error:", err);
   }
 
-  // Generate fresh trends
+  // Generate fresh ideas
   try {
-    const trends = await generateTrends(db);
-    return res.status(200).json({ trends, generatedAt: Date.now() });
+    const ideas = await generateIdeas(db);
+    return res.status(200).json({ ideas, generatedAt: Date.now() });
   } catch (err) {
     console.error("Pulse generation error:", err);
 
@@ -121,14 +150,16 @@ module.exports = async function handler(req, res) {
       const staleSnap = await db.doc("aiTrends/latest").get();
       if (staleSnap.exists) {
         const cached = staleSnap.data();
-        return res.status(200).json({
-          trends: cached.trends,
-          generatedAt: cached.generatedAt?.toDate?.()?.getTime() || 0,
-          stale: true,
-        });
+        if (Array.isArray(cached.ideas)) {
+          return res.status(200).json({
+            ideas: cached.ideas,
+            generatedAt: cached.generatedAt?.toDate?.()?.getTime() || 0,
+            stale: true,
+          });
+        }
       }
     } catch {}
 
-    return res.status(500).json({ error: "Failed to generate trends" });
+    return res.status(500).json({ error: "Failed to generate ideas" });
   }
 };
