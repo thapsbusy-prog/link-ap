@@ -24,6 +24,7 @@ The app is split across several source files. There is no routing library — `M
 **Source file map**
 - `src/App.js` — `MainApp`, `SearchModal`, `SplashScreen`, `ErrorBoundary`, `App` root, and helpers (`playBeep`, `triggerVibrate`)
 - `src/Discover.js` — `Discover`, `PublicProfile`, `ShareModal`, `ConnectNoteModal`, and canvas helpers (`roundRect`, `drawInvitePoster`)
+- `src/IntroScreen.js` — `IntroScreen` component, the pre-auth landing page (`HIGHLIGHTS`, `FOUNDING_PERKS` arrays)
 - `src/Matches.js` — `Matches` component
 - `src/Messages.js` — `Messages` component and `formatRelativeTime`
 - `src/Profile.js` — `Profile` component
@@ -74,6 +75,11 @@ The app is split across several source files. There is no routing library — `M
 - All PDF-generating tool previews (`InvoicePreview`, `ProposalPreview`, `ContentCalendarPreview`, `PitchDeckPreview` in `src/Tools.js`) and `Profile.js`'s "Share Profile as PDF" now share the actual generated PDF file via the Web Share API Level 2 (`navigator.canShare({ files: [file] })`), not just text.
 - Each tool's PDF-building logic was extracted into a `build*PDF()` function (returns the `jsPDF` doc without saving) shared by both the Download button (`doc.save(filename)`) and the Share button (`doc.output("blob")` → `File`).
 - Share handler order: if `navigator.canShare({ files })` — share the PDF file (with title/text); else if `navigator.share` exists — share text only (previous behaviour); else — download the PDF directly. On `AbortError` (user cancelled share sheet) do nothing; on any other error, fall back to downloading the PDF.
+
+**Landing page & invite poster refresh (10 June 2026)**
+- `src/IntroScreen.js` shortened significantly (feedback: previous version was too long). Removed the separate "AI Networking" / "Founder & Freelancer Tools" sections, the 4-card "Who it's for" grid, and the Apple App Store "coming soon" block; trimmed "How it works" from 5 steps to 3 and `FOUNDING_PERKS` from 5 to 3.
+- New unified `HIGHLIGHTS` array (2-column grid, 6 cards) replaces the old `NETWORKING_FEATURES`/`TOOL_FEATURES` arrays, leading with **Business Ideas Feed** (tagged "NEW") and **Payment Chaser** (tagged "NEW") alongside Why Connect AI, Quotes & Invoices, Pitch & Runway Tools, and Smart Chat Tools. Cards support an optional `badge` field rendered as a small amber "NEW" pill top-right.
+- `drawInvitePoster()` in `src/Discover.js` (used by `ShareModal` for both the Discover "Invite Someone" poster and Profile's "Share Profile" poster) — its 4-card feature list updated to lead with "Business Ideas Feed" and "Quotes, Invoices & More", replacing the old "AI Pulse"/"Profile Score" cards.
 
 **Onboarding design (as of 29 May 2026)**
 - `Onboarding` is intentionally minimal: collects only First Name, Last Name, Role, and Location (plus optional Title). All other profile fields default to empty/`[]`.

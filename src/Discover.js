@@ -285,9 +285,9 @@ function drawInvitePoster(canvas) {
 
   // AI feature cards (4 × 62px tall, 10px gap → period 72)
   const features = [
-    { label: "AI Pulse", desc: "Daily AI trends explained for builders" },
-    { label: "Profile Score", desc: "Know exactly how to stand out" },
-    { label: "Note Assistant", desc: "AI drafts your connection note in one tap" },
+    { label: "Business Ideas Feed", desc: "5 SA business ideas every 5 days, with real costs" },
+    { label: "Why Connect — AI", desc: "AI explains exactly why each match matters" },
+    { label: "Quotes, Invoices & More", desc: "AI-built tools to win clients and get paid" },
     { label: "Chat Starters", desc: "Break the ice with every new match" },
   ];
   const CH = 62, GAP = 10, PERIOD = CH + GAP;
