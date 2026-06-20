@@ -328,6 +328,33 @@ const FEATURE_CARDS = {
       example: "You know a tax payment is due in month 4. You add it as a once-off outflow and see your runway shorten from 'no limit' to 7 months — giving you time to plan ahead instead of being caught off guard.",
     },
   ],
+
+  "Daily Marketing Angle": [
+    {
+      pill: "MARKETING ANGLE",
+      what: "AI Daily Marketing Angle Generator",
+      whatDesc: "Tell Link-Ap what you sell and the vibe you're going for, and it hands you a fresh content angle — a hook, three talking points, a caption, and a CTA — built for TikTok, not a corporate brief.",
+      forWhom: "TikTok Creators Selling Their Own Product",
+      forDesc: "Posting daily is easy until the ideas run out and every video starts sounding the same. Now a new angle is one tap away, in your own voice, never scripted or stiff.",
+      example: "You sell handmade candles and you've posted the same 'behind the scenes' video three times this month. You hit Generate, pick 'Casual & funny', and get a hook about why your candles smell better than your ex's apartment — plus three beats to riff on, not read.",
+    },
+    {
+      pill: "MARKETING ANGLE",
+      what: "AI Daily Marketing Angle Generator",
+      whatDesc: "Tell Link-Ap what you sell and the vibe you're going for, and it hands you a fresh content angle — a hook, three talking points, a caption, and a CTA — built for TikTok, not a corporate brief.",
+      forWhom: "Freelancers Building a Personal Brand",
+      forDesc: "You know posting consistently builds trust and brings in leads, but staring at a blank caption box kills the habit before it starts. Now you always have somewhere to start.",
+      example: "You're a freelance copywriter trying to post three times a week. Today's angle is 'Myth-buster' — a hook calling out a copywriting myth your audience believes, talking points to riff on, and a caption with a CTA to DM you for a free headline rewrite.",
+    },
+    {
+      pill: "MARKETING ANGLE",
+      what: "AI Daily Marketing Angle Generator",
+      whatDesc: "Tell Link-Ap what you sell and the vibe you're going for, and it hands you a fresh content angle — a hook, three talking points, a caption, and a CTA — built for TikTok, not a corporate brief.",
+      forWhom: "Small Business Owners Juggling Their Own Marketing",
+      forDesc: "You don't have a content calendar or a marketing team — you have ten minutes between customers. Now those ten minutes produce a usable, on-brand angle instead of nothing at all.",
+      example: "Between customers at your braai-spice stall, you open the tool, set the vibe to 'Hype & energetic', and get a 'Surprise me' angle built around a taste-test reaction video — hook, beats, caption, and CTA ready before your next customer walks in.",
+    },
+  ],
 };
 
 const FEATURES = Object.keys(FEATURE_CARDS);
