@@ -196,12 +196,13 @@ export default function Pulse({ firebaseUser, user }) {
   const [generatedAt, setGeneratedAt] = useState(null);
   const [stale, setStale] = useState(false);
 
-  const fetchIdeas = useCallback(async () => {
+  const fetchIdeas = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
       const token = await firebaseUser.getIdToken();
-      const res = await fetch("/api/pulse", {
+      const url = forceRefresh ? "/api/pulse?refresh=true" : "/api/pulse";
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`Status ${res.status}`);
@@ -235,14 +236,14 @@ export default function Pulse({ firebaseUser, user }) {
           </div>
           {!loading && (
             <button
-              onClick={fetchIdeas}
+              onClick={() => fetchIdeas(true)}
               style={{
                 background: "transparent", border: `1px solid ${COLORS.border}`,
                 color: COLORS.textMuted, borderRadius: 8, padding: "6px 12px",
                 fontSize: 12, cursor: "pointer", flexShrink: 0,
               }}
             >
-              Refresh
+              New batch
             </button>
           )}
         </div>

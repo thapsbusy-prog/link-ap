@@ -121,21 +121,25 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // Try to serve from cache first
-  try {
-    const cacheSnap = await db.doc("aiTrends/latest").get();
-    if (cacheSnap.exists) {
-      const cached = cacheSnap.data();
-      // Migration: old shape used `trends` — treat as expired and regenerate
-      if (Array.isArray(cached.ideas)) {
-        const generatedAt = cached.generatedAt?.toDate?.()?.getTime() || 0;
-        if (Date.now() - generatedAt < CACHE_TTL_MS) {
-          return res.status(200).json({ ideas: cached.ideas, generatedAt });
+  const forceRefresh = req.query.refresh === "true" && !isCron;
+
+  // Try to serve from cache first (unless force-refresh requested)
+  if (!forceRefresh) {
+    try {
+      const cacheSnap = await db.doc("aiTrends/latest").get();
+      if (cacheSnap.exists) {
+        const cached = cacheSnap.data();
+        // Migration: old shape used `trends` — treat as expired and regenerate
+        if (Array.isArray(cached.ideas)) {
+          const generatedAt = cached.generatedAt?.toDate?.()?.getTime() || 0;
+          if (Date.now() - generatedAt < CACHE_TTL_MS) {
+            return res.status(200).json({ ideas: cached.ideas, generatedAt });
+          }
         }
       }
+    } catch (err) {
+      console.error("Pulse cache read error:", err);
     }
-  } catch (err) {
-    console.error("Pulse cache read error:", err);
   }
 
   // Generate fresh ideas
