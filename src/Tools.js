@@ -5,6 +5,7 @@ import { COLORS } from "./shared";
 import QuoteGenerator from "./tools/QuoteGenerator";
 import RunwayCalculator from "./tools/RunwayCalculator";
 import PaymentChaser from "./tools/PaymentChaser";
+import DailyAngleGenerator from "./tools/DailyAngleGenerator";
 
 const SUBTABS = [
   { id: "founders", label: "Founders Hub" },
@@ -3641,6 +3642,87 @@ function FreelancerKit({ user }) {
   );
 }
 
+// ─── Growth Lab ───────────────────────────────────────────────────────────────
+
+function GrowthLab({ user }) {
+  const [activeTool, setActiveTool] = useState(null);
+  const isPro = user?.plan === "founding_member" || user?.plan === "premium";
+
+  const TOOLS = [
+    {
+      id: "content-calendar",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      ),
+      name: "AI Content Calendar",
+      desc: "2–4 weeks of social posts planned and written for you",
+      ai: true,
+    },
+    {
+      id: "daily-angle",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      ),
+      name: "AI Daily Marketing Angle",
+      desc: "Never run out of ways to talk about what you sell — get a fresh angle, every day you post.",
+      ai: true,
+    },
+  ];
+
+  if (activeTool) {
+    return (
+      <div>
+        <button onClick={() => setActiveTool(null)} style={backBtnStyle}>
+          ← Back to Growth Lab
+        </button>
+        {activeTool === "content-calendar" && <ContentCalendarForm user={user} />}
+        {activeTool === "daily-angle" && <DailyAngleGenerator user={user} />}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <p style={{ fontSize: 13, color: COLORS.textMuted, margin: "0 0 4px" }}>
+        Tools to grow your audience and keep content consistent.
+      </p>
+      {TOOLS.map(tool => {
+        const locked = tool.ai && !isPro;
+        return (
+          <button
+            key={tool.id}
+            onClick={() => !locked && setActiveTool(tool.id)}
+            style={{ ...toolCardStyle, opacity: locked ? 0.5 : 1, cursor: locked ? "default" : "pointer" }}
+          >
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: `${COLORS.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {locked ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.textMuted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              ) : tool.icon()}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: COLORS.text }}>{tool.name}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#000", background: COLORS.accent, borderRadius: 4, padding: "1px 5px" }}>PRO</span>
+              </div>
+              <div style={{ fontSize: 12, color: COLORS.textMuted }}>{tool.desc}</div>
+              {locked && (
+                <div style={{ fontSize: 11, color: COLORS.accent, marginTop: 3 }}>Founding Member only</div>
+              )}
+            </div>
+            <span style={{ color: COLORS.textMuted, fontSize: 18 }}>›</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Tools (main export) ──────────────────────────────────────────────────────
 
 export default function Tools({ user }) {
@@ -3672,7 +3754,7 @@ export default function Tools({ user }) {
 
       {subtab === "founders" && <FoundersHub user={user} />}
       {subtab === "freelancer" && <FreelancerKit user={user} />}
-      {subtab === "growth" && <ContentCalendarForm user={user} />}
+      {subtab === "growth" && <GrowthLab user={user} />}
     </div>
   );
 }
