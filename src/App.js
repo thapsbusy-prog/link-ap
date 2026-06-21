@@ -486,7 +486,14 @@ function MainApp({ user, firebaseUser, onProfileUpdate }) {
           <button onClick={() => setShowSearch(true)} style={{
             background: "none", border: `1px solid ${COLORS.border}`, color: COLORS.text,
             borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontSize: 13,
-          }}>🔍 Search</button>
+            display: "flex", alignItems: "center", gap: 6,
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Search
+          </button>
           <div onClick={() => setTab("profile")} style={{ position: "relative", cursor: "pointer" }}>
             <Avatar initials={user.avatar} color={user.color} size={36} photoURL={user.photoURL} />
             {!(user.bio && user.skills?.length > 0 && user.lookingFor?.length > 0 && user.photoURL) && (

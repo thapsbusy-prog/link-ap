@@ -56,7 +56,7 @@ function IdeaCard({ idea }) {
 
   const handleShare = async (e) => {
     e.stopPropagation();
-    const text = `${idea.emoji} ${idea.title}\n\n${idea.whyInDemand}\n\nFound on Link-Ap — link-ap.online`;
+    const text = `${idea.title}\n\n${idea.whyInDemand}\n\nFound on Link-Ap — link-ap.online`;
     if (navigator.share) {
       try { await navigator.share({ text }); } catch {}
     } else {
@@ -99,7 +99,7 @@ function IdeaCard({ idea }) {
         </div>
 
         <h3 style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, lineHeight: 1.35, margin: "0 0 8px" }}>
-          {idea.emoji} {idea.title}
+          {idea.title}
         </h3>
 
         <span style={{
