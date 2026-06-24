@@ -119,6 +119,33 @@ const FEATURE_CARDS = {
     },
   ],
 
+  "Strategic Ideas": [
+    {
+      pill: "STRATEGIC IDEAS",
+      what: "Strategic Ideas — Capital-Backed Playbooks",
+      whatDesc: "Alongside the free Business Ideas feed, Link-Ap now surfaces a Strategic tier every 7 days — bigger plays for people with capital, each with a funding route, a competitive moat, and a 12/24-month scale plan.",
+      forWhom: "Retrenched Workers With a Payout",
+      forDesc: "A severance payout can fund more than a side hustle. Every idea shows what stops a competitor from copying it in 30 days, plus the realistic SA funding route if you need to top up.",
+      example: "You received a retrenchment payout of R180,000. The Strategic Ideas tab surfaces a Green/Agri play — a small-scale hydroponics operation supplying local restaurants — with a clear competitive moat (supplier exclusivity) and a 24-month plan to a second site.",
+    },
+    {
+      pill: "STRATEGIC IDEAS",
+      what: "Strategic Ideas — Capital-Backed Playbooks",
+      whatDesc: "Alongside the free Business Ideas feed, Link-Ap now surfaces a Strategic tier every 7 days — bigger plays for people with capital, each with a funding route, a competitive moat, and a 12/24-month scale plan.",
+      forWhom: "Funded Founders",
+      forDesc: "You've raised or saved capital and want a defensible business, not just a busy one. Every idea names the specific SA funding mechanism that fits — SEFA, asset finance, franchise finance — so you know exactly where to go next.",
+      example: "You're sitting on R150,000 in angel funding and don't know where to deploy it. A Digital idea — a niche logistics booking platform — shows a 12-month path to your first paying depots and a moat built on early supplier integrations competitors can't replicate quickly.",
+    },
+    {
+      pill: "STRATEGIC IDEAS",
+      what: "Strategic Ideas — Capital-Backed Playbooks",
+      whatDesc: "Alongside the free Business Ideas feed, Link-Ap now surfaces a Strategic tier every 7 days — bigger plays for people with capital, each with a funding route, a competitive moat, and a 12/24-month scale plan.",
+      forWhom: "Small Business Owners Looking to Expand",
+      forDesc: "Your current business has proven the model — now you need the next move. Every idea includes a scale timeline so you can see month-by-month what growth actually looks like before you commit capital.",
+      example: "Your single coffee cart has been profitable for two years. The Strategic tier surfaces a Food & Trade expansion idea — a licensed mobile cart fleet — with a funding route through a commercial bank business loan and a 24-month timeline to three operators.",
+    },
+  ],
+
   "Why Connect": [
     {
       pill: "WHY CONNECT",

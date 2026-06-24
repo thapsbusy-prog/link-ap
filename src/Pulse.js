@@ -9,13 +9,17 @@ const CATEGORY_COLORS = {
   "Skills & Education":  "#6366F1",
 };
 
-const REFRESH_DAYS = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function nextBatchLabel(ts) {
+const TIERS = [
+  { id: "basic", label: "Basic Ideas", path: "/api/pulse", refreshDays: 5 },
+  { id: "strategic", label: "Strategic Ideas", path: "/api/pulse-strategic", refreshDays: 7 },
+];
+
+function nextBatchLabel(ts, refreshDays) {
   if (!ts) return null;
   const elapsedDays = (Date.now() - ts) / DAY_MS;
-  const remaining = Math.ceil(REFRESH_DAYS - elapsedDays);
+  const remaining = Math.ceil(refreshDays - elapsedDays);
   if (remaining <= 0) return "Fresh today";
   return `Next batch in ${remaining} day${remaining === 1 ? "" : "s"}`;
 }
@@ -156,6 +160,27 @@ function IdeaCard({ idea }) {
                 ))}
               </ul>
             </div>
+
+            {[
+              ["Funding route", idea.fundingRoute],
+              ["Competitive moat", idea.competitiveMoat],
+              ["12/24-month scale timeline", idea.scaleTimeline],
+            ].filter(([, body]) => !!body).map(([label, body]) => (
+              <div key={label} style={{
+                padding: "12px 14px", borderRadius: 10,
+                background: `${catColor}18`, border: `1px solid ${catColor}35`,
+              }}>
+                <p style={{
+                  fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8,
+                  color: catColor, margin: "0 0 6px",
+                }}>
+                  {label}
+                </p>
+                <p style={{ fontSize: 13, color: COLORS.text, lineHeight: 1.6, margin: 0 }}>
+                  {body}
+                </p>
+              </div>
+            ))}
           </div>
         )}
 
@@ -189,9 +214,9 @@ function SkeletonCard({ index }) {
   );
 }
 
-export default function Pulse({ firebaseUser, user }) {
+function usePulseFeed(firebaseUser, path) {
   const [ideas, setIdeas] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [generatedAt, setGeneratedAt] = useState(null);
   const [stale, setStale] = useState(false);
@@ -201,7 +226,7 @@ export default function Pulse({ firebaseUser, user }) {
     setError(null);
     try {
       const token = await firebaseUser.getIdToken();
-      const url = forceRefresh ? "/api/pulse?refresh=true" : "/api/pulse";
+      const url = forceRefresh ? `${path}?refresh=true` : path;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -211,32 +236,62 @@ export default function Pulse({ firebaseUser, user }) {
       setGeneratedAt(data.generatedAt || null);
       setStale(!!data.stale);
     } catch (err) {
-      console.error("Pulse fetch error:", err);
+      console.error(`Pulse fetch error (${path}):`, err);
       setError("Couldn't load ideas right now.");
     } finally {
       setLoading(false);
     }
-  }, [firebaseUser]);
+  }, [firebaseUser, path]);
 
-  useEffect(() => { fetchIdeas(); }, [fetchIdeas]);
+  return { ideas, loading, error, generatedAt, stale, fetchIdeas };
+}
+
+export default function Pulse({ firebaseUser, user }) {
+  const [activeTier, setActiveTier] = useState("basic");
+  const basic = usePulseFeed(firebaseUser, "/api/pulse");
+  const strategic = usePulseFeed(firebaseUser, "/api/pulse-strategic");
+  const feed = activeTier === "basic" ? basic : strategic;
+  const tier = TIERS.find(t => t.id === activeTier);
+
+  useEffect(() => {
+    if (feed.ideas === null && !feed.loading && !feed.error) feed.fetchIdeas();
+  }, [activeTier, feed]);
 
   return (
     <div style={{ padding: "16px 20px", paddingBottom: 32 }}>
       {/* Header */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <IconBulb size={18} />
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: 0 }}>Business Ideas</h2>
+        </div>
+        <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>
+          Basic ideas for getting started, strategic ideas for growing with capital
+        </p>
+      </div>
+
+      {/* Tier pills */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        {TIERS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTier(t.id)}
+            style={{
+              padding: "7px 16px", borderRadius: 20, cursor: "pointer",
+              fontSize: 13, fontWeight: 500,
+              background: activeTier === t.id ? COLORS.accent : COLORS.card,
+              color: activeTier === t.id ? "#000" : COLORS.textMuted,
+              border: `1px solid ${activeTier === t.id ? COLORS.accent : COLORS.border}`,
+            }}
+          >{t.label}</button>
+        ))}
+      </div>
+
       <div style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <IconBulb size={18} />
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: 0 }}>Business Ideas</h2>
-            </div>
-            <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>
-              5 fresh ideas every 5 days — built for South Africa
-            </p>
-          </div>
-          {!loading && (
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "flex-end" }}>
+          {!feed.loading && (
             <button
-              onClick={() => fetchIdeas(true)}
+              onClick={() => feed.fetchIdeas(true)}
               style={{
                 background: "transparent", border: `1px solid ${COLORS.border}`,
                 color: COLORS.textMuted, borderRadius: 8, padding: "6px 12px",
@@ -247,7 +302,7 @@ export default function Pulse({ firebaseUser, user }) {
             </button>
           )}
         </div>
-        {generatedAt && (
+        {feed.generatedAt && (
           <div style={{ marginTop: 10 }}>
             <span style={{
               display: "inline-flex", alignItems: "center", gap: 6,
@@ -255,25 +310,25 @@ export default function Pulse({ firebaseUser, user }) {
               background: `${COLORS.accent}1A`, padding: "4px 10px", borderRadius: 20,
             }}>
               <IconCalendar size={13} />
-              {nextBatchLabel(generatedAt)}{stale ? " · cached" : ""}
+              {nextBatchLabel(feed.generatedAt, tier.refreshDays)}{feed.stale ? " · cached" : ""}
             </span>
           </div>
         )}
       </div>
 
       {/* Loading skeletons */}
-      {loading && [0, 1, 2, 3].map(i => <SkeletonCard key={i} index={i} />)}
+      {feed.loading && [0, 1, 2, 3].map(i => <SkeletonCard key={i} index={i} />)}
 
       {/* Error state */}
-      {!loading && error && (
+      {!feed.loading && feed.error && (
         <div style={{
           padding: "24px 20px", borderRadius: 16, background: COLORS.card,
           border: `1px solid ${COLORS.border}`, textAlign: "center",
         }}>
           <p style={{ fontSize: 28, margin: "0 0 10px" }}>⚡</p>
-          <p style={{ color: COLORS.textMuted, fontSize: 14, margin: "0 0 16px" }}>{error}</p>
+          <p style={{ color: COLORS.textMuted, fontSize: 14, margin: "0 0 16px" }}>{feed.error}</p>
           <button
-            onClick={fetchIdeas}
+            onClick={() => feed.fetchIdeas()}
             style={{
               background: COLORS.accent, color: "#000", border: "none",
               borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer",
@@ -285,9 +340,9 @@ export default function Pulse({ firebaseUser, user }) {
       )}
 
       {/* Idea cards */}
-      {!loading && !error && ideas && (
+      {!feed.loading && !feed.error && feed.ideas && (
         <>
-          {ideas.map((idea, i) => <IdeaCard key={i} idea={idea} />)}
+          {feed.ideas.map((idea, i) => <IdeaCard key={i} idea={idea} />)}
           <p style={{ textAlign: "center", fontSize: 11, color: COLORS.textMuted, marginTop: 4 }}>
             Tap any card for the full playbook · Share ideas with your network
           </p>
