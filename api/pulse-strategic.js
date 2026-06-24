@@ -19,8 +19,6 @@ if (!admin.apps.length) {
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-const VALID_CATEGORIES = ["Services", "Food & Trade", "Digital", "Green/Agri", "Skills & Education"];
-
 async function generateIdeas(db) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY not set");
@@ -34,15 +32,16 @@ async function generateIdeas(db) {
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: `You are the editor of "Strategic Ideas" on Link-Ap, a business-idea tier for South Africans who already have access to capital — savings, a retrenchment payout, a loan, or investor backing — and want to deploy it into a defensible, scalable business. Generate 5 fresh, viable business ideas for this batch.
 
 Audience: people with R20,000–R250,000+ to invest, who want a bigger play than a side hustle — something with real growth potential, not just a way to make ends meet. Tone must be sharp, strategic, and credible — speak to them as operators, not beginners.
 
 Requirements:
-- Ideas must be realistic for South Africa in 2026 and require meaningful capital to start (not low/no-capital ideas — this is the opposite framing from the Basic tier).
-- Mix the 5 ideas across different categories — don't repeat the same category twice unless unavoidable.
-- Vary the ideas across batches. Avoid generic franchise-in-a-box suggestions unless given a genuinely specific, well-reasoned angle.
+- Ideas can come from ANY industry — do not restrict yourself to the fixed category list used by the Basic Ideas tier (Services / Food & Trade / Digital / Green/Agri / Skills & Education). Draw from manufacturing, logistics, construction, hospitality, real estate, agriculture, import/export, healthcare, franchising, energy, automotive, events, or any other industry — whatever genuinely fits the brief below.
+- The only filter is: the idea must be scalable, in genuine demand in South Africa right now, and require meaningfully more capital to start than a Basic-tier idea (i.e. not low/no-capital — this is the opposite framing from the Basic tier).
+- Vary industries across the 5 ideas in this batch — don't repeat the same industry twice unless unavoidable. Vary further across batches over time.
+- Avoid generic franchise-in-a-box suggestions unless given a genuinely specific, well-reasoned angle.
 - ZAR amounts in startupCost must be realistic capital-intensive ranges (roughly "R20,000 – R60,000" up to "R150,000 – R250,000+").
 - fundingRoute must name a real South African funding mechanism suited to that specific idea (e.g. SEFA loan, commercial bank business loan, franchise finance, NYDA funding, angel/family investment, asset finance) — never the same generic answer for every idea.
 - competitiveMoat must explain, in 1-2 sentences, what specifically stops a competitor from copying this within 30 days (licensing, supplier relationships, capital intensity, location exclusivity, network effects, etc.) — tied to that idea, not generic.
@@ -50,7 +49,7 @@ Requirements:
 
 Respond ONLY with valid JSON — an object with a single key "ideas", an array of exactly 5 objects, each with:
 - "title": string — short, concrete idea name
-- "category": one of ["Services", "Food & Trade", "Digital", "Green/Agri", "Skills & Education"]
+- "category": string — a short, free-form industry label that best fits this specific idea (e.g. "Logistics", "Manufacturing", "Hospitality", "Construction", "Import & Export", "Real Estate", "Healthcare", "Franchise Operations") — not limited to the Basic tier's fixed list
 - "emoji": string — one relevant emoji
 - "whatItIs": string — 2-3 sentences, plain language, explaining the idea
 - "whyInDemand": string — 2-3 sentences on why this is in high demand in South Africa right now
@@ -86,7 +85,7 @@ No markdown. No preamble. No explanation. Output the JSON object only.`,
   const valid = ideas.slice(0, 5).filter(idea =>
     idea
     && typeof idea.title === "string"
-    && VALID_CATEGORIES.includes(idea.category)
+    && typeof idea.category === "string" && idea.category.trim().length > 0
     && typeof idea.emoji === "string"
     && typeof idea.whatItIs === "string"
     && typeof idea.whyInDemand === "string"
@@ -173,6 +172,6 @@ module.exports = async function handler(req, res) {
       }
     } catch {}
 
-    return res.status(500).json({ error: "Failed to generate ideas", debug: err.message });
+    return res.status(500).json({ error: "Failed to generate ideas" });
   }
 };
