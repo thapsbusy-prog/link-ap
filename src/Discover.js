@@ -285,7 +285,7 @@ function drawInvitePoster(canvas) {
 
   // AI feature cards (4 × 62px tall, 10px gap → period 72)
   const features = [
-    { label: "Business Ideas Feed", desc: "5 SA business ideas every 5 days, with real costs" },
+    { label: "Business Ideas Feed", desc: "5 SA business ideas every month, with real costs" },
     { label: "Why Connect — AI", desc: "AI explains exactly why each match matters" },
     { label: "Quotes, Invoices & More", desc: "AI-built tools to win clients and get paid" },
     { label: "Chat Starters", desc: "Break the ice with every new match" },

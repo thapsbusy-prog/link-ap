@@ -12,8 +12,8 @@ const CATEGORY_COLORS = {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const TIERS = [
-  { id: "basic", label: "Basic Ideas", path: "/api/pulse", refreshDays: 5 },
-  { id: "strategic", label: "Strategic Ideas", path: "/api/pulse-strategic", refreshDays: 7 },
+  { id: "basic", label: "Basic Ideas", path: "/api/pulse", refreshDays: 30 },
+  { id: "strategic", label: "Strategic Ideas", path: "/api/pulse-strategic", refreshDays: 30 },
 ];
 
 function nextBatchLabel(ts, refreshDays) {

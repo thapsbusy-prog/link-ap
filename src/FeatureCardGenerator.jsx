@@ -48,7 +48,7 @@ const FEATURE_CARDS = {
     {
       pill: "BUSINESS IDEAS",
       what: "Business Ideas — Empowerment Feed",
-      whatDesc: "Every 5 days, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
+      whatDesc: "Every month, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
       forWhom: "Job Seekers & The Unemployed",
       forDesc: "You don't need a degree or savings to get started. Every idea is realistic, low-capital, and comes with concrete steps you can take this week.",
       example: "You open the Business Ideas tab and find a mobile car wash concept with a startup cost under R500. The playbook tells you exactly where to find your first customers — office parks near you — and how to grow from one client to a small team.",
@@ -56,7 +56,7 @@ const FEATURE_CARDS = {
     {
       pill: "BUSINESS IDEAS",
       what: "Business Ideas — Empowerment Feed",
-      whatDesc: "Every 5 days, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
+      whatDesc: "Every month, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
       forWhom: "Aspiring Founders",
       forDesc: "Not sure what to build yet? Each idea comes with a clear path from your first client to a real, scalable business — including where to get formal support from SEDA, NYDA, or the IDC.",
       example: "A Skills & Education idea catches your eye — running weekend coding workshops for matric students. The playbook shows how to find your first 10 students through WhatsApp groups and schools, then how to formalise and scale into a registered training provider.",
@@ -64,7 +64,7 @@ const FEATURE_CARDS = {
     {
       pill: "BUSINESS IDEAS",
       what: "Business Ideas — Empowerment Feed",
-      whatDesc: "Every 5 days, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
+      whatDesc: "Every month, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
       forWhom: "Side-Hustlers",
       forDesc: "Already working but want extra income? Each idea is built to start small around your existing schedule, with realistic ZAR costs and no marketing budget required.",
       example: "You're employed but want extra income on weekends. A Food & Trade idea shows how to start a small meal-prep service from your kitchen for under R2,000 — with scripts for getting your first orders from coworkers and your local community WhatsApp group.",
@@ -72,7 +72,7 @@ const FEATURE_CARDS = {
     {
       pill: "BUSINESS IDEAS",
       what: "Business Ideas — Empowerment Feed",
-      whatDesc: "Every 5 days, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
+      whatDesc: "Every month, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
       forWhom: "Recently Retrenched Workers",
       forDesc: "Losing a job doesn't mean losing your income — it means redirecting your existing skills. Every idea shows you how to turn what you already know into your own business, with a realistic budget for your situation.",
       example: "After 12 years in retail, you were retrenched last month. The feed surfaces a Services idea — home organising and decluttering — built on the customer-facing skills you already have, with a startup cost under R1,000 and a script for landing your first three clients in your old suburb.",
@@ -80,7 +80,7 @@ const FEATURE_CARDS = {
     {
       pill: "BUSINESS IDEAS",
       what: "Business Ideas — Empowerment Feed",
-      whatDesc: "Every 5 days, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
+      whatDesc: "Every month, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
       forWhom: "Stay-at-Home Parents & Caregivers",
       forDesc: "Your time is limited and your income matters. Every idea is designed to fit around school runs and household routines — low-capital, home-based, and built to grow at your own pace.",
       example: "Between drop-offs and pick-ups, you've got a few free hours a day. A Food & Trade idea shows how to run a small home bakery for the school community — starting with under R800 in ingredients and a plan to get your first orders through the parents' WhatsApp group.",
@@ -88,7 +88,7 @@ const FEATURE_CARDS = {
     {
       pill: "BUSINESS IDEAS",
       what: "Business Ideas — Empowerment Feed",
-      whatDesc: "Every 5 days, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
+      whatDesc: "Every month, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
       forWhom: "Matriculants Without Funding for Tertiary Study",
       forDesc: "No bursary or NSFAS spot doesn't mean a gap year has to be empty. Every idea gives you a real first step — something to build, earn from, and put on a CV while you reapply.",
       example: "Your NSFAS application didn't come through this year. The feed surfaces a Digital idea — managing social media pages for local businesses — with under R200 in startup costs and a clear pitch script for approaching shop owners in your area this week.",
@@ -96,7 +96,7 @@ const FEATURE_CARDS = {
     {
       pill: "BUSINESS IDEAS",
       what: "Business Ideas — Empowerment Feed",
-      whatDesc: "Every 5 days, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
+      whatDesc: "Every month, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
       forWhom: "Township & Informal Traders",
       forDesc: "Already selling, but want to grow beyond one stall or one street corner? Every idea includes a 'how to scale' step — practical ways to formalise, add products, or reach more customers without big capital.",
       example: "You run a small spaza stall. A Food & Trade idea shows an add-on product line with high demand and low spoilage, plus a 'how to scale' step on registering with your local municipality so you can supply nearby tuck shops too.",
@@ -104,7 +104,7 @@ const FEATURE_CARDS = {
     {
       pill: "BUSINESS IDEAS",
       what: "Business Ideas — Empowerment Feed",
-      whatDesc: "Every 5 days, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
+      whatDesc: "Every month, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
       forWhom: "Rural Entrepreneurs",
       forDesc: "Limited access to a big-city market doesn't mean limited opportunity. Every idea includes 'where the market is' guidance tailored to smaller towns — local demand, transport-light products, and community-based ways to find your first customers.",
       example: "You live in a small town outside Polokwane. A Green/Agri idea shows how to start a seedling nursery using space you already have, with a startup cost under R1,500 and a plan to sell to neighbours, local schools, and nearby farms.",
@@ -112,7 +112,7 @@ const FEATURE_CARDS = {
     {
       pill: "BUSINESS IDEAS",
       what: "Business Ideas — Empowerment Feed",
-      whatDesc: "Every 5 days, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
+      whatDesc: "Every month, Link-Ap surfaces 5 fresh, viable business ideas for South Africa — each one a practical mini playbook with startup costs, first steps, and where to find clients.",
       forWhom: "Graduates Still Job Hunting",
       forDesc: "Months of applications with no offers is exhausting — and it doesn't have to be the only path forward. Every idea shows how to put your degree to work for yourself while you keep applying, turning idle time into income and experience.",
       example: "You graduated with a marketing degree eight months ago and haven't landed a job yet. The feed surfaces a Skills & Education idea — running a paid CV and LinkedIn profile clinic for fellow job seekers — with zero startup cost and a plan to find your first clients through your own university alumni group.",
@@ -123,7 +123,7 @@ const FEATURE_CARDS = {
     {
       pill: "STRATEGIC IDEAS",
       what: "Strategic Ideas — Capital-Backed Playbooks",
-      whatDesc: "Alongside the free Business Ideas feed, Link-Ap now surfaces a Strategic tier every 7 days — bigger plays for people with capital, each with a funding route, a competitive moat, and a 12/24-month scale plan.",
+      whatDesc: "Alongside the free Business Ideas feed, Link-Ap now surfaces a Strategic tier every month — bigger plays for people with capital, each with a funding route, a competitive moat, and a 12/24-month scale plan.",
       forWhom: "Retrenched Workers With a Payout",
       forDesc: "A severance payout can fund more than a side hustle. Every idea shows what stops a competitor from copying it in 30 days, plus the realistic SA funding route if you need to top up.",
       example: "You received a retrenchment payout of R180,000. The Strategic Ideas tab surfaces a Green/Agri play — a small-scale hydroponics operation supplying local restaurants — with a clear competitive moat (supplier exclusivity) and a 24-month plan to a second site.",
@@ -131,7 +131,7 @@ const FEATURE_CARDS = {
     {
       pill: "STRATEGIC IDEAS",
       what: "Strategic Ideas — Capital-Backed Playbooks",
-      whatDesc: "Alongside the free Business Ideas feed, Link-Ap now surfaces a Strategic tier every 7 days — bigger plays for people with capital, each with a funding route, a competitive moat, and a 12/24-month scale plan.",
+      whatDesc: "Alongside the free Business Ideas feed, Link-Ap now surfaces a Strategic tier every month — bigger plays for people with capital, each with a funding route, a competitive moat, and a 12/24-month scale plan.",
       forWhom: "Funded Founders",
       forDesc: "You've raised or saved capital and want a defensible business, not just a busy one. Every idea names the specific SA funding mechanism that fits — SEFA, asset finance, franchise finance — so you know exactly where to go next.",
       example: "You're sitting on R150,000 in angel funding and don't know where to deploy it. A Digital idea — a niche logistics booking platform — shows a 12-month path to your first paying depots and a moat built on early supplier integrations competitors can't replicate quickly.",
@@ -139,7 +139,7 @@ const FEATURE_CARDS = {
     {
       pill: "STRATEGIC IDEAS",
       what: "Strategic Ideas — Capital-Backed Playbooks",
-      whatDesc: "Alongside the free Business Ideas feed, Link-Ap now surfaces a Strategic tier every 7 days — bigger plays for people with capital, each with a funding route, a competitive moat, and a 12/24-month scale plan.",
+      whatDesc: "Alongside the free Business Ideas feed, Link-Ap now surfaces a Strategic tier every month — bigger plays for people with capital, each with a funding route, a competitive moat, and a 12/24-month scale plan.",
       forWhom: "Small Business Owners Looking to Expand",
       forDesc: "Your current business has proven the model — now you need the next move. Every idea includes a scale timeline so you can see month-by-month what growth actually looks like before you commit capital.",
       example: "Your single coffee cart has been profitable for two years. The Strategic tier surfaces a Food & Trade expansion idea — a licensed mobile cart fleet — with a funding route through a commercial bank business loan and a 24-month timeline to three operators.",

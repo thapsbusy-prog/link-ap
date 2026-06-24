@@ -17,7 +17,7 @@ if (!admin.apps.length) {
   }
 }
 
-const CACHE_TTL_MS = 5 * 24 * 60 * 60 * 1000; // 5 days
+const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 const VALID_CATEGORIES = ["Services", "Food & Trade", "Digital", "Green/Agri", "Skills & Education"];
 

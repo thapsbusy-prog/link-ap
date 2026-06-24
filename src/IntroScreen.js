@@ -9,7 +9,7 @@ const HIGHLIGHTS = [
       </svg>
     ),
     title: "Business Ideas Feed",
-    desc: "5 SA business ideas every 5 days — real costs & how-to-start steps",
+    desc: "5 SA business ideas every month — real costs & how-to-start steps",
     badge: "NEW",
   },
   {
