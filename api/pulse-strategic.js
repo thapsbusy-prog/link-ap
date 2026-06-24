@@ -173,6 +173,6 @@ module.exports = async function handler(req, res) {
       }
     } catch {}
 
-    return res.status(500).json({ error: "Failed to generate ideas" });
+    return res.status(500).json({ error: "Failed to generate ideas", debug: err.message });
   }
 };
