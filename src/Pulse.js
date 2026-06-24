@@ -257,6 +257,14 @@ export default function Pulse({ firebaseUser, user }) {
     if (feed.ideas === null && !feed.loading && !feed.error) feed.fetchIdeas();
   }, [activeTier, feed]);
 
+  const [slowNotice, setSlowNotice] = useState(false);
+  useEffect(() => {
+    setSlowNotice(false);
+    if (!feed.loading) return;
+    const t = setTimeout(() => setSlowNotice(true), 6000);
+    return () => clearTimeout(t);
+  }, [activeTier, feed.loading]);
+
   return (
     <div style={{ padding: "16px 20px", paddingBottom: 32 }}>
       {/* Header */}
@@ -318,6 +326,11 @@ export default function Pulse({ firebaseUser, user }) {
 
       {/* Loading skeletons */}
       {feed.loading && [0, 1, 2, 3].map(i => <SkeletonCard key={i} index={i} />)}
+      {feed.loading && slowNotice && (
+        <p style={{ textAlign: "center", fontSize: 12, color: COLORS.textMuted, marginTop: 4 }}>
+          Still generating — a fresh batch can take up to a minute. Hang tight.
+        </p>
+      )}
 
       {/* Error state */}
       {!feed.loading && feed.error && (
