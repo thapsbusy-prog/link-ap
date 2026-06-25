@@ -4,6 +4,7 @@ import { auth } from "./firebase";
 import { COLORS } from "./shared";
 import QuoteGenerator from "./tools/QuoteGenerator";
 import RunwayCalculator from "./tools/RunwayCalculator";
+import CashFlowProjection from "./tools/CashFlowProjection";
 import PaymentChaser from "./tools/PaymentChaser";
 import DailyAngleGenerator from "./tools/DailyAngleGenerator";
 
@@ -3464,6 +3465,19 @@ function FoundersHub({ user }) {
       desc: "See how many months your cash will last",
       ai: false,
     },
+    {
+      id: "cash-flow-projection",
+      icon: () => (
+        <svg viewBox="0 0 24 24" fill="none" stroke={COLORS.accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="22" height="22">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+          <path d="M7 14l3 3 4-5 3 3"/>
+        </svg>
+      ),
+      name: "Cash Flow Projection",
+      desc: "Build a 12-month cash flow forecast and download it",
+      ai: false,
+    },
   ];
 
   if (activeTool) {
@@ -3478,6 +3492,7 @@ function FoundersHub({ user }) {
         {activeTool === "break-even" && <BreakEvenCalculator />}
         {activeTool === "invoice-template" && <StaticInvoiceTemplate user={user} />}
         {activeTool === "runway" && <RunwayCalculator />}
+        {activeTool === "cash-flow-projection" && <CashFlowProjection user={user} />}
       </div>
     );
   }
