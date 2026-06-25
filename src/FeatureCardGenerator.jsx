@@ -119,6 +119,33 @@ const FEATURE_CARDS = {
     },
   ],
 
+  "Funded Ideas": [
+    {
+      pill: "FUNDED IDEAS",
+      what: "Funded Ideas — Small-Capital Playbooks",
+      whatDesc: "Sitting between the free Business Ideas feed and the bigger Strategic tier, Link-Ap's Funded Ideas tier surfaces 5 ideas every month for people with R15,000–R150,000 to invest — real businesses with some upfront cost, without needing big capital.",
+      forWhom: "Stokvel or Savings-Club Members",
+      forDesc: "Your stokvel payout is real money, but not enough for a capital-intensive operation. Every idea is sized to a R15,000–R150,000 budget, with concrete steps for deploying it into stock, equipment, or a small premises.",
+      example: "Your stokvel payout comes to R45,000. The Funded Ideas tab surfaces a Trades & Repair idea — a mobile appliance repair service with a starter toolkit and branded vehicle signage — with a plan to find your first clients through local Facebook groups.",
+    },
+    {
+      pill: "FUNDED IDEAS",
+      what: "Funded Ideas — Small-Capital Playbooks",
+      whatDesc: "Sitting between the free Business Ideas feed and the bigger Strategic tier, Link-Ap's Funded Ideas tier surfaces 5 ideas every month for people with R15,000–R150,000 to invest — real businesses with some upfront cost, without needing big capital.",
+      forWhom: "Personal Loan or Small Payout Recipients",
+      forDesc: "A small loan or payout can disappear fast without a clear plan. Every idea shows exactly what that capital buys — stock, a vehicle, equipment — and how to start earning from it quickly.",
+      example: "You took out a R80,000 personal loan to start something of your own. A Food Service idea — a fitted-out shipping-container kitchen — shows what the budget realistically covers and a path to your first 100 regular customers.",
+    },
+    {
+      pill: "FUNDED IDEAS",
+      what: "Funded Ideas — Small-Capital Playbooks",
+      whatDesc: "Sitting between the free Business Ideas feed and the bigger Strategic tier, Link-Ap's Funded Ideas tier surfaces 5 ideas every month for people with R15,000–R150,000 to invest — real businesses with some upfront cost, without needing big capital.",
+      forWhom: "Side-Hustlers Ready to Reinvest",
+      forDesc: "Your bootstrapped hustle has saved up some real capital — now you can afford equipment or stock that changes what's possible. Every idea shows the next-tier-up version of a small business, not just more of the same.",
+      example: "Your side hustle has saved up R60,000. The Funded Ideas tab surfaces a Beauty & Wellness idea — a small fitted salon chair rental setup — with a plan to find your first chair-renters through local salon networks.",
+    },
+  ],
+
   "Strategic Ideas": [
     {
       pill: "STRATEGIC IDEAS",

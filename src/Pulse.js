@@ -13,6 +13,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 const TIERS = [
   { id: "basic", label: "Basic Ideas", path: "/api/pulse", refreshDays: 30 },
+  { id: "funded", label: "Funded Ideas", path: "/api/pulse-funded", refreshDays: 30 },
   { id: "strategic", label: "Strategic Ideas", path: "/api/pulse-strategic", refreshDays: 30 },
 ];
 
@@ -249,8 +250,10 @@ function usePulseFeed(firebaseUser, path) {
 export default function Pulse({ firebaseUser, user }) {
   const [activeTier, setActiveTier] = useState("basic");
   const basic = usePulseFeed(firebaseUser, "/api/pulse");
+  const funded = usePulseFeed(firebaseUser, "/api/pulse-funded");
   const strategic = usePulseFeed(firebaseUser, "/api/pulse-strategic");
-  const feed = activeTier === "basic" ? basic : strategic;
+  const feedsByTier = { basic, funded, strategic };
+  const feed = feedsByTier[activeTier];
   const tier = TIERS.find(t => t.id === activeTier);
 
   useEffect(() => {
@@ -274,7 +277,7 @@ export default function Pulse({ firebaseUser, user }) {
           <h2 style={{ fontSize: 18, fontWeight: 700, color: COLORS.text, margin: 0 }}>Business Ideas</h2>
         </div>
         <p style={{ color: COLORS.textMuted, fontSize: 13, margin: 0 }}>
-          Basic ideas for getting started, strategic ideas for growing with capital
+          Basic ideas to get started, funded ideas with some capital behind you, strategic ideas for bigger plays
         </p>
       </div>
 
